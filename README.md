@@ -21,6 +21,7 @@ OP_EMAIL=operator@example.com      # email that can post price updates
 ### Database
 ```
 npm install
+npx prisma generate
 npx prisma migrate dev
 ```
 On first run the app seeds the 8 companies with default quarterly prices.
@@ -32,7 +33,7 @@ npm run dev
 Visit `http://localhost:3000`.
 
 ### Admin price updates (no UI)
-Send an authenticated POST (session as `ADMIN_EMAIL`) to:
+Send an authenticated POST (session as `OP_EMAIL`) to:
 ```
 POST /api/admin/update-prices
 [
