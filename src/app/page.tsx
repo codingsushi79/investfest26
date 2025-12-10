@@ -7,6 +7,7 @@ import { TradeControls } from "@/components/TradeControls";
 import { StockCharts } from "@/components/StockCharts";
 import { PortfolioTable } from "@/components/PortfolioTable";
 import { UsernameForm } from "@/components/UsernameForm";
+import { SignInButton } from "@/components/SignInButton";
 
 export const dynamic = "force-dynamic";
 
@@ -53,14 +54,7 @@ export default async function Home() {
                 </button>
               </form>
             ) : (
-              <form action="/api/auth/signin/google" method="post">
-                <button
-                  type="submit"
-                  className="rounded-md bg-indigo-600 px-3 py-2 font-semibold text-white hover:bg-indigo-700"
-                >
-                  Sign in with Google
-                </button>
-              </form>
+              <SignInButton />
             )}
           </div>
         </div>
@@ -111,14 +105,9 @@ export default async function Home() {
             <p className="text-sm text-zinc-700">
               Sign in with Google to start trading and track your holdings.
             </p>
-            <form action="/api/auth/signin/google" method="post" className="mt-3">
-              <button
-                type="submit"
-                className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-              >
-                Sign in with Google
-              </button>
-            </form>
+            <div className="mt-3">
+              <SignInButton />
+            </div>
           </div>
         )}
 
