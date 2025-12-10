@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
+import type { Session } from "next-auth";
 import { authConfig } from "@/lib/auth";
 import { getDashboardData, getLatestPrices } from "@/lib/data";
 import { TradeControls } from "@/components/TradeControls";
@@ -7,8 +8,10 @@ import { StockCharts } from "@/components/StockCharts";
 import { PortfolioTable } from "@/components/PortfolioTable";
 import { UsernameForm } from "@/components/UsernameForm";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
-  const session = await getServerSession(authConfig);
+  const session = (await getServerSession(authConfig)) as Session | null;
   const dashboard = await getDashboardData(session?.user?.id);
   const latestPrices = await getLatestPrices();
 

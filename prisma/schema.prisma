@@ -64,6 +64,7 @@ model Company {
   createdAt DateTime  @default(now())
   prices    PricePoint[]
   holdings  Holding[]
+  transactions Transaction[]
 }
 
 model PricePoint {

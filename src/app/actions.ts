@@ -40,6 +40,7 @@ export async function buyShares(raw: { symbol: string; shares: number }) {
   if (!session?.user?.id) {
     throw new Error("Not authenticated");
   }
+  const userId = session.user.id;
 
   const input = tradeSchema.parse({
     symbol: raw.symbol,
@@ -58,7 +59,7 @@ export async function buyShares(raw: { symbol: string; shares: number }) {
   const totalCost = price * input.shares;
 
   const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
+    where: { id: userId },
     select: { balance: true },
   });
   if (!user) throw new Error("User missing");
@@ -69,15 +70,15 @@ export async function buyShares(raw: { symbol: string; shares: number }) {
 
   await prisma.$transaction(async (tx) => {
     await tx.user.update({
-      where: { id: session.user.id },
+      where: { id: userId },
       data: { balance: { decrement: totalCost } },
     });
 
     await tx.holding.upsert({
-      where: { userId_companyId: { userId: session.user.id, companyId: company.id } },
+      where: { userId_companyId: { userId, companyId: company.id } },
       update: { shares: { increment: input.shares } },
       create: {
-        userId: session.user.id,
+        userId,
         companyId: company.id,
         shares: input.shares,
       },
@@ -85,7 +86,7 @@ export async function buyShares(raw: { symbol: string; shares: number }) {
 
     await tx.transaction.create({
       data: {
-        userId: session.user.id,
+        userId,
         companyId: company.id,
         type: "BUY",
         shares: input.shares,
@@ -105,6 +106,7 @@ export async function sellShares(raw: { symbol: string; shares: number }) {
   if (!session?.user?.id) {
     throw new Error("Not authenticated");
   }
+  const userId = session.user.id;
 
   const input = tradeSchema.parse({
     symbol: raw.symbol,
@@ -120,7 +122,7 @@ export async function sellShares(raw: { symbol: string; shares: number }) {
   }
 
   const holding = await prisma.holding.findUnique({
-    where: { userId_companyId: { userId: session.user.id, companyId: company.id } },
+    where: { userId_companyId: { userId, companyId: company.id } },
   });
 
   if (!holding || holding.shares < input.shares) {
@@ -132,18 +134,18 @@ export async function sellShares(raw: { symbol: string; shares: number }) {
 
   await prisma.$transaction(async (tx) => {
     await tx.user.update({
-      where: { id: session.user.id },
+      where: { id: userId },
       data: { balance: { increment: totalValue } },
     });
 
     await tx.holding.update({
-      where: { userId_companyId: { userId: session.user.id, companyId: company.id } },
+      where: { userId_companyId: { userId, companyId: company.id } },
       data: { shares: { decrement: input.shares } },
     });
 
     await tx.transaction.create({
       data: {
-        userId: session.user.id,
+        userId,
         companyId: company.id,
         type: "SELL",
         shares: input.shares,

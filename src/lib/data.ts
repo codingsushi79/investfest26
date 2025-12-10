@@ -9,7 +9,7 @@ export const COMPANY_SYMBOLS = [
   { symbol: "KEY", name: "Royal Key" },
   { symbol: "TN", name: "True North Investments" },
   { symbol: "TMB", name: "Trust Me Bro" },
-  { symbol: "TGOC", name: "Two Guys one Company" },
+  { symbol: "TGOC", name: "Two Guys One Company" },
 ];
 
 export const ensureSeedData = cache(async () => {
