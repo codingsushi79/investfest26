@@ -12,30 +12,17 @@ export const COMPANY_SYMBOLS = [
   { symbol: "TGOC", name: "Two Guys one Company" },
 ];
 
-const DEFAULT_PRICE_SERIES = [
-  { label: "y1 q1", value: 100 },
-  { label: "y1 q2", value: 105 },
-  { label: "y1 q3", value: 112 },
-  { label: "y1 q4", value: 118 },
-];
-
 export const ensureSeedData = cache(async () => {
   const count = await prisma.company.count();
   if (count > 0) return;
 
   await prisma.$transaction(async (tx) => {
     for (const company of COMPANY_SYMBOLS) {
-      const created = await tx.company.create({
+      await tx.company.create({
         data: {
           symbol: company.symbol,
           name: company.name,
         },
-      });
-      await tx.pricePoint.createMany({
-        data: DEFAULT_PRICE_SERIES.map((p) => ({
-          ...p,
-          companyId: created.id,
-        })),
       });
     }
   });

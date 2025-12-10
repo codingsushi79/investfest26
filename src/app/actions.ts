@@ -166,7 +166,7 @@ const adminPriceSchema = z.array(
 
 export async function adminUpdatePrices(rows: z.infer<typeof adminPriceSchema>) {
   const session = await getServerSession(authConfig);
-  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminEmail = process.env.OP_EMAIL;
   if (!session?.user?.email || !adminEmail || session.user.email !== adminEmail) {
     throw new Error("Admin only");
   }

@@ -17,6 +17,15 @@ type ChartCompany = {
 };
 
 export function StockCharts({ companies }: { companies: ChartCompany[] }) {
+  const hasAnyPrices = companies.some((c) => c.prices.length > 0);
+  if (!hasAnyPrices) {
+    return (
+      <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-6 text-sm text-zinc-600">
+        No price data yet. Operator updates prices every 15 minutes via code.
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
       {companies.map((company) => (
