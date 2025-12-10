@@ -4,12 +4,11 @@ import { signOut } from "@/lib/auth-utils";
 export async function POST() {
   try {
     await signOut();
-    return NextResponse.json({ success: true });
+    // Redirect to home page after sign out
+    return NextResponse.redirect(new URL("/", process.env.NEXTAUTH_URL || "http://localhost:3000"));
   } catch (error) {
     console.error("Signout error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    // Still redirect on error to avoid getting stuck
+    return NextResponse.redirect(new URL("/", process.env.NEXTAUTH_URL || "http://localhost:3000"));
   }
 }

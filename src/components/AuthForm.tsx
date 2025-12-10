@@ -8,6 +8,7 @@ export function AuthForm() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -20,7 +21,7 @@ export function AuthForm() {
     try {
       const endpoint = isSignUp ? "/api/auth/signup" : "/api/auth/signin";
       const body = isSignUp
-        ? { username, password, name }
+        ? { username, password, name, email }
         : { username, password };
 
       const response = await fetch(endpoint, {
@@ -70,19 +71,36 @@ export function AuthForm() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {isSignUp && (
-            <div>
-              <label htmlFor="name" className="block text-sm font-semibold text-slate-700 mb-2">
-                Full Name <span className="text-slate-400 font-normal">(optional)</span>
-              </label>
-              <input
-                type="text"
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="block w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
-                placeholder="Enter your full name"
-              />
-            </div>
+            <>
+              <div>
+                <label htmlFor="name" className="block text-sm font-semibold text-slate-700 mb-2">
+                  Full Name <span className="text-slate-400 font-normal">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="block w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+                  placeholder="Enter your full name"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="block w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+                  placeholder="Enter your email address"
+                  required
+                />
+              </div>
+            </>
           )}
 
           <div>
