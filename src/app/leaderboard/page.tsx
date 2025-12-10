@@ -19,6 +19,7 @@ export default function LeaderboardPage() {
   const [rows, setRows] = useState<LeaderboardRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<{ username?: string } | null>(null);
+  const [tradingEnded, setTradingEnded] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -36,6 +37,10 @@ export default function LeaderboardPage() {
           const leaderboardData = await leaderboardResponse.json();
           setRows(leaderboardData);
         }
+
+        // Check if trading has ended
+        const tradingEndedStatus = localStorage.getItem("investfest-trading-ended") === "true";
+        setTradingEnded(tradingEndedStatus);
       } catch (error) {
         console.error("Failed to fetch data:", error);
       } finally {
@@ -82,6 +87,7 @@ export default function LeaderboardPage() {
           holdings: r.holdings,
         }))}
         isOperator={isOperator}
+        tradingEnded={tradingEnded}
       />
     </div>
   );

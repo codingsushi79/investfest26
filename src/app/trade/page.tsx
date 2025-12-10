@@ -28,6 +28,7 @@ export default function TradePage() {
   const [loading, setLoading] = useState(true);
   const [selectedCompany, setSelectedCompany] = useState<string>("");
   const [shares, setShares] = useState<string>("");
+  const [tradingEnded, setTradingEnded] = useState(false);
   const [tradeType, setTradeType] = useState<"buy" | "sell">("buy");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -68,6 +69,10 @@ export default function TradePage() {
         }));
         setCompanies(companyData);
       }
+
+      // Check if trading has ended
+      const tradingEndedStatus = localStorage.getItem("investfest-trading-ended") === "true";
+      setTradingEnded(tradingEndedStatus);
     } catch {
       setError("Failed to load trading data");
     } finally {
@@ -172,6 +177,30 @@ export default function TradePage() {
             className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200"
           >
             Sign In
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (tradingEnded) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="mx-auto w-24 h-24 bg-gradient-to-br from-yellow-100 to-orange-100 rounded-full flex items-center justify-center mb-6">
+            <svg className="w-12 h-12 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+            </svg>
+          </div>
+          <h1 className="text-3xl font-bold text-slate-900 mb-4">Event Has Ended</h1>
+          <p className="text-lg text-slate-600 mb-8 max-w-md">
+            The trading event has concluded. Check the leaderboard to see the final rankings!
+          </p>
+          <Link
+            href="/leaderboard"
+            className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-yellow-600 to-orange-600 text-white font-semibold rounded-lg hover:from-yellow-700 hover:to-orange-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+          >
+            View Final Rankings
           </Link>
         </div>
       </div>

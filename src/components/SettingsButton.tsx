@@ -1,10 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SettingsPanel } from "./SettingsPanel";
 
 export function SettingsButton() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isOperator, setIsOperator] = useState(false);
+
+  useEffect(() => {
+    // Check if current user is operator
+    const checkOperatorStatus = async () => {
+      try {
+        const response = await fetch("/api/auth/user");
+        if (response.ok) {
+          const data = await response.json();
+          const opUsername = process.env.NEXT_PUBLIC_OP_USERNAME || "operator";
+          setIsOperator(data.user?.username === opUsername);
+        }
+      } catch (error) {
+        console.error("Failed to check operator status:", error);
+      }
+    };
+
+    checkOperatorStatus();
+  }, []);
 
   return (
     <>
@@ -19,7 +38,7 @@ export function SettingsButton() {
         </svg>
       </button>
 
-      <SettingsPanel isOpen={isOpen} onClose={() => setIsOpen(false)} />
+      <SettingsPanel isOpen={isOpen} onClose={() => setIsOpen(false)} isOperator={isOperator} />
     </>
   );
 }
