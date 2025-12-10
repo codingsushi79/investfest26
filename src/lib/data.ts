@@ -13,19 +13,48 @@ export const COMPANY_SYMBOLS = [
 ];
 
 export const ensureSeedData = cache(async () => {
-  const count = await prisma.company.count();
-  if (count > 0) return;
+  const companyCount = await prisma.company.count();
 
-  await prisma.$transaction(async (tx) => {
-    for (const company of COMPANY_SYMBOLS) {
-      await tx.company.create({
-        data: {
-          symbol: company.symbol,
-          name: company.name,
-        },
-      });
+  if (companyCount === 0) {
+    // Create companies and initial price points for new databases
+    await prisma.$transaction(async (tx) => {
+      for (const company of COMPANY_SYMBOLS) {
+        const companyRecord = await tx.company.create({
+          data: {
+            symbol: company.symbol,
+            name: company.name,
+          },
+        });
+
+        // Create initial price point at $100 before Y1 Q1
+        await tx.pricePoint.create({
+          data: {
+            companyId: companyRecord.id,
+            label: "Y0 Q4",
+            value: 100,
+          },
+        });
+      }
+    });
+  } else {
+    // For existing databases, ensure all companies have initial price points
+    const companies = await prisma.company.findMany({
+      include: { prices: true },
+    });
+
+    for (const company of companies) {
+      if (company.prices.length === 0) {
+        // Company has no price points, add initial one
+        await prisma.pricePoint.create({
+          data: {
+            companyId: company.id,
+            label: "Y0 Q4",
+            value: 100,
+          },
+        });
+      }
     }
-  });
+  }
 });
 
 export async function getLatestPrices() {
