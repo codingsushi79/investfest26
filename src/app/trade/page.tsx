@@ -33,10 +33,6 @@ export default function TradePage() {
   const [success, setSuccess] = useState("");
   const [trading, setTrading] = useState(false);
   const [showTradeModal, setShowTradeModal] = useState(false);
-  const [operatorMode, setOperatorMode] = useState(false);
-  const [operatorCompany, setOperatorCompany] = useState<string>("");
-  const [operatorLabel, setOperatorLabel] = useState<string>("");
-  const [operatorValue, setOperatorValue] = useState<string>("");
   const router = useRouter();
 
   const fetchTradeData = useCallback(async () => {
@@ -82,14 +78,6 @@ export default function TradePage() {
   useEffect(() => {
     fetchTradeData();
   }, [fetchTradeData]);
-
-  useEffect(() => {
-    // Check if user is operator
-    const opUsername = process.env.NEXT_PUBLIC_OP_USERNAME || "operator";
-    if (user?.username === opUsername) {
-      setOperatorMode(true);
-    }
-  }, [user]);
 
   const handleTrade = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,46 +153,6 @@ export default function TradePage() {
     }
   };
 
-  const handlePriceUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!operatorCompany || !operatorLabel || !operatorValue) {
-      setError("Please fill in all price update fields");
-      return;
-    }
-
-    const value = parseFloat(operatorValue);
-    if (isNaN(value) || value <= 0) {
-      setError("Please enter a valid price");
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/admin/update-prices", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify([{
-          symbol: operatorCompany,
-          label: operatorLabel,
-          value: value,
-        }]),
-      });
-
-      if (response.ok) {
-        setSuccess(`Updated ${operatorCompany} price to $${value.toFixed(2)} for ${operatorLabel}`);
-        setOperatorCompany("");
-        setOperatorLabel("");
-        setOperatorValue("");
-        // Refresh data
-        await fetchTradeData();
-      } else {
-        const errorData = await response.json();
-        setError(errorData.error || "Price update failed");
-      }
-    } catch {
-      setError("Network error. Please try again.");
-    }
-  };
 
   if (loading) {
     return (
@@ -266,77 +214,8 @@ export default function TradePage() {
           >
             🏪 Trade Shares
           </button>
-          {operatorMode && (
-            <button
-              onClick={() => setOperatorMode(!operatorMode)}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
-            >
-              ⚙️ Operator Panel
-            </button>
-          )}
         </div>
 
-        {/* Operator Price Update Panel */}
-        {operatorMode && (
-          <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-200 p-6 mb-8">
-            <h3 className="text-xl font-semibold text-purple-900 mb-4 flex items-center gap-2">
-              <span>⚙️</span> Operator: Update Stock Prices
-            </h3>
-            <form onSubmit={handlePriceUpdate} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-purple-700 mb-1">Company</label>
-                <select
-                  value={operatorCompany}
-                  onChange={(e) => setOperatorCompany(e.target.value)}
-                  className="w-full rounded-lg border border-purple-300 px-3 py-2 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
-                  required
-                >
-                  <option value="">Select...</option>
-                  {companies.map((company) => (
-                    <option key={company.symbol} value={company.symbol}>
-                      {company.symbol}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-purple-700 mb-1">Time Period</label>
-                <select
-                  value={operatorLabel}
-                  onChange={(e) => setOperatorLabel(e.target.value)}
-                  className="w-full rounded-lg border border-purple-300 px-3 py-2 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
-                  required
-                >
-                  <option value="">Select...</option>
-                  {["y1 q1", "y1 q2", "y1 q3", "y1 q4", "y2 q1", "y2 q2", "y2 q3", "y2 q4", "y3 q1", "y3 q2", "y3 q3", "y3 q4", "y4 q1", "y4 q2", "y4 q3", "y4 q4", "y5 q1", "y5 q2", "y5 q3", "y5 q4"].map(label => (
-                    <option key={label} value={label}>{label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-purple-700 mb-1">Price ($)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  value={operatorValue}
-                  onChange={(e) => setOperatorValue(e.target.value)}
-                  className="w-full rounded-lg border border-purple-300 px-3 py-2 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
-                  placeholder="0.00"
-                  required
-                />
-              </div>
-              <div className="flex items-end">
-                <button
-                  type="submit"
-                  className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors font-medium"
-                >
-                  Update Price
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
 
         <div className="grid gap-8 lg:grid-cols-2">
 
@@ -423,7 +302,7 @@ export default function TradePage() {
                   {/* Trade Type */}
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-3">
-                      Trade Type
+                      What would you like to do?
                     </label>
                     <div className="flex gap-3">
                       <button
@@ -435,7 +314,7 @@ export default function TradePage() {
                             : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                         }`}
                       >
-                        🛒 Buy
+                        🛒 Buy Shares
                       </button>
                       <button
                         type="button"
@@ -446,7 +325,7 @@ export default function TradePage() {
                             : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                         }`}
                       >
-                        💰 Sell
+                        💰 Sell Shares
                       </button>
                     </div>
                   </div>

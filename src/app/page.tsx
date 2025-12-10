@@ -1,27 +1,132 @@
+"use client";
+
 import Link from "next/link";
-import { getCurrentUser } from "@/lib/auth-utils";
-import { getDashboardData, getLatestPrices } from "@/lib/data";
+import { useState, useEffect } from "react";
 import { TradeControls } from "@/components/TradeControls";
 import { StockCharts } from "@/components/StockCharts";
 import { PortfolioTable } from "@/components/PortfolioTable";
 import { UsernameForm } from "@/components/UsernameForm";
 
-export const dynamic = "force-dynamic";
+interface User {
+  id: string;
+  username: string;
+  balance: number;
+}
 
-export default async function Home() {
-  const user = await getCurrentUser();
-  const dashboard = await getDashboardData(user?.id);
-  const latestPrices = await getLatestPrices();
+export default function Home() {
+  const [user, setUser] = useState<User | null>(null);
+  const [dashboard, setDashboard] = useState<{
+    companies: Array<{symbol: string, name: string}>,
+    holdings: Array<{symbol: string, shares: number}>,
+    cash: number,
+    invested: number,
+    portfolioValue: number
+  }>({
+    companies: [],
+    holdings: [],
+    cash: 0,
+    invested: 0,
+    portfolioValue: 0
+  });
+  const [latestPrices, setLatestPrices] = useState(new Map());
+  const [loading, setLoading] = useState(true);
+
+  // Operator modal state
+  const [showOperatorModal, setShowOperatorModal] = useState(false);
+  const [operatorCompany, setOperatorCompany] = useState("");
+  const [operatorLabel, setOperatorLabel] = useState("");
+  const [updatingPrice, setUpdatingPrice] = useState(false);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [dashboardRes, pricesRes] = await Promise.all([
+        fetch("/api/dashboard"),
+        fetch("/api/prices"),
+      ]);
+
+      if (dashboardRes.ok) {
+        const dashboardData = await dashboardRes.json();
+        setUser(dashboardData.user);
+        setDashboard(dashboardData);
+      }
+
+      if (pricesRes.ok) {
+        const pricesData = await pricesRes.json();
+        setLatestPrices(new Map(Object.entries(pricesData)));
+      }
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOperatorPriceUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!operatorCompany || !operatorLabel) return;
+
+    // Generate price automatically - increment by 5-15% from current price
+    const currentPrice = latestPrices.get(operatorCompany) || 100;
+    const randomIncrement = Math.random() * 0.1 + 0.05; // 5-15% increase
+    const newPrice = Math.round((currentPrice * (1 + randomIncrement)) * 100) / 100;
+
+    setUpdatingPrice(true);
+    try {
+      const response = await fetch("/api/admin/update-prices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify([{
+          symbol: operatorCompany,
+          label: operatorLabel,
+          value: newPrice,
+        }]),
+      });
+
+      if (response.ok) {
+        setShowOperatorModal(false);
+        setOperatorCompany("");
+        setOperatorLabel("");
+        // Refresh data
+        await fetchData();
+      } else {
+        console.error("Failed to update price");
+      }
+    } catch (error) {
+      console.error("Error updating price:", error);
+    } finally {
+      setUpdatingPrice(false);
+    }
+  };
 
   const companyOptions = dashboard.companies.map((c) => ({
     symbol: c.symbol,
     name: c.name,
-    price: latestPrices.get(c.id)?.price ?? 0,
+    price: latestPrices.get(c.symbol) || 0,
   }));
 
-  const holdingsSimple =
-    dashboard.holdings.map((h) => ({ symbol: h.symbol, shares: h.shares })) ??
-    [];
+  const holdingsSimple = dashboard.holdings.map((h) => {
+    const company = dashboard.companies.find(c => c.symbol === h.symbol);
+    const price = latestPrices.get(h.symbol) || 0;
+    return {
+      symbol: h.symbol,
+      name: company?.name || h.symbol,
+      shares: h.shares,
+      latestPrice: price,
+      value: h.shares * price,
+    };
+  });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -184,22 +289,35 @@ export default async function Home() {
         </div>
 
         <section className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900">Price History</h2>
+                <p className="text-sm text-slate-600">Live charts updated every 15 minutes by the operator</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-xl font-semibold text-slate-900">Price History</h2>
-              <p className="text-sm text-slate-600">Live charts updated every 15 minutes by the operator</p>
-            </div>
+            {user && user.username === (process.env.NEXT_PUBLIC_OP_USERNAME || "operator") && (
+              <button
+                onClick={() => setShowOperatorModal(true)}
+                className="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 transition-colors"
+                title="Add price point"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+            )}
           </div>
           <StockCharts
             companies={dashboard.companies.map((c) => ({
               symbol: c.symbol,
               name: c.name,
-              prices: c.prices.map((p) => ({ label: p.label, value: p.value })),
+              prices: [], // Will be populated by the chart component
             }))}
           />
         </section>
@@ -224,9 +342,109 @@ export default async function Home() {
               View leaderboard →
             </Link>
           </div>
-          <PortfolioTable rows={dashboard.holdings} />
+          <PortfolioTable rows={holdingsSimple} />
         </section>
       </main>
+
+      {/* Operator Price Update Modal */}
+      {showOperatorModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-slate-900">Add Price Point</h2>
+                <button
+                  onClick={() => setShowOperatorModal(false)}
+                  className="text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <form onSubmit={handleOperatorPriceUpdate} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Select Company
+                  </label>
+                  <select
+                    value={operatorCompany}
+                    onChange={(e) => setOperatorCompany(e.target.value)}
+                    className="block w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    required
+                  >
+                    <option value="">Choose a company...</option>
+                    {dashboard.companies.map((company) => (
+                      <option key={company.symbol} value={company.symbol}>
+                        {company.symbol} - {company.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Time Period
+                  </label>
+                  <select
+                    value={operatorLabel}
+                    onChange={(e) => setOperatorLabel(e.target.value)}
+                    className="block w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    required
+                  >
+                    <option value="">Choose time period...</option>
+                    {["y1 q1", "y1 q2", "y1 q3", "y1 q4", "y2 q1", "y2 q2", "y2 q3", "y2 q4", "y3 q1", "y3 q2", "y3 q3", "y3 q4", "y4 q1", "y4 q2", "y4 q3", "y4 q4", "y5 q1", "y5 q2", "y5 q3", "y5 q4"].map(label => (
+                      <option key={label} value={label}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {operatorCompany && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-sm font-medium text-blue-900">Automatic Price Calculation</span>
+                    </div>
+                    <p className="text-sm text-blue-800">
+                      Price will be automatically generated (5-15% increase from current price of ${latestPrices.get(operatorCompany) || 0})
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowOperatorModal(false)}
+                    className="flex-1 bg-slate-100 text-slate-700 px-4 py-3 rounded-lg font-medium hover:bg-slate-200 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={updatingPrice || !operatorCompany || !operatorLabel}
+                    className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
+                  >
+                    {updatingPrice ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Generating...
+                      </div>
+                    ) : (
+                      "Add Price Point"
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
