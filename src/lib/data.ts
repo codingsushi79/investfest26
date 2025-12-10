@@ -119,6 +119,7 @@ export async function getLeaderboard() {
       userId: user.id,
       name: user.name,
       username: user.username ?? "",
+      email: user.email,
       balance: user.balance,
       holdings,
       invested,
@@ -150,6 +151,7 @@ export async function getAllPortfolios() {
     userId: u.id,
     name: u.name,
     username: u.username ?? "",
+    email: u.email,
     balance: u.balance,
     holdings: u.holdings.map((h) => {
       const company = companies.find((c) => c.id === h.companyId)!;

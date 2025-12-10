@@ -7,6 +7,7 @@ interface Portfolio {
   userId: string;
   username: string | null;
   name: string | null;
+  email: string | null;
   balance: number;
   holdings: Array<{
     symbol: string;
@@ -20,6 +21,7 @@ export default function PortfoliosPage() {
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentUser, setCurrentUser] = useState<{ username?: string } | null>(null);
 
   useEffect(() => {
     fetchPortfolios();
@@ -27,6 +29,14 @@ export default function PortfoliosPage() {
 
   const fetchPortfolios = async () => {
     try {
+      // Fetch current user
+      const userResponse = await fetch("/api/auth/user");
+      if (userResponse.ok) {
+        const userData = await userResponse.json();
+        setCurrentUser(userData.user);
+      }
+
+      // Fetch portfolios
       const response = await fetch("/api/portfolios");
       if (response.ok) {
         const data = await response.json();
@@ -124,24 +134,30 @@ export default function PortfoliosPage() {
             </p>
           </div>
         ) : (
-          filteredPortfolios.map((p) => (
-            <div
-              key={p.userId}
-              className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm font-semibold text-zinc-900">
-                    {p.name && p.name.trim() !== "" && (
-                      <div className="text-zinc-700">{p.name}</div>
-                    )}
-                    {p.username && (
-                      <div className="text-xs text-zinc-500">@{p.username}</div>
-                    )}
+          filteredPortfolios.map((p) => {
+            const isOperator = currentUser?.username === (process.env.NEXT_PUBLIC_OP_USERNAME || "operator");
+
+            return (
+              <div
+                key={p.userId}
+                className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-semibold text-zinc-900">
+                      {p.name && p.name.trim() !== "" && (
+                        <div className="text-zinc-700">{p.name}</div>
+                      )}
+                      {p.username && (
+                        <div className="text-xs text-zinc-500">@{p.username}</div>
+                      )}
+                      {isOperator && p.email && (
+                        <div className="text-xs text-zinc-400 mt-1">{p.email}</div>
+                      )}
+                    </div>
+                    <p className="text-xs text-zinc-500 mt-1">Cash ${p.balance.toFixed(2)}</p>
                   </div>
-                  <p className="text-xs text-zinc-500 mt-1">Cash ${p.balance.toFixed(2)}</p>
                 </div>
-              </div>
               <div className="mt-3 space-y-1 text-sm text-zinc-700">
                 {p.holdings.length === 0 ? (
                   <p className="text-zinc-500">No holdings yet.</p>
@@ -162,7 +178,8 @@ export default function PortfoliosPage() {
                 )}
               </div>
             </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

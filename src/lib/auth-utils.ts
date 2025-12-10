@@ -7,6 +7,7 @@ export interface User {
   id: string;
   username: string;
   name: string | null;
+  email: string | null;
   balance: number;
 }
 
@@ -92,6 +93,7 @@ export async function getCurrentUser(): Promise<User | null> {
       id: session.user.id,
       username: session.user.username,
       name: session.user.name,
+      email: session.user.email,
       balance: session.user.balance,
     };
   } catch (error) {

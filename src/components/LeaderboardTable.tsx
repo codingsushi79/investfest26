@@ -1,13 +1,14 @@
 type LeaderRow = {
   name: string | null;
   username?: string;
+  email?: string | null;
   balance: number;
   invested: number;
   portfolioValue: number;
   holdings: { symbol: string; shares: number; value: number }[];
 };
 
-export function LeaderboardTable({ rows }: { rows: LeaderRow[] }) {
+export function LeaderboardTable({ rows, isOperator = false }: { rows: LeaderRow[]; isOperator?: boolean }) {
   return (
     <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
       <table className="min-w-full divide-y divide-zinc-200 text-sm">
@@ -15,6 +16,7 @@ export function LeaderboardTable({ rows }: { rows: LeaderRow[] }) {
           <tr>
             <th className="px-4 py-2">Rank</th>
             <th className="px-4 py-2">User</th>
+            {isOperator && <th className="px-4 py-2">Email</th>}
             <th className="px-4 py-2">Portfolio</th>
             <th className="px-4 py-2">Cash</th>
             <th className="px-4 py-2">Holdings</th>
@@ -34,6 +36,11 @@ export function LeaderboardTable({ rows }: { rows: LeaderRow[] }) {
                   )}
                 </div>
               </td>
+              {isOperator && (
+                <td className="px-4 py-2 text-zinc-800">
+                  <span className="text-sm">{row.email || "—"}</span>
+                </td>
+              )}
               <td className="px-4 py-2 font-semibold text-indigo-700">
                 ${row.portfolioValue.toFixed(2)}
                 <div className="text-xs text-zinc-500">
