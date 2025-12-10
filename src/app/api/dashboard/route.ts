@@ -25,7 +25,7 @@ export async function GET() {
     });
 
     const latestPrices = new Map(
-      companies.map((c) => [c.id, c.prices[0]?.value ?? 0])
+      companies.map((c) => [c.id, c.prices[c.prices.length - 1]?.value ?? 0])
     );
 
     const holdingsWithValues = holdings.map((h) => {

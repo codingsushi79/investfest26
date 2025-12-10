@@ -113,7 +113,7 @@ export async function getLeaderboard() {
     const portfolioValue = invested + user.balance;
     return {
       userId: user.id,
-      name: user.name ?? "Anonymous",
+      name: user.name,
       username: user.username ?? "",
       balance: user.balance,
       holdings,
@@ -140,7 +140,7 @@ export async function getAllPortfolios() {
 
   return users.map((u) => ({
     userId: u.id,
-    name: u.name ?? "Anonymous",
+    name: u.name,
     username: u.username ?? "",
     balance: u.balance,
     holdings: u.holdings.map((h) => {

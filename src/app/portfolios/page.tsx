@@ -131,10 +131,15 @@ export default function PortfoliosPage() {
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-zinc-900">
-                    {p.username ? `@${p.username}` : p.name}
-                  </p>
-                  <p className="text-xs text-zinc-500">Cash ${p.balance.toFixed(2)}</p>
+                  <div className="text-sm font-semibold text-zinc-900">
+                    {p.name && p.name.trim() !== "" && (
+                      <div className="text-zinc-700">{p.name}</div>
+                    )}
+                    {p.username && (
+                      <div className="text-xs text-zinc-500">@{p.username}</div>
+                    )}
+                  </div>
+                  <p className="text-xs text-zinc-500 mt-1">Cash ${p.balance.toFixed(2)}</p>
                 </div>
               </div>
               <div className="mt-3 space-y-1 text-sm text-zinc-700">

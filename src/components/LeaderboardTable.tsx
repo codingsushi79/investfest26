@@ -1,5 +1,5 @@
 type LeaderRow = {
-  name: string;
+  name: string | null;
   username?: string;
   balance: number;
   invested: number;
@@ -25,7 +25,14 @@ export function LeaderboardTable({ rows }: { rows: LeaderRow[] }) {
             <tr key={`${row.username}-${idx}`} className="hover:bg-zinc-50">
               <td className="px-4 py-2 text-zinc-800">{idx + 1}</td>
               <td className="px-4 py-2 font-medium text-zinc-900">
-                {row.username ? `@${row.username}` : row.name}
+                <div className="flex flex-col">
+                  {row.name && row.name.trim() !== "" && (
+                    <span className="text-sm text-zinc-700">{row.name}</span>
+                  )}
+                  {row.username && (
+                    <span className="text-xs text-zinc-500">@{row.username}</span>
+                  )}
+                </div>
               </td>
               <td className="px-4 py-2 font-semibold text-indigo-700">
                 ${row.portfolioValue.toFixed(2)}
