@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { TradeControls } from "@/components/TradeControls";
 import { StockCharts } from "@/components/StockCharts";
 import { PortfolioTable } from "@/components/PortfolioTable";
 import { UsernameForm } from "@/components/UsernameForm";
@@ -28,14 +27,45 @@ export default function Home() {
     invested: 0,
     portfolioValue: 0
   });
-  const [latestPrices, setLatestPrices] = useState(new Map());
   const [loading, setLoading] = useState(true);
 
   // Operator modal state
   const [showOperatorModal, setShowOperatorModal] = useState(false);
   const [operatorCompany, setOperatorCompany] = useState("");
-  const [operatorLabel, setOperatorLabel] = useState("");
+  const [operatorPrice, setOperatorPrice] = useState("");
   const [updatingPrice, setUpdatingPrice] = useState(false);
+
+  // Helper function to calculate next time period
+  const getNextTimePeriod = (companyPrices: Array<{label: string, value: number}>) => {
+    if (companyPrices.length === 0) {
+      return "y1 q1";
+    }
+
+    const lastLabel = companyPrices[companyPrices.length - 1].label;
+    const match = lastLabel.match(/y(\d+)\s+q(\d+)/);
+
+    if (!match) {
+      return "y1 q1";
+    }
+
+    let year = parseInt(match[1]);
+    let quarter = parseInt(match[2]);
+
+    if (quarter < 4) {
+      quarter += 1;
+    } else {
+      quarter = 1;
+      year += 1;
+    }
+
+    // Cap at y5 q4
+    if (year > 5) {
+      year = 5;
+      quarter = 4;
+    }
+
+    return `y${year} q${quarter}`;
+  };
 
   useEffect(() => {
     fetchData();
@@ -73,12 +103,19 @@ export default function Home() {
 
   const handleOperatorPriceUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!operatorCompany || !operatorLabel) return;
+    if (!operatorCompany || !operatorPrice) return;
 
-    // Generate price automatically - increment by 5-15% from current price
-    const currentPrice = latestPrices.get(operatorCompany) || 100;
-    const randomIncrement = Math.random() * 0.1 + 0.05; // 5-15% increase
-    const newPrice = Math.round((currentPrice * (1 + randomIncrement)) * 100) / 100;
+    const priceValue = parseFloat(operatorPrice);
+    if (isNaN(priceValue) || priceValue <= 0) {
+      alert("Please enter a valid price greater than 0");
+      return;
+    }
+
+    // Find the selected company and calculate next time period
+    const selectedCompany = dashboard.companies.find(c => c.symbol === operatorCompany);
+    if (!selectedCompany) return;
+
+    const nextLabel = getNextTimePeriod(selectedCompany.prices);
 
     setUpdatingPrice(true);
     try {
@@ -87,15 +124,15 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify([{
           symbol: operatorCompany,
-          label: operatorLabel,
-          value: newPrice,
+          label: nextLabel,
+          value: priceValue,
         }]),
       });
 
       if (response.ok) {
         setShowOperatorModal(false);
         setOperatorCompany("");
-        setOperatorLabel("");
+        setOperatorPrice("");
         // Refresh data
         await fetchData();
       } else {
@@ -126,20 +163,6 @@ export default function Home() {
             <div className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
               InvestFest 26
             </div>
-            {user && (
-              <TradeControls
-                companies={dashboard.companies.map((c) => ({
-                  symbol: c.symbol,
-                  name: c.name,
-                  price: latestPrices.get(c.symbol) || 0,
-                }))}
-                holdings={dashboard.holdings.map((h) => ({
-                  symbol: h.symbol,
-                  shares: h.shares,
-                }))}
-                balance={dashboard.cash}
-              />
-            )}
           </div>
           <div className="flex items-center gap-4 text-sm">
             <Link
@@ -187,9 +210,31 @@ export default function Home() {
               Prices are updated every 15 minutes by the operator.
             </p>
             {user && (
-              <p className="text-sm font-medium text-slate-700 bg-blue-50 px-3 py-1 rounded-full inline-block">
-                Signed in as <span className="text-blue-600">{user.username}</span>
-              </p>
+              <div className="flex items-center gap-4">
+                <p className="text-sm font-medium text-slate-700 bg-blue-50 px-3 py-1 rounded-full">
+                  Signed in as <span className="text-blue-600">{user.username}</span>
+                </p>
+                <div className="flex gap-2">
+                  <Link
+                    href="/trade"
+                    className="rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                  >
+                    🏪 Trade Shares
+                  </Link>
+                  <Link
+                    href="/leaderboard"
+                    className="text-slate-700 hover:text-blue-600 transition-colors font-medium text-sm px-3 py-2 rounded-lg hover:bg-slate-50"
+                  >
+                    Leaderboard
+                  </Link>
+                  <Link
+                    href="/portfolios"
+                    className="text-slate-700 hover:text-blue-600 transition-colors font-medium text-sm px-3 py-2 rounded-lg hover:bg-slate-50"
+                  >
+                    All portfolios
+                  </Link>
+                </div>
+              </div>
             )}
           </div>
           {user && (
@@ -378,31 +423,35 @@ export default function Home() {
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Time Period
+                    Price ($)
                   </label>
-                  <select
-                    value={operatorLabel}
-                    onChange={(e) => setOperatorLabel(e.target.value)}
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={operatorPrice}
+                    onChange={(e) => setOperatorPrice(e.target.value)}
                     className="block w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    placeholder="Enter price (e.g. 150.50)"
                     required
-                  >
-                    <option value="">Choose time period...</option>
-                    {["y1 q1", "y1 q2", "y1 q3", "y1 q4", "y2 q1", "y2 q2", "y2 q3", "y2 q4", "y3 q1", "y3 q2", "y3 q3", "y3 q4", "y4 q1", "y4 q2", "y4 q3", "y4 q4", "y5 q1", "y5 q2", "y5 q3", "y5 q4"].map(label => (
-                      <option key={label} value={label}>{label}</option>
-                    ))}
-                  </select>
+                  />
                 </div>
 
                 {operatorCompany && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <span className="text-sm font-medium text-blue-900">Automatic Price Calculation</span>
+                      <span className="text-sm font-medium text-blue-900">Next Time Period</span>
                     </div>
                     <p className="text-sm text-blue-800">
-                      Price will be automatically generated (5-15% increase from current price of ${latestPrices.get(operatorCompany) || 0})
+                      Next period: <strong>
+                        {(() => {
+                          const selectedCompany = dashboard.companies.find(c => c.symbol === operatorCompany);
+                          return selectedCompany ? getNextTimePeriod(selectedCompany.prices) : "y1 q1";
+                        })()}
+                      </strong>
                     </p>
                   </div>
                 )}
@@ -417,7 +466,7 @@ export default function Home() {
                   </button>
                   <button
                     type="submit"
-                    disabled={updatingPrice || !operatorCompany || !operatorLabel}
+                    disabled={updatingPrice || !operatorCompany || !operatorPrice}
                     className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
                   >
                     {updatingPrice ? (
