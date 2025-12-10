@@ -211,7 +211,7 @@ export default function TradePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
-      <header className="border-b border-slate-200/60 bg-white/80 backdrop-blur-md shadow-sm">
+      <header className="border-b border-slate-200/60 dark:border-slate-700/60 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-4">
             <Link href="/" className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
@@ -250,7 +250,7 @@ export default function TradePage() {
 
           {/* Holdings Summary */}
           <div className="space-y-6">
-            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
               <h3 className="text-lg font-semibold text-slate-900 mb-4">Your Holdings</h3>
               {holdings.length > 0 ? (
                 <div className="space-y-3">
@@ -280,7 +280,7 @@ export default function TradePage() {
               )}
             </div>
 
-            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
               <h3 className="text-lg font-semibold text-slate-900 mb-4">Quick Stats</h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
@@ -313,7 +313,7 @@ export default function TradePage() {
         {/* Trade Modal */}
         {showTradeModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-2xl font-bold text-slate-900">Trade Shares</h2>

@@ -84,7 +84,7 @@ export default function CompanyValuesPage() {
       </div>
 
       {/* Company Values Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-zinc-200 overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-700 overflow-hidden">
         <table className="min-w-full divide-y divide-zinc-200">
           <thead className="bg-zinc-50">
             <tr>
@@ -105,7 +105,7 @@ export default function CompanyValuesPage() {
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-zinc-200">
+          <tbody className="bg-white dark:bg-slate-800 divide-y divide-zinc-200 dark:divide-zinc-700">
             {companyValues.map((company) => (
               <tr key={company.symbol} className="hover:bg-zinc-50">
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -133,17 +133,17 @@ export default function CompanyValuesPage() {
 
       {/* Additional Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-lg p-4 border border-zinc-200">
+        <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700">
           <div className="text-2xl font-bold text-zinc-900">{companyValues.length}</div>
           <div className="text-sm text-zinc-600">Companies</div>
         </div>
-        <div className="bg-white rounded-lg p-4 border border-zinc-200">
+        <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700">
           <div className="text-2xl font-bold text-zinc-900">
             {companyValues.reduce((sum, c) => sum + c.totalShares, 0).toLocaleString()}
           </div>
           <div className="text-sm text-zinc-600">Total Shares Outstanding</div>
         </div>
-        <div className="bg-white rounded-lg p-4 border border-zinc-200">
+        <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700">
           <div className="text-2xl font-bold text-zinc-900">
             ${(companyValues.reduce((sum, c) => sum + c.marketValue, 0) / companyValues.reduce((sum, c) => sum + c.totalShares, 0) || 0).toFixed(2)}
           </div>
