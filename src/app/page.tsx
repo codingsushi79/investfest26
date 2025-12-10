@@ -38,14 +38,14 @@ export default function Home() {
   // Helper function to calculate next time period
   const getNextTimePeriod = (companyPrices: Array<{label: string, value: number}>) => {
     if (companyPrices.length === 0) {
-      return "y1 q1";
+      return "Y1 Q1";
     }
 
     const lastLabel = companyPrices[companyPrices.length - 1].label;
-    const match = lastLabel.match(/y(\d+)\s+q(\d+)/);
+    const match = lastLabel.match(/Y(\d+)\s+Q(\d+)/);
 
     if (!match) {
-      return "y1 q1";
+      return "Y1 Q1";
     }
 
     let year = parseInt(match[1]);
@@ -58,13 +58,13 @@ export default function Home() {
       year += 1;
     }
 
-    // Cap at y5 q4
+    // Cap at Y5 Q4
     if (year > 5) {
       year = 5;
       quarter = 4;
     }
 
-    return `y${year} q${quarter}`;
+    return `Y${year} Q${quarter}`;
   };
 
   useEffect(() => {
@@ -119,6 +119,12 @@ export default function Home() {
 
     setUpdatingPrice(true);
     try {
+      console.log("Sending price update:", {
+        symbol: operatorCompany,
+        label: nextLabel,
+        value: priceValue,
+      });
+
       const response = await fetch("/api/admin/update-prices", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -129,17 +135,24 @@ export default function Home() {
         }]),
       });
 
+      console.log("Response status:", response.status);
+      console.log("Response ok:", response.ok);
+
       if (response.ok) {
+        console.log("Price update successful");
         setShowOperatorModal(false);
         setOperatorCompany("");
         setOperatorPrice("");
         // Refresh data
         await fetchData();
       } else {
-        console.error("Failed to update price");
+        const errorData = await response.json();
+        console.error("Price update failed:", errorData);
+        alert(`Failed to update price: ${errorData.error || "Unknown error"}`);
       }
     } catch (error) {
       console.error("Error updating price:", error);
+      alert(`Error updating price: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
       setUpdatingPrice(false);
     }
@@ -449,7 +462,7 @@ export default function Home() {
                       Next period: <strong>
                         {(() => {
                           const selectedCompany = dashboard.companies.find(c => c.symbol === operatorCompany);
-                          return selectedCompany ? getNextTimePeriod(selectedCompany.prices) : "y1 q1";
+                          return selectedCompany ? getNextTimePeriod(selectedCompany.prices) : "Y1 Q1";
                         })()}
                       </strong>
                     </p>

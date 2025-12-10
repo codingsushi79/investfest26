@@ -168,6 +168,8 @@ const adminPriceSchema = z.array(
 export async function adminUpdatePrices(rows: z.infer<typeof adminPriceSchema>) {
   const user = await getCurrentUser();
   const adminUsername = process.env.OP_USERNAME;
+  console.log("Admin check:", { user: user?.username, adminUsername, isAdmin: user?.username === adminUsername });
+
   if (!user?.username || !adminUsername || user.username !== adminUsername) {
     throw new Error("Admin only");
   }
