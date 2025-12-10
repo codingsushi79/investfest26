@@ -113,7 +113,7 @@ export function AuthForm() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="block w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
-              placeholder="Choose a username"
+              placeholder="Enter your username"
               required
             />
           </div>
