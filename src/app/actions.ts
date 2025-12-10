@@ -1,11 +1,9 @@
 'use server';
 
 import { revalidatePath } from "next/cache";
-import { getServerSession } from "next-auth";
-import type { Session } from "next-auth";
+import { getCurrentUser } from "@/lib/auth-utils";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { authConfig } from "@/lib/auth";
 import { ensureSeedData } from "@/lib/data";
 
 const tradeSchema = z.object({
@@ -14,8 +12,8 @@ const tradeSchema = z.object({
 });
 
 export async function updateUsername(username: string) {
-  const session = (await getServerSession(authConfig)) as Session | null;
-  if (!session?.user?.id) {
+  const user = await getCurrentUser();
+  if (!user?.id) {
     throw new Error("Not authenticated");
   }
 
@@ -25,7 +23,7 @@ export async function updateUsername(username: string) {
   }
 
   await prisma.user.update({
-    where: { id: session.user.id },
+    where: { id: user.id },
     data: { username: cleaned },
   });
 
@@ -36,11 +34,11 @@ export async function updateUsername(username: string) {
 
 export async function buyShares(raw: { symbol: string; shares: number }) {
   await ensureSeedData();
-  const session = (await getServerSession(authConfig)) as Session | null;
-  if (!session?.user?.id) {
+  const user = await getCurrentUser();
+  if (!user?.id) {
     throw new Error("Not authenticated");
   }
-  const userId = session.user.id;
+  const userId = user.id;
 
   const input = tradeSchema.parse({
     symbol: raw.symbol,
@@ -58,13 +56,13 @@ export async function buyShares(raw: { symbol: string; shares: number }) {
   const price = company.prices[0].value;
   const totalCost = price * input.shares;
 
-  const user = await prisma.user.findUnique({
+  const userRecord = await prisma.user.findUnique({
     where: { id: userId },
     select: { balance: true },
   });
-  if (!user) throw new Error("User missing");
+  if (!userRecord) throw new Error("User missing");
 
-  if (user.balance < totalCost) {
+  if (userRecord.balance < totalCost) {
     throw new Error("Not enough balance");
   }
 
@@ -102,11 +100,11 @@ export async function buyShares(raw: { symbol: string; shares: number }) {
 
 export async function sellShares(raw: { symbol: string; shares: number }) {
   await ensureSeedData();
-  const session = (await getServerSession(authConfig)) as Session | null;
-  if (!session?.user?.id) {
+  const user = await getCurrentUser();
+  if (!user?.id) {
     throw new Error("Not authenticated");
   }
-  const userId = session.user.id;
+  const userId = user.id;
 
   const input = tradeSchema.parse({
     symbol: raw.symbol,
@@ -168,9 +166,9 @@ const adminPriceSchema = z.array(
 );
 
 export async function adminUpdatePrices(rows: z.infer<typeof adminPriceSchema>) {
-  const session = (await getServerSession(authConfig)) as Session | null;
-  const adminEmail = process.env.OP_EMAIL;
-  if (!session?.user?.email || !adminEmail || session.user.email !== adminEmail) {
+  const user = await getCurrentUser();
+  const adminUsername = process.env.OP_USERNAME;
+  if (!user?.username || !adminUsername || user.username !== adminUsername) {
     throw new Error("Admin only");
   }
 

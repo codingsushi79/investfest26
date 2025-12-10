@@ -1,19 +1,16 @@
 import Link from "next/link";
-import { getServerSession } from "next-auth";
-import type { Session } from "next-auth";
-import { authConfig } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth-utils";
 import { getDashboardData, getLatestPrices } from "@/lib/data";
 import { TradeControls } from "@/components/TradeControls";
 import { StockCharts } from "@/components/StockCharts";
 import { PortfolioTable } from "@/components/PortfolioTable";
 import { UsernameForm } from "@/components/UsernameForm";
-import { SignInButton } from "@/components/SignInButton";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const session = (await getServerSession(authConfig)) as Session | null;
-  const dashboard = await getDashboardData(session?.user?.id);
+  const user = await getCurrentUser();
+  const dashboard = await getDashboardData(user?.id);
   const latestPrices = await getLatestPrices();
 
   const companyOptions = dashboard.companies.map((c) => ({
@@ -32,7 +29,7 @@ export default async function Home() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-4">
             <div className="text-lg font-bold text-indigo-700">InvestFest 26</div>
-            {session && (
+            {user && (
               <TradeControls
                 companies={companyOptions}
                 holdings={holdingsSimple}
@@ -47,14 +44,19 @@ export default async function Home() {
             <Link href="/portfolios" className="text-indigo-700 hover:underline">
               All portfolios
             </Link>
-            {session ? (
+            {user ? (
               <form action="/api/auth/signout" method="post">
                 <button className="rounded-md bg-zinc-900 px-3 py-2 text-white hover:bg-zinc-800">
                   Sign out
                 </button>
               </form>
             ) : (
-              <SignInButton />
+              <Link
+                href="/signin"
+                className="rounded-md bg-indigo-600 px-3 py-2 font-semibold text-white hover:bg-indigo-700"
+              >
+                Sign in
+              </Link>
             )}
           </div>
         </div>
@@ -67,13 +69,13 @@ export default async function Home() {
               Each player starts with $1000 and must buy one $100 share of the 8
               companies. Prices update every 15 minutes by the operator.
             </p>
-            {session && (
+            {user && (
               <p className="text-sm text-zinc-600">
-                Signed in as {session.user?.email}
+                Signed in as {user.username}
               </p>
             )}
           </div>
-          {session && (
+          {user && (
             <div className="text-right text-sm text-zinc-600">
               <div>Cash: ${dashboard.cash.toFixed(2)}</div>
               <div>Portfolio value: ${dashboard.portfolioValue.toFixed(2)}</div>
@@ -81,7 +83,7 @@ export default async function Home() {
           )}
         </div>
 
-        {session ? (
+        {user ? (
           <div className="grid gap-4 md:grid-cols-3">
             <div className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
               <p className="text-xs uppercase text-zinc-500">Cash</p>
@@ -103,11 +105,14 @@ export default async function Home() {
         ) : (
           <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-6">
             <p className="text-sm text-zinc-700">
-              Sign in with Google to start trading and track your holdings.
+              Create an account or sign in to start trading and track your holdings.
             </p>
-            <div className="mt-3">
-              <SignInButton />
-            </div>
+            <Link
+              href="/signin"
+              className="mt-3 inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+            >
+              Get Started
+            </Link>
           </div>
         )}
 
@@ -120,7 +125,7 @@ export default async function Home() {
               Update your username for the leaderboard.
             </p>
           </div>
-          {session && <UsernameForm initial={session.user?.username ?? null} />}
+          {user && <UsernameForm initial={user.username} />}
         </div>
 
         <section className="space-y-3">

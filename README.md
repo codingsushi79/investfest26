@@ -1,10 +1,10 @@
 ## InvestFest26
 
-Single‑page trading game built for Vercel. Players sign in with Google, start with $1,000, and trade 8 operator-controlled companies whose prices update every 15 minutes. The operator (admin) can change prices in code via an authenticated API.
+Single‑page trading game built for Vercel. Players create accounts with username/email/password, start with $1,000, and trade 8 operator-controlled companies whose prices update every 15 minutes. The operator (admin) can change prices in code via an authenticated API.
 
 ### Stack
 - Next.js App Router + TypeScript + Tailwind (v4)
-- NextAuth (Google, database sessions)
+- Custom authentication (bcrypt, JWT sessions)
 - Prisma (PostgreSQL)
 - Recharts for price charts
 
@@ -12,10 +12,8 @@ Single‑page trading game built for Vercel. Players sign in with Google, start 
 Create `.env.local` with:
 ```
 DATABASE_URL=postgresql://user:password@host:5432/investfest
-GOOGLE_CLIENT_ID=...
-GOOGLE_CLIENT_SECRET=...
-NEXTAUTH_SECRET=...
-OP_EMAIL=operator@example.com      # email that can post price updates
+JWT_SECRET=your-random-secret-key-here
+OP_USERNAME=operator      # username that can post price updates
 ```
 
 ### Database
@@ -30,7 +28,7 @@ On first run the app seeds the 8 companies with default quarterly prices.
 ```
 npm run dev
 ```
-Visit `http://localhost:3000` and click "Sign in with Google".
+Visit `http://localhost:3000` and create an account or sign in.
 
 ### Admin price updates (no UI)
 Send an authenticated POST (session as `OP_EMAIL`) to:
