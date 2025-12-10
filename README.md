@@ -14,6 +14,7 @@ Create `.env.local` with:
 DATABASE_URL=postgresql://user:password@host:5432/investfest
 JWT_SECRET=your-random-secret-key-here
 OP_USERNAME=operator      # username that can post price updates
+NEXT_PUBLIC_OP_USERNAME=operator  # same as OP_USERNAME for client-side checks
 ```
 
 ### Database
