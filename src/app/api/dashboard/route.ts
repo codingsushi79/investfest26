@@ -9,18 +9,52 @@ export async function GET() {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
+    // Get all companies with their latest prices
+    const companies = await prisma.company.findMany({
+      include: {
+        prices: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
+      },
+    });
+
+    // Get user holdings
     const holdings = await prisma.holding.findMany({
       where: { userId: user.id },
       include: { company: true },
     });
 
+    const latestPrices = new Map(
+      companies.map((c) => [c.id, c.prices[0]?.value ?? 0])
+    );
+
+    const holdingsWithValues = holdings.map((h) => {
+      const latest = latestPrices.get(h.companyId) ?? 0;
+      return {
+        symbol: h.company.symbol,
+        name: h.company.name,
+        shares: h.shares,
+        latestPrice: latest,
+        value: h.shares * latest,
+      };
+    });
+
+    const invested = holdingsWithValues.reduce((sum, h) => sum + h.value, 0);
+    const cash = user.balance;
+    const portfolioValue = invested + cash;
+
     return NextResponse.json({
       user,
-      holdings: holdings.map(h => ({
-        symbol: h.company.symbol,
-        shares: h.shares,
-        value: 0, // Will be calculated on frontend with current prices
+      companies: companies.map(c => ({
+        symbol: c.symbol,
+        name: c.name,
+        prices: c.prices.map(p => ({ label: p.label, value: p.value })),
       })),
+      holdings: holdingsWithValues,
+      cash,
+      invested,
+      portfolioValue,
     });
   } catch (error) {
     console.error("Dashboard error:", error);

@@ -16,8 +16,8 @@ interface User {
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [dashboard, setDashboard] = useState<{
-    companies: Array<{symbol: string, name: string}>,
-    holdings: Array<{symbol: string, shares: number}>,
+    companies: Array<{symbol: string, name: string, prices: Array<{label: string, value: number}>}>,
+    holdings: Array<{symbol: string, shares: number, name: string, latestPrice: number, value: number}>,
     cash: number,
     invested: number,
     portfolioValue: number
@@ -51,7 +51,13 @@ export default function Home() {
       if (dashboardRes.ok) {
         const dashboardData = await dashboardRes.json();
         setUser(dashboardData.user);
-        setDashboard(dashboardData);
+        setDashboard({
+          companies: dashboardData.companies,
+          holdings: dashboardData.holdings,
+          cash: dashboardData.cash,
+          invested: dashboardData.invested,
+          portfolioValue: dashboardData.portfolioValue,
+        });
       }
 
       if (pricesRes.ok) {
@@ -102,23 +108,7 @@ export default function Home() {
     }
   };
 
-  const companyOptions = dashboard.companies.map((c) => ({
-    symbol: c.symbol,
-    name: c.name,
-    price: latestPrices.get(c.symbol) || 0,
-  }));
 
-  const holdingsSimple = dashboard.holdings.map((h) => {
-    const company = dashboard.companies.find(c => c.symbol === h.symbol);
-    const price = latestPrices.get(h.symbol) || 0;
-    return {
-      symbol: h.symbol,
-      name: company?.name || h.symbol,
-      shares: h.shares,
-      latestPrice: price,
-      value: h.shares * price,
-    };
-  });
 
   if (loading) {
     return (
@@ -138,8 +128,15 @@ export default function Home() {
             </div>
             {user && (
               <TradeControls
-                companies={companyOptions}
-                holdings={holdingsSimple}
+                companies={dashboard.companies.map((c) => ({
+                  symbol: c.symbol,
+                  name: c.name,
+                  price: latestPrices.get(c.symbol) || 0,
+                }))}
+                holdings={dashboard.holdings.map((h) => ({
+                  symbol: h.symbol,
+                  shares: h.shares,
+                }))}
                 balance={dashboard.cash}
               />
             )}
@@ -314,11 +311,7 @@ export default function Home() {
             )}
           </div>
           <StockCharts
-            companies={dashboard.companies.map((c) => ({
-              symbol: c.symbol,
-              name: c.name,
-              prices: [], // Will be populated by the chart component
-            }))}
+            companies={dashboard.companies}
           />
         </section>
 
@@ -342,7 +335,7 @@ export default function Home() {
               View leaderboard →
             </Link>
           </div>
-          <PortfolioTable rows={holdingsSimple} />
+          <PortfolioTable rows={dashboard.holdings} />
         </section>
       </main>
 
