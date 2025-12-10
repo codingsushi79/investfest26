@@ -53,12 +53,14 @@ export default async function Home() {
                 </button>
               </form>
             ) : (
-              <Link
-                href="/signin"
-                className="rounded-md bg-indigo-600 px-3 py-2 font-semibold text-white hover:bg-indigo-700"
-              >
-                Sign in with Google
-              </Link>
+              <form action="/api/auth/signin/google" method="post">
+                <button
+                  type="submit"
+                  className="rounded-md bg-indigo-600 px-3 py-2 font-semibold text-white hover:bg-indigo-700"
+                >
+                  Sign in with Google
+                </button>
+              </form>
             )}
           </div>
         </div>
@@ -109,12 +111,14 @@ export default async function Home() {
             <p className="text-sm text-zinc-700">
               Sign in with Google to start trading and track your holdings.
             </p>
-            <Link
-              href="/signin"
-              className="mt-3 inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-            >
-              Sign in
-            </Link>
+            <form action="/api/auth/signin/google" method="post" className="mt-3">
+              <button
+                type="submit"
+                className="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+              >
+                Sign in with Google
+              </button>
+            </form>
           </div>
         )}
 
