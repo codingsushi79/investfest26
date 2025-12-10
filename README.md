@@ -1,4 +1,4 @@
-## InvestFest26
+## InvestFest 2026
 
 Single‑page trading game built for Vercel. Players create accounts with username/email/password, start with $1,000, and trade 8 operator-controlled companies whose prices update every 15 minutes. The operator (admin) can change prices in code via an authenticated API.
 

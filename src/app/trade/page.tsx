@@ -186,7 +186,7 @@ export default function TradePage() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-4">
             <Link href="/" className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              InvestFest 26
+              InvestFest 2026
             </Link>
             <span className="text-slate-500">→</span>
             <span className="text-slate-700 font-medium">Trade</span>

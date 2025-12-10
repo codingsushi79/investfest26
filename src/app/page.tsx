@@ -180,7 +180,7 @@ export default function Home() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-4">
             <div className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              InvestFest 26
+              InvestFest 2026
             </div>
           </div>
           <div className="flex items-center gap-4 text-sm">

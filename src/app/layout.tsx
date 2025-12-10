@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "InvestFest 26",
+  title: "InvestFest 2026",
   description: "Virtual stock trading game",
 };
 
