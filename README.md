@@ -30,7 +30,7 @@ On first run the app seeds the 8 companies with default quarterly prices.
 ```
 npm run dev
 ```
-Visit `http://localhost:3000`.
+Visit `http://localhost:3000` and click "Sign in with Google".
 
 ### Admin price updates (no UI)
 Send an authenticated POST (session as `OP_EMAIL`) to:
