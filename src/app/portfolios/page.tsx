@@ -15,6 +15,7 @@ interface Portfolio {
     latestPrice: number;
     value: number;
   }>;
+  portfolioValue: number;
 }
 
 export default function PortfoliosPage() {
@@ -156,6 +157,11 @@ export default function PortfoliosPage() {
                       )}
                     </div>
                     <p className="text-xs text-zinc-500 mt-1">Cash ${p.balance.toFixed(2)}</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-bold text-green-600">
+                      Portfolio ${p.portfolioValue.toFixed(2)}
+                    </div>
                   </div>
                 </div>
               <div className="mt-3 space-y-1 text-sm text-zinc-700">

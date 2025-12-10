@@ -176,13 +176,8 @@ export async function getAllPortfolios() {
   const opUsername = process.env.OP_USERNAME;
   const filteredUsers = users.filter(user => user.username !== opUsername);
 
-  return filteredUsers.map((u) => ({
-    userId: u.id,
-    name: u.name,
-    username: u.username ?? "",
-    email: u.email,
-    balance: u.balance,
-    holdings: u.holdings.map((h) => {
+  return filteredUsers.map((u) => {
+    const holdingsWithValues = u.holdings.map((h) => {
       const company = companies.find((c) => c.id === h.companyId)!;
       const price = latestById.get(h.companyId) ?? 0;
       return {
@@ -191,8 +186,20 @@ export async function getAllPortfolios() {
         latestPrice: price,
         value: h.shares * price,
       };
-    }),
-  }));
+    });
+
+    const portfolioValue = holdingsWithValues.reduce((sum, h) => sum + h.value, 0);
+
+    return {
+      userId: u.id,
+      name: u.name,
+      username: u.username ?? "",
+      email: u.email,
+      balance: u.balance,
+      holdings: holdingsWithValues,
+      portfolioValue,
+    };
+  });
 }
 
 export async function getCompanyValues() {
