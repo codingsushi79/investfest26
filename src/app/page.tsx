@@ -382,6 +382,38 @@ export default function Home() {
               </button>
             )}
           </div>
+
+          {/* User Performance Summary */}
+          {user && (
+            <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">Your Performance</h3>
+                  <p className="text-sm text-slate-600">Since starting with $1,000</p>
+                </div>
+                <div className="text-right">
+                  {(() => {
+                    const initialBalance = 1000;
+                    const currentTotalValue = dashboard.portfolioValue + dashboard.cash;
+                    const gainLoss = currentTotalValue - initialBalance;
+                    const percentage = ((gainLoss / initialBalance) * 100);
+
+                    return (
+                      <div>
+                        <div className={`text-2xl font-bold ${gainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {gainLoss >= 0 ? '+' : ''}${gainLoss.toFixed(2)}
+                        </div>
+                        <div className={`text-sm font-medium ${percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {percentage >= 0 ? '+' : ''}{percentage.toFixed(2)}%
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+          )}
+
           <StockCharts
             companies={dashboard.companies}
           />
