@@ -1,0 +1,198 @@
+'use server';
+
+import { revalidatePath } from "next/cache";
+import { getServerSession } from "next-auth";
+import { z } from "zod";
+import { prisma } from "@/lib/prisma";
+import { authConfig } from "@/lib/auth";
+import { ensureSeedData } from "@/lib/data";
+
+const tradeSchema = z.object({
+  symbol: z.string().min(1),
+  shares: z.number().int().positive(),
+});
+
+export async function updateUsername(username: string) {
+  const session = await getServerSession(authConfig);
+  if (!session?.user?.id) {
+    throw new Error("Not authenticated");
+  }
+
+  const cleaned = username.trim();
+  if (!cleaned) {
+    throw new Error("Username is required");
+  }
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { username: cleaned },
+  });
+
+  revalidatePath("/");
+  revalidatePath("/leaderboard");
+  revalidatePath("/portfolios");
+}
+
+export async function buyShares(raw: { symbol: string; shares: number }) {
+  await ensureSeedData();
+  const session = await getServerSession(authConfig);
+  if (!session?.user?.id) {
+    throw new Error("Not authenticated");
+  }
+
+  const input = tradeSchema.parse({
+    symbol: raw.symbol,
+    shares: Number(raw.shares),
+  });
+
+  const company = await prisma.company.findUnique({
+    where: { symbol: input.symbol },
+    include: { prices: { orderBy: { createdAt: "desc" }, take: 1 } },
+  });
+  if (!company || company.prices.length === 0) {
+    throw new Error("Company or price not found");
+  }
+
+  const price = company.prices[0].value;
+  const totalCost = price * input.shares;
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { balance: true },
+  });
+  if (!user) throw new Error("User missing");
+
+  if (user.balance < totalCost) {
+    throw new Error("Not enough balance");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: session.user.id },
+      data: { balance: { decrement: totalCost } },
+    });
+
+    await tx.holding.upsert({
+      where: { userId_companyId: { userId: session.user.id, companyId: company.id } },
+      update: { shares: { increment: input.shares } },
+      create: {
+        userId: session.user.id,
+        companyId: company.id,
+        shares: input.shares,
+      },
+    });
+
+    await tx.transaction.create({
+      data: {
+        userId: session.user.id,
+        companyId: company.id,
+        type: "BUY",
+        shares: input.shares,
+        price,
+      },
+    });
+  });
+
+  revalidatePath("/");
+  revalidatePath("/leaderboard");
+  revalidatePath("/portfolios");
+}
+
+export async function sellShares(raw: { symbol: string; shares: number }) {
+  await ensureSeedData();
+  const session = await getServerSession(authConfig);
+  if (!session?.user?.id) {
+    throw new Error("Not authenticated");
+  }
+
+  const input = tradeSchema.parse({
+    symbol: raw.symbol,
+    shares: Number(raw.shares),
+  });
+
+  const company = await prisma.company.findUnique({
+    where: { symbol: input.symbol },
+    include: { prices: { orderBy: { createdAt: "desc" }, take: 1 } },
+  });
+  if (!company || company.prices.length === 0) {
+    throw new Error("Company or price not found");
+  }
+
+  const holding = await prisma.holding.findUnique({
+    where: { userId_companyId: { userId: session.user.id, companyId: company.id } },
+  });
+
+  if (!holding || holding.shares < input.shares) {
+    throw new Error("Not enough shares to sell");
+  }
+
+  const price = company.prices[0].value;
+  const totalValue = price * input.shares;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: session.user.id },
+      data: { balance: { increment: totalValue } },
+    });
+
+    await tx.holding.update({
+      where: { userId_companyId: { userId: session.user.id, companyId: company.id } },
+      data: { shares: { decrement: input.shares } },
+    });
+
+    await tx.transaction.create({
+      data: {
+        userId: session.user.id,
+        companyId: company.id,
+        type: "SELL",
+        shares: input.shares,
+        price,
+      },
+    });
+  });
+
+  revalidatePath("/");
+  revalidatePath("/leaderboard");
+  revalidatePath("/portfolios");
+}
+
+const adminPriceSchema = z.array(
+  z.object({
+    symbol: z.string(),
+    label: z.string(),
+    value: z.number(),
+  })
+);
+
+export async function adminUpdatePrices(rows: z.infer<typeof adminPriceSchema>) {
+  const session = await getServerSession(authConfig);
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!session?.user?.email || !adminEmail || session.user.email !== adminEmail) {
+    throw new Error("Admin only");
+  }
+
+  const updates = adminPriceSchema.parse(rows);
+  const companies = await prisma.company.findMany({
+    where: { symbol: { in: updates.map((u) => u.symbol) } },
+  });
+  const companiesBySymbol = new Map(companies.map((c) => [c.symbol, c.id]));
+
+  await prisma.$transaction(async (tx) => {
+    for (const item of updates) {
+      const companyId = companiesBySymbol.get(item.symbol);
+      if (!companyId) continue;
+      await tx.pricePoint.create({
+        data: {
+          companyId,
+          label: item.label,
+          value: item.value,
+        },
+      });
+    }
+  });
+
+  revalidatePath("/");
+  revalidatePath("/leaderboard");
+  revalidatePath("/portfolios");
+}
+
