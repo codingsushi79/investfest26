@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
+import type { Session } from "next-auth";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/lib/auth";
@@ -13,7 +14,7 @@ const tradeSchema = z.object({
 });
 
 export async function updateUsername(username: string) {
-  const session = await getServerSession(authConfig);
+  const session = (await getServerSession(authConfig)) as Session | null;
   if (!session?.user?.id) {
     throw new Error("Not authenticated");
   }
@@ -35,7 +36,7 @@ export async function updateUsername(username: string) {
 
 export async function buyShares(raw: { symbol: string; shares: number }) {
   await ensureSeedData();
-  const session = await getServerSession(authConfig);
+  const session = (await getServerSession(authConfig)) as Session | null;
   if (!session?.user?.id) {
     throw new Error("Not authenticated");
   }
@@ -100,7 +101,7 @@ export async function buyShares(raw: { symbol: string; shares: number }) {
 
 export async function sellShares(raw: { symbol: string; shares: number }) {
   await ensureSeedData();
-  const session = await getServerSession(authConfig);
+  const session = (await getServerSession(authConfig)) as Session | null;
   if (!session?.user?.id) {
     throw new Error("Not authenticated");
   }
@@ -165,7 +166,7 @@ const adminPriceSchema = z.array(
 );
 
 export async function adminUpdatePrices(rows: z.infer<typeof adminPriceSchema>) {
-  const session = await getServerSession(authConfig);
+  const session = (await getServerSession(authConfig)) as Session | null;
   const adminEmail = process.env.OP_EMAIL;
   if (!session?.user?.email || !adminEmail || session.user.email !== adminEmail) {
     throw new Error("Admin only");
