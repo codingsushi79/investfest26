@@ -91,8 +91,8 @@ export default function Home() {
       }
 
       if (pricesRes.ok) {
-        const pricesData = await pricesRes.json();
-        setLatestPrices(new Map(Object.entries(pricesData)));
+        // Prices data fetched but not stored locally since we get it from dashboard
+        await pricesRes.json();
       }
     } catch (error) {
       console.error("Failed to fetch data:", error);
