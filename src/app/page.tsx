@@ -202,6 +202,14 @@ export default function Home() {
             >
               All portfolios
             </Link>
+            {user && user.username === (process.env.NEXT_PUBLIC_OP_USERNAME || "operator") && (
+              <Link
+                href="/company-values"
+                className="text-purple-700 hover:text-purple-800 transition-colors font-medium"
+              >
+                Company Values
+              </Link>
+            )}
             {user ? (
               <form action="/api/auth/signout" method="post">
                 <button className="rounded-lg bg-slate-900 px-4 py-2 text-white hover:bg-slate-800 transition-all duration-200 shadow-sm hover:shadow-md">

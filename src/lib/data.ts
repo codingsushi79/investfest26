@@ -164,3 +164,41 @@ export async function getAllPortfolios() {
   }));
 }
 
+export async function getCompanyValues() {
+  await ensureSeedData();
+
+  // Get all companies with current prices
+  const companies = await prisma.company.findMany({
+    include: { prices: { orderBy: { createdAt: "desc" }, take: 1 } },
+  });
+
+  // Get all holdings (excluding operator)
+  const opUsername = process.env.OP_USERNAME;
+  const holdings = await prisma.holding.findMany({
+    include: {
+      user: true,
+      company: true,
+    },
+  });
+
+  const filteredHoldings = holdings.filter(h => h.user.username !== opUsername);
+
+  // Calculate total shares and market value for each company
+  const companyValues = companies.map(company => {
+    const companyHoldings = filteredHoldings.filter(h => h.companyId === company.id);
+    const totalShares = companyHoldings.reduce((sum, h) => sum + h.shares, 0);
+    const currentPrice = company.prices[0]?.value ?? 0;
+    const marketValue = totalShares * currentPrice;
+
+    return {
+      symbol: company.symbol,
+      name: company.name,
+      totalShares,
+      currentPrice,
+      marketValue,
+    };
+  });
+
+  return companyValues;
+}
+
