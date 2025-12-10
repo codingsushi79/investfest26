@@ -85,6 +85,9 @@ export function StockCharts({ companies }: { companies: ChartCompany[] }) {
     });
   });
 
+  console.log('All periods collected:', Array.from(allPeriods));
+  console.log('Companies data:', companies.map(c => ({ symbol: c.symbol, priceCount: c.prices.length })));
+
   const sortedPeriods = Array.from(allPeriods).sort((a, b) => {
     // Sort by year and quarter
     const aMatch = a.match(/Y(\d+)\s+Q(\d+)/);

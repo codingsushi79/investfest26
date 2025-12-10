@@ -9,12 +9,11 @@ export async function GET() {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    // Get all companies with their latest prices
+    // Get all companies with ALL their historical prices
     const companies = await prisma.company.findMany({
       include: {
         prices: {
-          orderBy: { createdAt: "desc" },
-          take: 1,
+          orderBy: { createdAt: "asc" }, // Oldest first for proper timeline
         },
       },
     });
