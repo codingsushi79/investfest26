@@ -98,7 +98,11 @@ export async function getLeaderboard() {
     include: { holdings: true },
   });
 
-  const rows = users.map((user) => {
+  // Filter out the operator account
+  const opUsername = process.env.OP_USERNAME;
+  const filteredUsers = users.filter(user => user.username !== opUsername);
+
+  const rows = filteredUsers.map((user) => {
     const holdings = user.holdings.map((h) => {
       const price = latestPriceById.get(h.companyId) ?? 0;
       const company = companies.find((c) => c.id === h.companyId)!;
@@ -138,7 +142,11 @@ export async function getAllPortfolios() {
     include: { holdings: true },
   });
 
-  return users.map((u) => ({
+  // Filter out the operator account
+  const opUsername = process.env.OP_USERNAME;
+  const filteredUsers = users.filter(user => user.username !== opUsername);
+
+  return filteredUsers.map((u) => ({
     userId: u.id,
     name: u.name,
     username: u.username ?? "",
