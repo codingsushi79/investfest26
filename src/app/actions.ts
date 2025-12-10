@@ -168,11 +168,35 @@ const adminPriceSchema = z.array(
 export async function adminUpdatePrices(rows: z.infer<typeof adminPriceSchema>) {
   const user = await getCurrentUser();
   const adminUsername = process.env.OP_USERNAME;
-  console.log("Admin check:", { user: user?.username, adminUsername, isAdmin: user?.username === adminUsername });
 
-  if (!user?.username || !adminUsername || user.username !== adminUsername) {
+  console.log("Admin check details:");
+  console.log("- User object:", user);
+  console.log("- User username:", user?.username);
+  console.log("- Admin username from env:", adminUsername);
+  console.log("- Environment OP_USERNAME:", process.env.OP_USERNAME);
+  console.log("- Comparison result:", user?.username === adminUsername);
+
+  if (!user) {
+    console.log("No user found - not authenticated");
+    throw new Error("Not authenticated");
+  }
+
+  if (!user.username) {
+    console.log("User has no username");
+    throw new Error("User has no username");
+  }
+
+  if (!adminUsername) {
+    console.log("No admin username set in environment");
+    throw new Error("Admin username not configured");
+  }
+
+  if (user.username !== adminUsername) {
+    console.log(`Username mismatch: user="${user.username}" vs admin="${adminUsername}"`);
     throw new Error("Admin only");
   }
+
+  console.log("Admin check passed!");
 
   const updates = adminPriceSchema.parse(rows);
   const companies = await prisma.company.findMany({

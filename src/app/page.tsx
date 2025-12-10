@@ -117,6 +117,12 @@ export default function Home() {
 
     const nextLabel = getNextTimePeriod(selectedCompany.prices);
 
+    console.log("Client-side user check:", {
+      user,
+      username: user?.username,
+      isOperator: user?.username === (process.env.NEXT_PUBLIC_OP_USERNAME || "operator")
+    });
+
     setUpdatingPrice(true);
     try {
       console.log("Sending price update:", {
