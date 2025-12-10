@@ -42,6 +42,8 @@ POST /api/admin/update-prices
 Prices append as new points and charts/portfolio values update automatically.
 
 ### Pages
-- `/` dashboard with charts, buy/sell, cash/holdings.
+- `/` dashboard with charts, cash/holdings overview.
+- `/trade` dedicated trading page to buy/sell shares.
 - `/leaderboard` ranking by total portfolio value.
-- `/portfolios` all accounts’ positions and cash.
+- `/portfolios` all accounts' positions and cash.
+- `/signin` authentication page for login/registration.

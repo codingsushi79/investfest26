@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { signIn } from "@/lib/auth-utils";
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,6 +45,9 @@ export async function POST(request: NextRequest) {
         balance: 1000, // Starting balance
       },
     });
+
+    // Sign in the user
+    await signIn(user);
 
     return NextResponse.json({
       user: {

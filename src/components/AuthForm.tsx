@@ -49,39 +49,44 @@ export function AuthForm() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4">
-      <div className="w-full max-w-md space-y-6 rounded-xl border border-zinc-200 bg-white p-8 shadow-sm">
-        <div className="space-y-2 text-center">
-          <h1 className="text-xl font-semibold text-zinc-900">
-            {isSignUp ? "Create Account" : "Sign In"}
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 px-4">
+      <div className="w-full max-w-md space-y-6 rounded-2xl border border-slate-200/60 bg-white/80 backdrop-blur-md p-8 shadow-xl">
+        <div className="space-y-3 text-center">
+          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center">
+            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900">
+            {isSignUp ? "Create Account" : "Welcome Back"}
           </h1>
-          <p className="text-sm text-zinc-600">
+          <p className="text-slate-600">
             {isSignUp
-              ? "Start with $1000 virtual cash to trade stocks"
-              : "Welcome back! Sign in to continue trading"
+              ? "Start with $1,000 virtual cash to trade stocks"
+              : "Sign in to continue your trading journey"
             }
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {isSignUp && (
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-zinc-700">
-                Name (optional)
+              <label htmlFor="name" className="block text-sm font-semibold text-slate-700 mb-2">
+                Full Name <span className="text-slate-400 font-normal">(optional)</span>
               </label>
               <input
                 type="text"
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                placeholder="Your name"
+                className="block w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+                placeholder="Enter your full name"
               />
             </div>
           )}
 
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-zinc-700">
+            <label htmlFor="username" className="block text-sm font-semibold text-slate-700 mb-2">
               Username
             </label>
             <input
@@ -89,47 +94,58 @@ export function AuthForm() {
               id="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              placeholder="Enter username"
+              className="block w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+              placeholder="Choose a username"
               required
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-zinc-700">
-              Password
+            <label htmlFor="password" className="block text-sm font-semibold text-slate-700 mb-2">
+              Password {isSignUp && <span className="text-slate-400 font-normal">(min. 6 characters)</span>}
             </label>
             <input
               type="password"
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              placeholder="Enter password"
+              className="block w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
+              placeholder="Enter your password"
               required
               minLength={6}
             />
           </div>
 
           {error && (
-            <div className="rounded-md bg-red-50 p-3">
-              <p className="text-sm text-red-700">{error}</p>
+            <div className="rounded-lg bg-red-50 border border-red-200 p-4">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm text-red-800 font-medium">{error}</p>
+              </div>
             </div>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="flex w-full items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-700 disabled:opacity-50"
+            className="flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:shadow-xl"
           >
+            {loading && (
+              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            )}
             {loading ? "Please wait..." : (isSignUp ? "Create Account" : "Sign In")}
           </button>
         </form>
 
-        <div className="text-center">
+        <div className="text-center pt-4 border-t border-slate-200">
           <button
             onClick={() => setIsSignUp(!isSignUp)}
-            className="text-sm text-indigo-700 hover:underline"
+            className="text-sm text-slate-600 hover:text-blue-600 font-medium transition-colors"
           >
             {isSignUp
               ? "Already have an account? Sign in"
