@@ -45,6 +45,6 @@ Prices append as new points and charts/portfolio values update automatically.
 ### Pages
 - `/` dashboard with charts, cash/holdings overview.
 - `/trade` dedicated trading page to buy/sell shares.
-- `/leaderboard` ranking by total portfolio value.
+- `/leaderboard` ranking by portfolio value (worth of shares owned).
 - `/portfolios` all accounts' positions and cash with search functionality.
 - `/signin` authentication page for login/registration.

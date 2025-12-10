@@ -41,7 +41,7 @@ export async function GET() {
 
     const invested = holdingsWithValues.reduce((sum, h) => sum + h.value, 0);
     const cash = user.balance;
-    const portfolioValue = invested + cash;
+    const portfolioValue = invested; // Portfolio value is total worth of shares owned
 
     return NextResponse.json({
       user,

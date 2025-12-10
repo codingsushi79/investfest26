@@ -315,7 +315,7 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Total Value</p>
-                  <p className="text-2xl font-bold text-slate-900">${dashboard.portfolioValue.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-slate-900">${(dashboard.portfolioValue + dashboard.cash).toFixed(2)}</p>
                 </div>
               </div>
             </div>

@@ -64,7 +64,7 @@ export default function LeaderboardPage() {
         <div>
           <h1 className="text-2xl font-semibold text-zinc-900">Leaderboard</h1>
           <p className="text-sm text-zinc-600">
-            Ranked by total portfolio value (cash + holdings).
+            Ranked by portfolio value (total worth of shares owned).
           </p>
         </div>
         <Link href="/" className="text-indigo-700 hover:underline">

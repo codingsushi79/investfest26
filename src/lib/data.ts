@@ -143,7 +143,7 @@ export async function getLeaderboard() {
       };
     });
     const invested = holdings.reduce((sum, h) => sum + h.value, 0);
-    const portfolioValue = invested + user.balance;
+    const portfolioValue = invested; // Portfolio value is total worth of shares owned
     return {
       userId: user.id,
       name: user.name,
