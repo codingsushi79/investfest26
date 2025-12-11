@@ -176,10 +176,10 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <header className="border-b border-slate-200/60 dark:border-slate-700/60 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm">
+      <header className="border-b border-slate-200/60 bg-white/80 backdrop-blur-md shadow-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-4">
-            <div className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
+            <div className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
               InvestFest 2026
             </div>
           </div>
@@ -192,13 +192,13 @@ export default function Home() {
             </Link>
             <Link
               href="/leaderboard"
-              className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
+              className="text-slate-700 hover:text-blue-600 transition-colors font-medium"
             >
               Leaderboard
             </Link>
             <Link
               href="/portfolios"
-              className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
+              className="text-slate-700 hover:text-blue-600 transition-colors font-medium"
             >
               All portfolios
             </Link>
@@ -212,7 +212,7 @@ export default function Home() {
             )}
             {user ? (
               <form action="/api/auth/signout" method="post">
-                <button className="rounded-lg bg-slate-900 dark:bg-slate-700 px-4 py-2 text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-all duration-200 shadow-sm hover:shadow-md">
+                <button className="rounded-lg bg-slate-900 px-4 py-2 text-white hover:bg-slate-800 transition-all duration-200 shadow-sm hover:shadow-md">
                   Sign out
                 </button>
               </form>
@@ -231,15 +231,15 @@ export default function Home() {
       <main className="mx-auto max-w-6xl space-y-8 px-4 py-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Virtual Stock Trading</h1>
-            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+            <h1 className="text-2xl font-bold text-slate-900">Virtual Stock Trading</h1>
+            <p className="text-slate-600 leading-relaxed">
               Each player starts with $1,000 and can trade shares in 8 companies.
               Prices are updated every 15 minutes by the operator.
             </p>
             {user && (
               <div className="flex items-center gap-4">
-                <p className="text-sm font-medium text-slate-700 dark:text-slate-300 bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-full">
-                  Signed in as <span className="text-blue-600 dark:text-blue-400">{user.username}</span>
+                <p className="text-sm font-medium text-slate-700 bg-blue-50 px-3 py-1 rounded-full">
+                  Signed in as <span className="text-blue-600">{user.username}</span>
                 </p>
                 <div className="flex gap-2">
                   <Link
@@ -266,13 +266,13 @@ export default function Home() {
           </div>
           {user && (
             <div className="flex gap-6 text-right">
-              <div className="bg-white dark:bg-slate-700 rounded-lg px-4 py-3 shadow-sm border border-slate-200 dark:border-slate-600">
-                <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Cash</div>
-                <div className="text-lg font-bold text-green-600 dark:text-green-400">${dashboard.cash.toFixed(2)}</div>
+              <div className="bg-white rounded-lg px-4 py-3 shadow-sm border border-slate-200">
+                <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Cash</div>
+                <div className="text-lg font-bold text-green-600">${dashboard.cash.toFixed(2)}</div>
               </div>
-              <div className="bg-white dark:bg-slate-700 rounded-lg px-4 py-3 shadow-sm border border-slate-200 dark:border-slate-600">
-                <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Portfolio</div>
-                <div className="text-lg font-bold text-blue-600 dark:text-blue-400">${dashboard.portfolioValue.toFixed(2)}</div>
+              <div className="bg-white rounded-lg px-4 py-3 shadow-sm border border-slate-200">
+                <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Portfolio</div>
+                <div className="text-lg font-bold text-blue-600">${dashboard.portfolioValue.toFixed(2)}</div>
               </div>
             </div>
           )}
@@ -306,16 +306,16 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-md transition-shadow duration-200">
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow duration-200">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Total Value</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">${(dashboard.portfolioValue + dashboard.cash).toFixed(2)}</p>
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Total Value</p>
+                  <p className="text-2xl font-bold text-slate-900">${(dashboard.portfolioValue + dashboard.cash).toFixed(2)}</p>
                 </div>
               </div>
             </div>
@@ -327,8 +327,8 @@ export default function Home() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Ready to Start Trading?</h3>
-            <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">Ready to Start Trading?</h3>
+            <p className="text-slate-600 mb-6 max-w-md mx-auto">
               Create an account to begin your virtual stock trading journey and track your portfolio performance.
             </p>
             <Link
@@ -343,13 +343,13 @@ export default function Home() {
           </div>
         )}
 
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-1">
+              <h2 className="text-xl font-semibold text-slate-900 mb-1">
                 Portfolio Overview
               </h2>
-              <p className="text-slate-600 dark:text-slate-400">
+              <p className="text-slate-600">
                 Update your username to appear on the leaderboard and track your performance.
               </p>
             </div>
@@ -357,17 +357,17 @@ export default function Home() {
           </div>
         </div>
 
-        <section className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+        <section className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Price History</h2>
-                <p className="text-sm text-slate-600 dark:text-slate-400">Live charts updated every 15 minutes by the operator</p>
+                <h2 className="text-xl font-semibold text-slate-900">Price History</h2>
+                <p className="text-sm text-slate-600">Live charts updated every 15 minutes by the operator</p>
               </div>
             </div>
             {user && user.username === (process.env.NEXT_PUBLIC_OP_USERNAME || "operator") && (
@@ -385,11 +385,11 @@ export default function Home() {
 
           {/* User Performance Summary */}
           {user && (
-            <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Your Performance</h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Since starting with $1,000</p>
+                  <h3 className="text-lg font-semibold text-slate-900">Your Performance</h3>
+                  <p className="text-sm text-slate-600">Since starting with $1,000</p>
                 </div>
                 <div className="text-right">
                   {(() => {

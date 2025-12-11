@@ -55,10 +55,10 @@ export function SettingsPanel({ isOpen, onClose, isOperator = false }: SettingsP
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 scrollbar-track-transparent">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Settings</h2>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Settings</h2>
             <button
               onClick={onClose}
               className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
@@ -72,7 +72,7 @@ export function SettingsPanel({ isOpen, onClose, isOperator = false }: SettingsP
           {/* Theme Settings */}
           <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3">Theme</h3>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-3">Theme</h3>
               <div className="grid grid-cols-3 gap-3">
                 {[
                   { value: "light", label: "Light", icon: "☀️" },
@@ -89,7 +89,7 @@ export function SettingsPanel({ isOpen, onClose, isOperator = false }: SettingsP
                     }`}
                   >
                     <div className="text-2xl mb-2">{option.icon}</div>
-                    <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{option.label}</div>
+                    <div className="text-sm font-medium text-slate-900 dark:text-white">{option.label}</div>
                   </button>
                 ))}
               </div>
@@ -97,12 +97,12 @@ export function SettingsPanel({ isOpen, onClose, isOperator = false }: SettingsP
 
             {/* Other Settings */}
             <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3">Preferences</h3>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-3">Preferences</h3>
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="font-medium text-slate-900 dark:text-slate-100">Animations</div>
+                    <div className="font-medium text-slate-900 dark:text-white">Animations</div>
                     <div className="text-sm text-slate-600 dark:text-slate-400">Enable smooth transitions and effects</div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -118,7 +118,7 @@ export function SettingsPanel({ isOpen, onClose, isOperator = false }: SettingsP
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="font-medium text-slate-900 dark:text-slate-100">Compact Mode</div>
+                    <div className="font-medium text-slate-900 dark:text-white">Compact Mode</div>
                     <div className="text-sm text-slate-600 dark:text-slate-400">Reduce spacing and padding</div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -137,12 +137,12 @@ export function SettingsPanel({ isOpen, onClose, isOperator = false }: SettingsP
             {/* Operator Controls */}
             {isOperator && (
               <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3">Operator Controls</h3>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-3">Operator Controls</h3>
 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-medium text-slate-900 dark:text-slate-100">End Trading Event</div>
+                      <div className="font-medium text-slate-900 dark:text-white">End Trading Event</div>
                       <div className="text-sm text-slate-600 dark:text-slate-400">
                         Permanently disable trading and show final rankings
                       </div>
@@ -167,7 +167,7 @@ export function SettingsPanel({ isOpen, onClose, isOperator = false }: SettingsP
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                         </svg>
                         <div className="text-sm text-yellow-800 dark:text-yellow-200">
-                          <strong className="text-yellow-900 dark:text-yellow-100">Trading event has ended!</strong> Users can no longer trade and final rankings are displayed.
+                          <strong>Trading event has ended!</strong> Users can no longer trade and final rankings are displayed.
                         </div>
                       </div>
                     </div>
@@ -178,7 +178,7 @@ export function SettingsPanel({ isOpen, onClose, isOperator = false }: SettingsP
 
             {/* Account Info */}
             <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3">Account</h3>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-3">Account</h3>
               <div className="text-sm text-slate-600 dark:text-slate-400">
                 Manage your account settings in your profile or contact support for assistance.
               </div>
