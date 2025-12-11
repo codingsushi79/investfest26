@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { SettingsButton } from "@/components/SettingsButton";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -25,9 +24,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-zinc-50 text-zinc-900 dark:bg-slate-900 dark:text-white`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-zinc-50 text-zinc-900`}>
         {children}
-        <SettingsButton />
       </body>
     </html>
   );
