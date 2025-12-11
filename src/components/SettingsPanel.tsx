@@ -7,26 +7,22 @@ type Theme = "light" | "dark" | "auto";
 interface SettingsPanelProps {
   isOpen: boolean;
   onClose: () => void;
-  isOperator?: boolean;
 }
 
-export function SettingsPanel({ isOpen, onClose, isOperator = false }: SettingsPanelProps & { isOperator?: boolean }) {
+export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
   const [theme, setTheme] = useState<Theme>("light");
   const [animations, setAnimations] = useState(true);
   const [compactMode, setCompactMode] = useState(false);
-  const [tradingEnded, setTradingEnded] = useState(false);
 
   // Load settings from localStorage on mount
   useEffect(() => {
     const savedTheme = localStorage.getItem("investfest-theme") as Theme;
     const savedAnimations = localStorage.getItem("investfest-animations");
     const savedCompact = localStorage.getItem("investfest-compact");
-    const savedTradingEnded = localStorage.getItem("investfest-trading-ended");
 
     if (savedTheme) setTheme(savedTheme);
     if (savedAnimations !== null) setAnimations(savedAnimations === "true");
     if (savedCompact !== null) setCompactMode(savedCompact === "true");
-    if (savedTradingEnded !== null) setTradingEnded(savedTradingEnded === "true");
   }, []);
 
   // Apply theme changes
@@ -48,8 +44,7 @@ export function SettingsPanel({ isOpen, onClose, isOperator = false }: SettingsP
   useEffect(() => {
     localStorage.setItem("investfest-animations", animations.toString());
     localStorage.setItem("investfest-compact", compactMode.toString());
-    localStorage.setItem("investfest-trading-ended", tradingEnded.toString());
-  }, [animations, compactMode, tradingEnded]);
+  }, [animations, compactMode]);
 
   if (!isOpen) return null;
 
@@ -133,48 +128,6 @@ export function SettingsPanel({ isOpen, onClose, isOperator = false }: SettingsP
                 </div>
               </div>
             </div>
-
-            {/* Operator Controls */}
-            {isOperator && (
-              <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-3">Operator Controls</h3>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-slate-900 dark:text-white">End Trading Event</div>
-                      <div className="text-sm text-slate-600 dark:text-slate-400">
-                        Permanently disable trading and show final rankings
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setTradingEnded(true)}
-                      disabled={tradingEnded}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                        tradingEnded
-                          ? "bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-600"
-                          : "bg-red-600 text-white hover:bg-red-700"
-                      }`}
-                    >
-                      {tradingEnded ? "Event Ended" : "End Event"}
-                    </button>
-                  </div>
-
-                  {tradingEnded && (
-                    <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <svg className="w-5 h-5 text-yellow-600 dark:text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                        </svg>
-                        <div className="text-sm text-yellow-800 dark:text-yellow-200">
-                          <strong>Trading event has ended!</strong> Users can no longer trade and final rankings are displayed.
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
 
             {/* Account Info */}
             <div className="border-t border-slate-200 dark:border-slate-700 pt-4">

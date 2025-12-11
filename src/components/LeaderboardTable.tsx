@@ -8,7 +8,7 @@ type LeaderRow = {
   holdings: { symbol: string; shares: number; value: number }[];
 };
 
-export function LeaderboardTable({ rows, isOperator = false, tradingEnded = false }: { rows: LeaderRow[]; isOperator?: boolean; tradingEnded?: boolean }) {
+export function LeaderboardTable({ rows, isOperator = false }: { rows: LeaderRow[]; isOperator?: boolean }) {
   return (
     <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
       <table className="min-w-full divide-y divide-zinc-200 text-sm">
@@ -23,37 +23,9 @@ export function LeaderboardTable({ rows, isOperator = false, tradingEnded = fals
           </tr>
         </thead>
         <tbody className="divide-y divide-zinc-100">
-          {rows.map((row, idx) => {
-            const rank = idx + 1;
-            const isTopThree = tradingEnded && rank <= 3;
-
-            let medalEmoji = "";
-            let bgColor = "";
-            let textColor = "text-zinc-800";
-
-            if (isTopThree) {
-              switch (rank) {
-                case 1:
-                  medalEmoji = "🥇";
-                  bgColor = "bg-gradient-to-r from-yellow-100 to-yellow-50";
-                  break;
-                case 2:
-                  medalEmoji = "🥈";
-                  bgColor = "bg-gradient-to-r from-slate-100 to-slate-50";
-                  break;
-                case 3:
-                  medalEmoji = "🥉";
-                  bgColor = "bg-gradient-to-r from-amber-100 to-amber-50";
-                  break;
-              }
-              textColor = "text-zinc-900";
-            }
-
-            return (
-              <tr key={`${row.username}-${idx}`} className={`hover:bg-zinc-50 ${bgColor}`}>
-                <td className={`px-4 py-2 font-bold ${textColor}`}>
-                  {isTopThree ? medalEmoji : rank}
-                </td>
+          {rows.map((row, idx) => (
+            <tr key={`${row.username}-${idx}`} className="hover:bg-zinc-50">
+              <td className="px-4 py-2 text-zinc-800">{idx + 1}</td>
               <td className="px-4 py-2 font-medium text-zinc-900">
                 <div className="flex flex-col">
                   {row.name && row.name.trim() !== "" && (
@@ -86,8 +58,7 @@ export function LeaderboardTable({ rows, isOperator = false, tradingEnded = fals
                       .join(" · ")}
               </td>
             </tr>
-            );
-          })}
+          ))}
         </tbody>
       </table>
     </div>
