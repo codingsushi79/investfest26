@@ -234,7 +234,7 @@ export default function Home() {
             <h1 className="text-2xl font-bold text-slate-900">InvestFest Dashboard</h1>
             <p className="text-slate-600 leading-relaxed">
               Each player starts with $1,000 and can trade shares in 8 companies.
-              Prices are updated every 15 minutes by the operator.
+              Prices are updated every class period.
             </p>
             {user && (
               <div className="flex items-center gap-4">
