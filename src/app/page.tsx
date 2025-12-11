@@ -231,7 +231,7 @@ export default function Home() {
       <main className="mx-auto max-w-6xl space-y-8 px-4 py-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-slate-900">Virtual Stock Trading</h1>
+            <h1 className="text-2xl font-bold text-slate-900">InvesFest Dashboard</h1>
             <p className="text-slate-600 leading-relaxed">
               Each player starts with $1,000 and can trade shares in 8 companies.
               Prices are updated every 15 minutes by the operator.
