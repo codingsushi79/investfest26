@@ -143,7 +143,7 @@ export default function ModeratorProfileViewPage({ params }: { params: Promise<{
               <div className="text-3xl font-bold text-slate-900">
                 ${profileData.currentTotalValue.toFixed(2)}
               </div>
-              <div className={`text-sm font-medium ${gainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <div className={`text-sm font-medium ${gainLoss >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                 {gainLoss >= 0 ? '+' : ''}${gainLoss.toFixed(2)} ({percentage >= 0 ? '+' : ''}{percentage.toFixed(2)}%)
               </div>
             </div>
