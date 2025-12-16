@@ -264,10 +264,10 @@ export default function Home() {
       <main className="mx-auto max-w-6xl space-y-8 px-4 py-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-slate-900">Virtual Stock Trading</h1>
+            <h1 className="text-2xl font-bold text-slate-900">InvestFest Dashboard</h1>
             <p className="text-slate-600 leading-relaxed">
               Each player starts with $1,000 and can trade shares in 8 companies.
-              Prices are updated every 15 minutes by the operator.
+              Prices are updated every class period by the operator.
             </p>
             {user && (
               <div className="flex items-center gap-4">
@@ -307,7 +307,7 @@ export default function Home() {
             <div className="flex gap-6 text-right">
               <div className="bg-white rounded-lg px-4 py-3 shadow-sm border border-slate-200">
                 <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Cash</div>
-                <div className="text-lg font-bold text-green-600">${dashboard.cash.toFixed(2)}</div>
+                <div className="text-lg font-bold text-green-700">${dashboard.cash.toFixed(2)}</div>
               </div>
               <div className="bg-white rounded-lg px-4 py-3 shadow-sm border border-slate-200">
                 <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">Portfolio</div>

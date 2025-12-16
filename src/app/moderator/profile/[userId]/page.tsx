@@ -154,7 +154,7 @@ export default function ModeratorProfileViewPage({ params }: { params: Promise<{
         <div className="grid gap-6 md:grid-cols-4">
           <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
             <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Cash</div>
-            <div className="text-2xl font-bold text-green-600">${profileData.user.balance.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-green-700">${profileData.user.balance.toFixed(2)}</div>
           </div>
           <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
             <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Portfolio</div>
