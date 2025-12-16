@@ -1,9 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import versionInfo from "@/lib/version.json";
 
 export function VersionIndicator() {
   const [isExpanded, setIsExpanded] = useState(false);
+  const displayVersion = versionInfo.commitHash !== "unknown" 
+    ? `v${versionInfo.version} (${versionInfo.commitHash})`
+    : `v${versionInfo.version}`;
 
   return (
     <div className="fixed bottom-4 left-4 z-50">
@@ -13,7 +17,7 @@ export function VersionIndicator() {
         onMouseLeave={() => setIsExpanded(false)}
       >
         <div className="px-3 py-1.5 flex items-center gap-2">
-          <span className="font-mono whitespace-nowrap">v0.5.3</span>
+          <span className="font-mono whitespace-nowrap">{displayVersion}</span>
           <div
             className={`flex items-center gap-2 overflow-hidden transition-all duration-500 ease-in-out ${
               isExpanded ? "max-w-[500px] opacity-100" : "max-w-0 opacity-0"

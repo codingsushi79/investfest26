@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "vercel-build": "prisma generate && next build",
+    "dev": "node scripts/get-version.js && next dev",
+    "build": "node scripts/get-version.js && next build",
+    "vercel-build": "node scripts/get-version.js && prisma generate && next build",
     "start": "next start",
     "lint": "eslint"
   },
