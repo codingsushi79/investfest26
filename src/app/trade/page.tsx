@@ -33,6 +33,7 @@ export default function TradePage() {
   const [success, setSuccess] = useState("");
   const [trading, setTrading] = useState(false);
   const [showTradeModal, setShowTradeModal] = useState(false);
+  const [tradingEnded, setTradingEnded] = useState(false);
   const router = useRouter();
 
   const fetchTradeData = useCallback(async () => {
@@ -77,12 +78,30 @@ export default function TradePage() {
 
   useEffect(() => {
     fetchTradeData();
+    // Check if trading has ended
+    const ended = localStorage.getItem("tradingEnded") === "true";
+    setTradingEnded(ended);
+
+    // Listen for storage changes (when event is ended/resumed in another tab)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "tradingEnded") {
+        setTradingEnded(e.newValue === "true");
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, [fetchTradeData]);
 
   const handleTrade = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setSuccess("");
+
+    // Check if trading has ended
+    if (tradingEnded || localStorage.getItem("tradingEnded") === "true") {
+      setError("Trading has ended. The event is now closed.");
+      return;
+    }
 
     // Require company selection for buying
     if (!selectedCompany) {
@@ -208,12 +227,25 @@ export default function TradePage() {
       <main className="mx-auto max-w-4xl px-4 py-8">
         {/* Action Buttons */}
         <div className="flex gap-4 mb-8">
-          <button
-            onClick={() => setShowTradeModal(true)}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
-          >
-            🏪 Trade Shares
-          </button>
+          {tradingEnded ? (
+            <div className="bg-red-50 border-2 border-red-200 rounded-xl px-8 py-4 text-center">
+              <h2 className="text-xl font-bold text-red-700 mb-2">Event Has Ended</h2>
+              <p className="text-red-600 mb-4">Trading is no longer available.</p>
+              <Link
+                href="/leaderboard"
+                className="inline-block bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all"
+              >
+                View Leaderboard →
+              </Link>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowTradeModal(true)}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+            >
+              🏪 Trade Shares
+            </button>
+          )}
         </div>
 
 

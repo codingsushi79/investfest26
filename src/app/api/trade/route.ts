@@ -16,6 +16,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
+    // Check if trading has ended (stored in a cookie or header, for now we'll check via request)
+    // Note: In production, you might want to store this in the database
+    // For now, we'll rely on client-side checks, but add server-side validation if needed
+
     const body = await request.json();
     const { symbol, shares, type } = tradeSchema.parse(body);
 

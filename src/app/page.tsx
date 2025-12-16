@@ -34,6 +34,7 @@ export default function Home() {
   const [operatorCompany, setOperatorCompany] = useState("");
   const [operatorPrice, setOperatorPrice] = useState("");
   const [updatingPrice, setUpdatingPrice] = useState(false);
+  const [tradingEnded, setTradingEnded] = useState(false);
 
   // Helper function to calculate next time period
   const getNextTimePeriod = (companyPrices: Array<{label: string, value: number}>) => {
@@ -69,6 +70,9 @@ export default function Home() {
 
   useEffect(() => {
     fetchData();
+    // Check if trading has ended
+    const ended = localStorage.getItem("tradingEnded") === "true";
+    setTradingEnded(ended);
   }, []);
 
   const fetchData = async () => {
@@ -184,6 +188,27 @@ export default function Home() {
             </div>
           </div>
           <div className="flex items-center gap-4 text-sm">
+            {user && user.username === (process.env.NEXT_PUBLIC_OP_USERNAME || "operator") && (
+              <button
+                onClick={() => {
+                  const newState = !tradingEnded;
+                  localStorage.setItem("tradingEnded", newState ? "true" : "false");
+                  setTradingEnded(newState);
+                  // Broadcast to other tabs
+                  window.dispatchEvent(new StorageEvent("storage", {
+                    key: "tradingEnded",
+                    newValue: newState ? "true" : "false",
+                  }));
+                }}
+                className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                  tradingEnded
+                    ? "bg-green-600 text-white hover:bg-green-700"
+                    : "bg-red-600 text-white hover:bg-red-700"
+                }`}
+              >
+                {tradingEnded ? "Resume Event" : "End Event"}
+              </button>
+            )}
             <Link
               href="/trade"
               className="rounded-lg bg-gradient-to-r from-green-600 to-green-700 px-4 py-2 font-semibold text-white hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-sm hover:shadow-md"
@@ -203,12 +228,20 @@ export default function Home() {
               All portfolios
             </Link>
             {user && user.username === (process.env.NEXT_PUBLIC_OP_USERNAME || "operator") && (
-              <Link
-                href="/company-values"
-                className="text-purple-700 hover:text-purple-800 transition-colors font-medium"
-              >
-                Company Values
-              </Link>
+              <>
+                <Link
+                  href="/company-values"
+                  className="text-purple-700 hover:text-purple-800 transition-colors font-medium"
+                >
+                  Company Values
+                </Link>
+                <Link
+                  href="/moderator/profiles"
+                  className="text-purple-700 hover:text-purple-800 transition-colors font-medium"
+                >
+                  View Profiles
+                </Link>
+              </>
             )}
             {user ? (
               <form action="/api/auth/signout" method="post">
@@ -231,10 +264,10 @@ export default function Home() {
       <main className="mx-auto max-w-6xl space-y-8 px-4 py-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-slate-900">InvestFest Dashboard</h1>
+            <h1 className="text-2xl font-bold text-slate-900">Virtual Stock Trading</h1>
             <p className="text-slate-600 leading-relaxed">
               Each player starts with $1,000 and can trade shares in 8 companies.
-              Prices are updated every class period.
+              Prices are updated every 15 minutes by the operator.
             </p>
             {user && (
               <div className="flex items-center gap-4">
@@ -243,10 +276,16 @@ export default function Home() {
                 </p>
                 <div className="flex gap-2">
                   <Link
+                    href="/profile"
+                    className="text-slate-700 hover:text-blue-600 transition-colors font-medium text-sm px-3 py-2 rounded-lg hover:bg-slate-50"
+                  >
+                    Profile
+                  </Link>
+                  <Link
                     href="/trade"
                     className="rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-sm hover:shadow-md"
                   >
-                    Trade Shares
+                    🏪 Trade Shares
                   </Link>
                   <Link
                     href="/leaderboard"
@@ -383,36 +422,6 @@ export default function Home() {
             )}
           </div>
 
-          {/* User Performance Summary */}
-          {user && (
-            <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-slate-900">Your Performance</h3>
-                  <p className="text-sm text-slate-600">Since starting with $1,000</p>
-                </div>
-                <div className="text-right">
-                  {(() => {
-                    const initialBalance = 1000;
-                    const currentTotalValue = dashboard.portfolioValue + dashboard.cash;
-                    const gainLoss = currentTotalValue - initialBalance;
-                    const percentage = ((gainLoss / initialBalance) * 100);
-
-                    return (
-                      <div>
-                        <div className={`text-2xl font-bold ${gainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {gainLoss >= 0 ? '+' : ''}${gainLoss.toFixed(2)}
-                        </div>
-                        <div className={`text-sm font-medium ${percentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {percentage >= 0 ? '+' : ''}{percentage.toFixed(2)}%
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              </div>
-            </div>
-          )}
 
           <StockCharts
             companies={dashboard.companies}

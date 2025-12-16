@@ -1,3 +1,7 @@
+"use client";
+
+import { useState, useEffect } from "react";
+
 type LeaderRow = {
   name: string | null;
   username?: string;
@@ -9,6 +13,37 @@ type LeaderRow = {
 };
 
 export function LeaderboardTable({ rows, isOperator = false }: { rows: LeaderRow[]; isOperator?: boolean }) {
+  const [tradingEnded, setTradingEnded] = useState(false);
+
+  useEffect(() => {
+    const ended = localStorage.getItem("tradingEnded") === "true";
+    setTradingEnded(ended);
+
+    // Listen for storage changes (when event is ended/resumed in another tab)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "tradingEnded") {
+        setTradingEnded(e.newValue === "true");
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+  
+  const getMedalEmoji = (rank: number) => {
+    if (rank === 0) return "🥇";
+    if (rank === 1) return "🥈";
+    if (rank === 2) return "🥉";
+    return null;
+  };
+
+  const getMedalBg = (rank: number) => {
+    if (!tradingEnded) return "";
+    if (rank === 0) return "bg-yellow-100";
+    if (rank === 1) return "bg-gray-200";
+    if (rank === 2) return "bg-amber-100";
+    return "";
+  };
+
   return (
     <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
       <table className="min-w-full divide-y divide-zinc-200 text-sm">
@@ -23,9 +58,14 @@ export function LeaderboardTable({ rows, isOperator = false }: { rows: LeaderRow
           </tr>
         </thead>
         <tbody className="divide-y divide-zinc-100">
-          {rows.map((row, idx) => (
-            <tr key={`${row.username}-${idx}`} className="hover:bg-zinc-50">
-              <td className="px-4 py-2 text-zinc-800">{idx + 1}</td>
+          {rows.map((row, idx) => {
+            const medal = getMedalEmoji(idx);
+            const bgClass = getMedalBg(idx);
+            return (
+            <tr key={`${row.username}-${idx}`} className={`hover:bg-zinc-50 ${bgClass}`}>
+              <td className="px-4 py-2 text-zinc-800 font-semibold">
+                {medal || idx + 1}
+              </td>
               <td className="px-4 py-2 font-medium text-zinc-900">
                 <div className="flex flex-col">
                   {row.name && row.name.trim() !== "" && (
@@ -58,7 +98,8 @@ export function LeaderboardTable({ rows, isOperator = false }: { rows: LeaderRow
                       .join(" · ")}
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>
