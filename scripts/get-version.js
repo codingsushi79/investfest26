@@ -39,19 +39,24 @@ try {
     }
   }
 
-  // Check if commit message contains "-next_ver-" and increment version if so
+  // Increment version based on commit message
+  // Default: increment patch (0.5.3 → 0.5.4)
+  // If "-next_ver-" in message: increment middle number and reset patch (0.5.3 → 0.6.0)
   let version = currentVersion;
-  if (commitMessage.includes('-next_ver-')) {
-    // Parse version (format: 0.x.y)
-    const versionParts = currentVersion.split('.');
-    if (versionParts.length === 3) {
-      const major = parseInt(versionParts[0]) || 0;
-      const minor = parseInt(versionParts[1]) || 0;
-      const patch = parseInt(versionParts[2]) || 0;
-      
-      // Increment middle number and reset last to 0
+  const versionParts = currentVersion.split('.');
+  if (versionParts.length === 3) {
+    const major = parseInt(versionParts[0]) || 0;
+    const minor = parseInt(versionParts[1]) || 0;
+    const patch = parseInt(versionParts[2]) || 0;
+    
+    if (commitMessage.includes('-next_ver-')) {
+      // Increment middle number and reset patch to 0
       version = `${major}.${minor + 1}.0`;
       console.log(`Version incremented from ${currentVersion} to ${version} (found -next_ver- in commit message)`);
+    } else {
+      // Default: increment patch number
+      version = `${major}.${minor}.${patch + 1}`;
+      console.log(`Version incremented from ${currentVersion} to ${version} (patch increment)`);
     }
   }
 
