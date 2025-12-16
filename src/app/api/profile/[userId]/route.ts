@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
     const currentUser = await getCurrentUser();
@@ -12,7 +12,7 @@ export async function GET(
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const userId = params.userId;
+    const { userId } = await params;
 
     // Get user data
     const user = await prisma.user.findUnique({
