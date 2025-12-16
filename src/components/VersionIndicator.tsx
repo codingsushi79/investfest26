@@ -16,24 +16,31 @@ export function VersionIndicator() {
         onMouseEnter={() => setIsExpanded(true)}
         onMouseLeave={() => setIsExpanded(false)}
       >
-        <div className="px-3 py-1.5 flex items-center gap-2">
-          <span className="font-mono whitespace-nowrap">{displayVersion}</span>
-          <div
-            className={`flex items-center gap-2 overflow-hidden transition-all duration-500 ease-in-out ${
-              isExpanded ? "max-w-[500px] opacity-100" : "max-w-0 opacity-0"
-            }`}
-          >
-            <span className="text-slate-600 whitespace-nowrap">© 2025 Sasha Baranov</span>
-            <span className="text-slate-400">•</span>
-            <a
-              href="https://github.com/codingsushi79/investfest26"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-700 underline whitespace-nowrap transition-colors"
+        <div className="px-3 py-1.5 flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <span className="font-mono whitespace-nowrap">{displayVersion}</span>
+            <div
+              className={`flex items-center gap-2 overflow-hidden transition-all duration-500 ease-in-out ${
+                isExpanded ? "max-w-[500px] opacity-100" : "max-w-0 opacity-0"
+              }`}
             >
-              GitHub
-            </a>
+              <span className="text-slate-600 whitespace-nowrap">© 2025 Sasha Baranov</span>
+              <span className="text-slate-400">•</span>
+              <a
+                href="https://github.com/codingsushi79/investfest26"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-700 underline whitespace-nowrap transition-colors"
+              >
+                GitHub
+              </a>
+            </div>
           </div>
+          {isExpanded && versionInfo.commitMessage && (
+            <div className="text-slate-600 text-xs italic max-w-[400px] truncate">
+              {versionInfo.commitMessage}
+            </div>
+          )}
         </div>
       </div>
     </div>

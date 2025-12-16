@@ -1,5 +1,6 @@
 {
   "version": "0.5.3",
-  "commitHash": "b1d6d57",
-  "buildTime": "2025-12-16T20:34:58.348Z"
+  "commitHash": "b335286",
+  "commitMessage": "Update package.json scripts to include version retrieval and modify VersionIndicator to display dyna",
+  "buildTime": "2025-12-16T20:49:08.120Z"
 }
