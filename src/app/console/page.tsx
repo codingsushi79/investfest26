@@ -140,6 +140,9 @@ export default function ConsolePage() {
           // Check if it's help output (starts with "Available commands")
           if (data.result.trim().startsWith("Available commands")) {
             addOutput(`<pre class="help-output">${escaped}</pre>`, data.success ? "success" : "info");
+          } else if (data.result.trim().startsWith("User:")) {
+            // User command output - format with better styling
+            addOutput(`<pre class="user-output">${escaped}</pre>`, data.success ? "success" : "info");
           } else {
             addOutput(`<pre>${escaped}</pre>`, data.success ? "success" : "info");
           }
@@ -291,6 +294,17 @@ export default function ConsolePage() {
           white-space: pre;
           font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
           line-height: 1.8;
+        }
+        .output pre.user-output {
+          background: transparent;
+          padding: 0;
+          margin: 0;
+          white-space: pre;
+          font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+          line-height: 1.8;
+        }
+        .output pre.user-output {
+          color: #4ec9b0;
         }
       `}</style>
     </div>

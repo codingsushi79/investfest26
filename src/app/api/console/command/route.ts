@@ -67,11 +67,21 @@ async function handleCommand(command: string) {
         }
         
         // Format user output with email prominently displayed
+        // First show key info as a formatted string, then full details as JSON
+        const emailDisplay = user.email || "(no email)";
+        const summary = `User: ${user.username}${user.name ? ` (${user.name})` : ''}
+Email: ${emailDisplay}
+Balance: $${user.balance.toFixed(2)}
+Holdings: ${user.holdings.length}
+Recent Transactions: ${user.transactions.length}
+
+Full Details:`;
+        
         const formattedResult = {
           id: user.id,
           username: user.username,
           name: user.name,
-          email: user.email || "(no email)",
+          email: user.email || null,
           balance: user.balance,
           createdAt: user.createdAt,
           holdings: user.holdings.map((h) => ({
@@ -88,7 +98,11 @@ async function handleCommand(command: string) {
           })),
         };
         
-        return { success: true, result: formattedResult };
+        // Return as string first, then JSON
+        return { 
+          success: true, 
+          result: `${summary}\n${JSON.stringify(formattedResult, null, 2)}`
+        };
 
       case "balance":
         if (args.length < 2) {
