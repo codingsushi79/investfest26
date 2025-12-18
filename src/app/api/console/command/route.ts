@@ -65,7 +65,30 @@ async function handleCommand(command: string) {
         if (!user) {
           return { success: false, result: `User not found: ${args[0]}` };
         }
-        return { success: true, result: user };
+        
+        // Format user output with email prominently displayed
+        const formattedResult = {
+          id: user.id,
+          username: user.username,
+          name: user.name,
+          email: user.email || "(no email)",
+          balance: user.balance,
+          createdAt: user.createdAt,
+          holdings: user.holdings.map((h) => ({
+            symbol: h.company.symbol,
+            name: h.company.name,
+            shares: h.shares,
+          })),
+          recentTransactions: user.transactions.map((t) => ({
+            type: t.type,
+            symbol: t.company.symbol,
+            shares: t.shares,
+            price: t.price,
+            createdAt: t.createdAt,
+          })),
+        };
+        
+        return { success: true, result: formattedResult };
 
       case "balance":
         if (args.length < 2) {

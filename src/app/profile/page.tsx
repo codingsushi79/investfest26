@@ -24,6 +24,7 @@ export default function ProfilePage() {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<{ id?: string; username?: string } | null>(null);
+  const [isOperator, setIsOperator] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -33,6 +34,10 @@ export default function ProfilePage() {
         if (userRes.ok) {
           const userData = await userRes.json();
           setCurrentUser(userData.user);
+          
+          // Check if user is operator
+          const opUsername = process.env.NEXT_PUBLIC_OP_USERNAME || "operator";
+          setIsOperator(userData.user?.username === opUsername);
           
           if (userData.user?.id) {
             // Fetch profile data
@@ -119,6 +124,9 @@ export default function ProfilePage() {
                 {profileData.user.name || profileData.user.username}
               </h1>
               <p className="text-slate-600">@{profileData.user.username}</p>
+              {isOperator && profileData.user.email && (
+                <p className="text-sm text-slate-500 mt-1">{profileData.user.email}</p>
+              )}
               <p className="text-sm text-slate-500 mt-2">
                 Joined {new Date(profileData.user.createdAt).toLocaleDateString()}
               </p>
