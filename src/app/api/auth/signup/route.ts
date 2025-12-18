@@ -5,7 +5,7 @@ import { signIn } from "@/lib/auth-utils";
 
 export async function POST(request: NextRequest) {
   try {
-    const { username, password, name } = await request.json();
+    const { username, password, name, email } = await request.json();
 
     if (!username || !password) {
       return NextResponse.json(
@@ -21,16 +21,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if username already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { username },
+    // Check if username or email already exists
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username },
+          ...(email ? [{ email }] : []),
+        ],
+      },
     });
 
     if (existingUser) {
-      return NextResponse.json(
-        { error: "Username already taken" },
-        { status: 409 }
-      );
+      if (existingUser.username === username) {
+        return NextResponse.json(
+          { error: "Username already taken" },
+          { status: 409 }
+        );
+      }
+      if (email && existingUser.email === email) {
+        return NextResponse.json(
+          { error: "Email already registered" },
+          { status: 409 }
+        );
+      }
     }
 
     // Hash password
@@ -42,6 +55,7 @@ export async function POST(request: NextRequest) {
         username,
         password: hashedPassword,
         name: name || null,
+        email: email || null,
         balance: 1000, // Starting balance
       },
     });
