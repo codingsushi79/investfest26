@@ -82,7 +82,10 @@ export default function PortfoliosPage() {
             Snapshot of every account&apos;s positions and cash.
           </p>
         </div>
-        <Link href="/" className="text-indigo-700 hover:underline ml-4">
+        <Link
+          href="/"
+          className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 transition-colors"
+        >
           ← Back
         </Link>
       </div>
@@ -151,9 +154,6 @@ export default function PortfoliosPage() {
                       )}
                       {p.username && (
                         <div className="text-xs text-zinc-500">@{p.username}</div>
-                      )}
-                      {isOperator && p.email && (
-                        <div className="text-xs text-zinc-400 mt-1">{p.email}</div>
                       )}
                     </div>
                     <p className="text-xs text-zinc-500 mt-1">Cash ${p.balance.toFixed(2)}</p>

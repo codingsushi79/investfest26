@@ -301,7 +301,7 @@ export default function ConsolePage() {
           <div className="flex items-center gap-4">
             <Link
               href="/"
-              className="text-[#4ec9b0] hover:text-[#6ed4c0] transition-colors"
+              className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 transition-colors"
             >
               ← Back
             </Link>
