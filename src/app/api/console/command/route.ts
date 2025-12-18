@@ -14,18 +14,20 @@ async function handleCommand(command: string) {
         return {
           success: true,
           result: `Available commands:
-  help                          - Show this help message
-  users                         - List all users
-  user <username>               - Get user details
-  balance <username> <amount>   - Set user balance
-  companies                     - List all companies
-  prices <symbol>               - Get price history for a company
-  update-price <symbol> <label> <value> - Add new price point
-  holdings <username>           - Get user holdings
-  transactions <username>       - Get user transactions
-  stats                         - System statistics
-  query <sql>                   - Execute raw SQL query (use with caution)
-  clear                         - Clear console (client-side)`,
+
+  help                          Show this help message
+  users                         List all users
+  user <username>               Get user details
+  balance <username> <amount>    Set user balance
+  companies                     List all companies
+  prices <symbol>               Get price history for a company
+  update-price <symbol> <label> <value>
+                                Add new price point
+  holdings <username>           Get user holdings
+  transactions <username>       Get user transactions
+  stats                         System statistics
+  query <sql>                   Execute raw SQL query (use with caution)
+  clear                         Clear console (client-side)`,
         };
 
       case "users":

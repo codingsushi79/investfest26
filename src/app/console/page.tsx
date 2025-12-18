@@ -131,11 +131,21 @@ export default function ConsolePage() {
       if (data.error) {
         addOutput("Error: " + data.error, "error");
       } else {
-        const output =
-          typeof data.result === "string"
-            ? data.result
-            : "<pre>" + JSON.stringify(data.result, null, 2) + "</pre>";
-        addOutput(output, data.success ? "success" : "info");
+        if (typeof data.result === "string") {
+          // For help and other text output, preserve line breaks and escape HTML
+          const escaped = data.result
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+          // Check if it's help output (starts with "Available commands")
+          if (data.result.trim().startsWith("Available commands")) {
+            addOutput(`<pre class="help-output">${escaped}</pre>`, data.success ? "success" : "info");
+          } else {
+            addOutput(`<pre>${escaped}</pre>`, data.success ? "success" : "info");
+          }
+        } else {
+          addOutput("<pre>" + JSON.stringify(data.result, null, 2) + "</pre>", data.success ? "success" : "info");
+        }
       }
     } catch (err: any) {
       addOutput("Error: " + err.message, "error");
@@ -269,6 +279,18 @@ export default function ConsolePage() {
           border-radius: 4px;
           overflow-x: auto;
           margin-top: 5px;
+          white-space: pre-wrap;
+          word-wrap: break-word;
+          font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+          line-height: 1.6;
+        }
+        .output pre.help-output {
+          background: transparent;
+          padding: 0;
+          margin: 0;
+          white-space: pre;
+          font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+          line-height: 1.8;
         }
       `}</style>
     </div>
