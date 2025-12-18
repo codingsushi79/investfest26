@@ -230,6 +230,12 @@ export default function Home() {
             {user && user.username === (process.env.NEXT_PUBLIC_OP_USERNAME || "operator") && (
               <>
                 <Link
+                  href="/console"
+                  className="text-slate-700 hover:text-blue-600 transition-colors font-medium"
+                >
+                  Console
+                </Link>
+                <Link
                   href="/company-values"
                   className="text-purple-700 hover:text-purple-800 transition-colors font-medium"
                 >
