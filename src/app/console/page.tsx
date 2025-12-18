@@ -15,6 +15,9 @@ export default function ConsolePage() {
   const historyIndex = useRef(-1);
   const eventSourceRef = useRef<EventSource | null>(null);
   const [status, setStatus] = useState("Connecting...");
+  const [autocompleteSuggestions, setAutocompleteSuggestions] = useState<string[]>([]);
+  const [autocompleteIndex, setAutocompleteIndex] = useState(-1);
+  const autocompleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Check if user is operator
@@ -161,9 +164,98 @@ export default function ConsolePage() {
     }
   };
 
+  const fetchAutocomplete = async (input: string) => {
+    if (!input.trim()) {
+      setAutocompleteSuggestions([]);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/console/autocomplete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input }),
+      });
+      const data = await res.json();
+      if (data.suggestions) {
+        setAutocompleteSuggestions(data.suggestions);
+        setAutocompleteIndex(-1);
+      }
+    } catch (err) {
+      // Silently fail
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    
+    // Clear existing timeout
+    if (autocompleteTimeoutRef.current) {
+      clearTimeout(autocompleteTimeoutRef.current);
+    }
+
+    // Fetch autocomplete after a short delay
+    autocompleteTimeoutRef.current = setTimeout(() => {
+      fetchAutocomplete(value);
+    }, 200);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Handle autocomplete navigation
+    if (autocompleteSuggestions.length > 0) {
+      if (e.key === "Tab") {
+        e.preventDefault();
+        if (autocompleteIndex >= 0 && autocompleteIndex < autocompleteSuggestions.length) {
+          const suggestion = autocompleteSuggestions[autocompleteIndex];
+          if (inputEl.current) {
+            const parts = inputEl.current.value.trim().split(/\s+/);
+            if (parts.length > 1) {
+              parts[parts.length - 1] = suggestion;
+              inputEl.current.value = parts.join(" ") + " ";
+            } else {
+              inputEl.current.value = suggestion + " ";
+            }
+            setAutocompleteSuggestions([]);
+            setAutocompleteIndex(-1);
+          }
+        } else if (autocompleteSuggestions.length > 0) {
+          // Use first suggestion
+          const suggestion = autocompleteSuggestions[0];
+          if (inputEl.current) {
+            const parts = inputEl.current.value.trim().split(/\s+/);
+            if (parts.length > 1) {
+              parts[parts.length - 1] = suggestion;
+              inputEl.current.value = parts.join(" ") + " ";
+            } else {
+              inputEl.current.value = suggestion + " ";
+            }
+            setAutocompleteSuggestions([]);
+            setAutocompleteIndex(-1);
+          }
+        }
+        return;
+      } else if (e.key === "ArrowRight" && autocompleteIndex >= 0) {
+        e.preventDefault();
+        const suggestion = autocompleteSuggestions[autocompleteIndex];
+        if (inputEl.current) {
+          const parts = inputEl.current.value.trim().split(/\s+/);
+          if (parts.length > 1) {
+            parts[parts.length - 1] = suggestion;
+            inputEl.current.value = parts.join(" ") + " ";
+          } else {
+            inputEl.current.value = suggestion + " ";
+          }
+          setAutocompleteSuggestions([]);
+          setAutocompleteIndex(-1);
+        }
+        return;
+      }
+    }
+
+    // Handle command history
     if (e.key === "ArrowUp") {
       e.preventDefault();
+      setAutocompleteSuggestions([]); // Clear autocomplete when using history
       if (historyIndex.current > 0) {
         historyIndex.current--;
         if (inputEl.current) {
@@ -172,6 +264,7 @@ export default function ConsolePage() {
       }
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
+      setAutocompleteSuggestions([]); // Clear autocomplete when using history
       if (historyIndex.current < commandHistory.current.length - 1) {
         historyIndex.current++;
         if (inputEl.current) {
@@ -183,6 +276,9 @@ export default function ConsolePage() {
           inputEl.current.value = "";
         }
       }
+    } else if (e.key === "Escape") {
+      setAutocompleteSuggestions([]);
+      setAutocompleteIndex(-1);
     }
   };
 
@@ -221,16 +317,48 @@ export default function ConsolePage() {
           className="console flex-1 bg-[#252526] border border-[#3e3e3e] rounded p-4 mb-4 overflow-y-auto text-sm leading-relaxed"
         />
 
-        <div className="input-container flex gap-2.5">
-          <input
-            ref={inputEl}
-            type="text"
-            placeholder="Enter command (type 'help' for commands)"
-            autoComplete="off"
-            onKeyPress={handleKeyPress}
-            onKeyDown={handleKeyDown}
-            className="flex-1 bg-[#252526] border border-[#3e3e3e] text-[#d4d4d4] p-2.5 rounded font-mono text-sm focus:outline-none focus:border-[#4ec9b0]"
-          />
+        <div className="input-container flex gap-2.5 relative">
+          <div className="flex-1 relative">
+            <input
+              ref={inputEl}
+              type="text"
+              placeholder="Enter command (type 'help' for commands)"
+              autoComplete="off"
+              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyDown}
+              onChange={handleInputChange}
+              className="w-full bg-[#252526] border border-[#3e3e3e] text-[#d4d4d4] p-2.5 rounded font-mono text-sm focus:outline-none focus:border-[#4ec9b0]"
+            />
+            {autocompleteSuggestions.length > 0 && (
+              <div className="absolute bottom-full left-0 right-0 mb-1 bg-[#252526] border border-[#3e3e3e] rounded max-h-48 overflow-y-auto z-10">
+                {autocompleteSuggestions.map((suggestion, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => {
+                      if (inputEl.current) {
+                        const parts = inputEl.current.value.trim().split(/\s+/);
+                        if (parts.length > 1) {
+                          parts[parts.length - 1] = suggestion;
+                          inputEl.current.value = parts.join(" ") + " ";
+                        } else {
+                          inputEl.current.value = suggestion + " ";
+                        }
+                        setAutocompleteSuggestions([]);
+                        setAutocompleteIndex(-1);
+                        inputEl.current.focus();
+                      }
+                    }}
+                    className={`px-3 py-1.5 text-sm cursor-pointer hover:bg-[#2d2d30] ${
+                      idx === autocompleteIndex ? "bg-[#2d2d30]" : ""
+                    }`}
+                    onMouseEnter={() => setAutocompleteIndex(idx)}
+                  >
+                    {suggestion}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <button
             onClick={executeCommand}
             className="bg-[#0e639c] text-white border-none px-5 py-2.5 rounded cursor-pointer font-mono text-sm hover:bg-[#1177bb]"

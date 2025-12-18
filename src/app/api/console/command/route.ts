@@ -51,12 +51,36 @@ async function handleCommand(command: string) {
           where: {
             OR: [{ username: args[0] }, { email: args[0] }],
           },
-          include: {
+          select: {
+            id: true,
+            username: true,
+            email: true,
+            name: true,
+            balance: true,
+            createdAt: true,
             holdings: {
-              include: { company: true },
+              select: {
+                shares: true,
+                company: {
+                  select: {
+                    symbol: true,
+                    name: true,
+                  },
+                },
+              },
             },
             transactions: {
-              include: { company: true },
+              select: {
+                type: true,
+                shares: true,
+                price: true,
+                createdAt: true,
+                company: {
+                  select: {
+                    symbol: true,
+                  },
+                },
+              },
               orderBy: { createdAt: "desc" },
               take: 10,
             },
