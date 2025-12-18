@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node scripts/get-version.js && next dev",
+    "dev": "node scripts/get-version.js && concurrently \"node scripts/console-server.js\" \"next dev\"",
     "console": "node scripts/console-server.js",
     "build": "node scripts/get-version.js && next build",
     "vercel-build": "node scripts/get-version.js && prisma generate && next build",
@@ -28,6 +28,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^9.2.1",
     "dotenv-cli": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.0.8",

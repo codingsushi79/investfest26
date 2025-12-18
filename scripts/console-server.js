@@ -3,10 +3,152 @@ const { PrismaClient } = require('@prisma/client');
 const path = require('path');
 const fs = require('fs');
 
-const prisma = new PrismaClient();
+// Load environment variables from .env.local
+const envPath = path.join(process.cwd(), '.env.local');
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf-8');
+  envContent.split('\n').forEach(line => {
+    const trimmed = line.trim();
+    if (trimmed && !trimmed.startsWith('#')) {
+      const [key, ...valueParts] = trimmed.split('=');
+      if (key && valueParts.length > 0) {
+        const value = valueParts.join('=').replace(/^["']|["']$/g, '');
+        if (!process.env[key]) {
+          process.env[key] = value;
+        }
+      }
+    }
+  });
+}
+
+const prisma = new PrismaClient({
+  log: [
+    {
+      emit: 'event',
+      level: 'query',
+    },
+  ],
+});
+
+// Store WebSocket clients for real-time logging
+const wsClients = new Set();
+
+// Prisma query logging
+prisma.$on('query', (e) => {
+  // Only log mutations (INSERT, UPDATE, DELETE)
+  if (e.query && (e.query.includes('INSERT') || e.query.includes('UPDATE') || e.query.includes('DELETE'))) {
+    broadcastLog({
+      type: 'query',
+      query: e.query,
+      params: e.params,
+      duration: e.duration,
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+// Track last transaction ID for polling new transactions
+let lastTransactionId = null;
+
+// Initialize last transaction ID
+async function initLastTransactionId() {
+  try {
+    const lastTx = await prisma.transaction.findFirst({
+      orderBy: { createdAt: 'desc' },
+      select: { id: true },
+    });
+    lastTransactionId = lastTx?.id || null;
+  } catch (error) {
+    console.error('Error initializing transaction tracking:', error);
+  }
+}
+
+// Poll for new transactions and price updates
+async function pollForUpdates() {
+  try {
+    // Check for new transactions
+    if (lastTransactionId) {
+      const newTransactions = await prisma.transaction.findMany({
+        where: {
+          id: { gt: lastTransactionId },
+        },
+        include: {
+          user: { select: { username: true } },
+          company: { select: { symbol: true, name: true } },
+        },
+        orderBy: { createdAt: 'asc' },
+      });
+
+      for (const tx of newTransactions) {
+        broadcastLog({
+          type: 'transaction',
+          action: tx.type,
+          username: tx.user.username,
+          symbol: tx.company.symbol,
+          companyName: tx.company.name,
+          shares: tx.shares,
+          price: tx.price,
+          total: tx.shares * tx.price,
+          timestamp: tx.createdAt.toISOString(),
+        });
+        lastTransactionId = tx.id;
+      }
+    } else {
+      // First run - just update the ID
+      const lastTx = await prisma.transaction.findFirst({
+        orderBy: { createdAt: 'desc' },
+        select: { id: true },
+      });
+      lastTransactionId = lastTx?.id || null;
+    }
+
+    // Check for new price points (in last 5 seconds)
+    const fiveSecondsAgo = new Date(Date.now() - 5000);
+    const newPrices = await prisma.pricePoint.findMany({
+      where: {
+        createdAt: { gte: fiveSecondsAgo },
+      },
+      include: {
+        company: { select: { symbol: true, name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    for (const price of newPrices) {
+      broadcastLog({
+        type: 'price_update',
+        symbol: price.company.symbol,
+        companyName: price.company.name,
+        label: price.label,
+        value: price.value,
+        timestamp: price.createdAt.toISOString(),
+      });
+    }
+  } catch (error) {
+    console.error('Error polling for updates:', error);
+  }
+}
+
+// Start polling every 2 seconds
+setInterval(pollForUpdates, 2000);
+initLastTransactionId();
+
+// Broadcast log to all WebSocket clients
+function broadcastLog(data) {
+  const message = JSON.stringify(data);
+  wsClients.forEach(client => {
+    try {
+      client.write(`data: ${message}\n\n`);
+    } catch (error) {
+      // Client disconnected, remove it
+      wsClients.delete(client);
+    }
+  });
+}
+
 const PORT = 3416;
 
-// HTML interface
+// HTML interface with Server-Sent Events for real-time logging
 const htmlInterface = `
 <!DOCTYPE html>
 <html lang="en">
@@ -29,10 +171,20 @@ const htmlInterface = `
             margin-bottom: 20px;
             padding-bottom: 10px;
             border-bottom: 1px solid #3e3e3e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .header h1 {
             color: #4ec9b0;
             font-size: 24px;
+        }
+        .status {
+            font-size: 12px;
+            color: #858585;
+        }
+        .status.connected {
+            color: #4ec9b0;
         }
         .console {
             flex: 1;
@@ -59,6 +211,21 @@ const htmlInterface = `
         }
         .output.info {
             color: #9cdcfe;
+        }
+        .output.log {
+            color: #ce9178;
+            font-size: 12px;
+            padding-left: 10px;
+            border-left: 2px solid #3e3e3e;
+        }
+        .output.log.transaction {
+            border-left-color: #4ec9b0;
+        }
+        .output.log.price_update {
+            border-left-color: #dcdcaa;
+        }
+        .output.log.query {
+            border-left-color: #569cd6;
         }
         .output pre {
             background: #1e1e1e;
@@ -111,6 +278,7 @@ const htmlInterface = `
 <body>
     <div class="header">
         <h1>🚀 InvestFest Console</h1>
+        <div class="status" id="status">Connecting...</div>
     </div>
     <div class="console" id="console"></div>
     <div class="input-container">
@@ -118,13 +286,15 @@ const htmlInterface = `
         <button onclick="executeCommand()">Execute</button>
     </div>
     <div class="help">
-        <strong>Tip:</strong> Use arrow keys to navigate command history. Commands are case-insensitive.
+        <strong>Tip:</strong> Use arrow keys to navigate command history. Commands are case-insensitive. Real-time logs appear automatically.
     </div>
     <script>
         const consoleEl = document.getElementById('console');
         const inputEl = document.getElementById('commandInput');
+        const statusEl = document.getElementById('status');
         let commandHistory = [];
         let historyIndex = -1;
+        let eventSource = null;
 
         function addOutput(text, className = '') {
             const div = document.createElement('div');
@@ -136,6 +306,43 @@ const htmlInterface = `
 
         function addPrompt(command) {
             addOutput('&gt; ' + command, 'prompt');
+        }
+
+        function formatLog(data) {
+            const time = new Date(data.timestamp).toLocaleTimeString();
+            switch (data.type) {
+                case 'transaction':
+                    const action = data.action === 'BUY' ? '🟢 BUY' : '🔴 SELL';
+                    return \`[\${time}] \${action} - \${data.username} | \${data.symbol} (\${data.shares} shares @ $\${data.price.toFixed(2)}) = $\${data.total.toFixed(2)}\`;
+                case 'price_update':
+                    return \`[\${time}] 💰 PRICE UPDATE - \${data.symbol} (\${data.label}): $\${data.value.toFixed(2)}\`;
+                case 'query':
+                    const queryType = data.query.match(/(INSERT|UPDATE|DELETE)/)?.[0] || 'QUERY';
+                    return \`[\${time}] 🔧 DB \${queryType} (\${data.duration}ms)\`;
+                default:
+                    return \`[\${time}] \${JSON.stringify(data)}\`;
+            }
+        }
+
+        function connectEventSource() {
+            eventSource = new EventSource('/api/events');
+            eventSource.onopen = () => {
+                statusEl.textContent = '● Connected';
+                statusEl.className = 'status connected';
+            };
+            eventSource.onerror = () => {
+                statusEl.textContent = '○ Disconnected';
+                statusEl.className = 'status';
+                setTimeout(connectEventSource, 3000);
+            };
+            eventSource.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    addOutput(formatLog(data), 'log ' + data.type);
+                } catch (e) {
+                    console.error('Error parsing log:', e);
+                }
+            };
         }
 
         function executeCommand() {
@@ -195,7 +402,9 @@ const htmlInterface = `
 
         // Initial welcome message
         addOutput('Welcome to InvestFest Console! Type "help" for available commands.', 'info');
+        addOutput('Real-time transaction and price update logging is active.', 'info');
         inputEl.focus();
+        connectEventSource();
     </script>
 </body>
 </html>
@@ -467,6 +676,29 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // Server-Sent Events endpoint for real-time logging
+  if (req.url === '/api/events' && req.method === 'GET') {
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+    });
+
+    // Send initial connection message
+    res.write(': connected\n\n');
+
+    // Add client to set
+    wsClients.add(res);
+
+    // Remove client on disconnect
+    req.on('close', () => {
+      wsClients.delete(res);
+    });
+
+    return;
+  }
+
   if (req.url === '/api/command' && req.method === 'POST') {
     let body = '';
     req.on('data', chunk => {
@@ -509,4 +741,3 @@ process.on('SIGTERM', async () => {
     process.exit(0);
   });
 });
-
