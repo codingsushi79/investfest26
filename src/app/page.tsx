@@ -5,6 +5,8 @@ import { useState, useEffect } from "react";
 import { StockCharts } from "@/components/StockCharts";
 import { PortfolioTable } from "@/components/PortfolioTable";
 import { UsernameForm } from "@/components/UsernameForm";
+import { TiltButton } from "@/components/TiltButton";
+import { TiltLink } from "@/components/TiltLink";
 
 interface User {
   id: string;
@@ -189,7 +191,7 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-4 text-sm">
             {user && user.username === (process.env.NEXT_PUBLIC_OP_USERNAME || "operator") && (
-              <button
+              <TiltButton
                 onClick={() => {
                   const newState = !tradingEnded;
                   localStorage.setItem("tradingEnded", newState ? "true" : "false");
@@ -207,14 +209,14 @@ export default function Home() {
                 }`}
               >
                 {tradingEnded ? "Resume Event" : "End Event"}
-              </button>
+              </TiltButton>
             )}
-            <Link
+            <TiltLink
               href="/trade"
               className="rounded-lg bg-gradient-to-r from-green-600 to-green-700 px-4 py-2 font-semibold text-white hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-sm hover:shadow-md"
             >
-              Trade Shares
-            </Link>
+              🏪 Trade Shares
+            </TiltLink>
             <Link
               href="/leaderboard"
               className="text-slate-700 hover:text-blue-600 transition-colors font-medium"
@@ -245,17 +247,17 @@ export default function Home() {
             )}
             {user ? (
               <form action="/api/auth/signout" method="post">
-                <button className="rounded-lg bg-slate-900 px-4 py-2 text-white hover:bg-slate-800 transition-all duration-200 shadow-sm hover:shadow-md">
+                <TiltButton className="rounded-lg bg-slate-900 px-4 py-2 text-white hover:bg-slate-800 transition-all duration-200 shadow-sm hover:shadow-md">
                   Sign out
-                </button>
+                </TiltButton>
               </form>
             ) : (
-              <Link
+              <TiltLink
                 href="/signin"
                 className="rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 font-semibold text-white hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-sm hover:shadow-md"
               >
-                Sign in
-              </Link>
+                🔐 Sign in
+              </TiltLink>
             )}
           </div>
         </div>
@@ -281,12 +283,12 @@ export default function Home() {
                   >
                     Profile
                   </Link>
-                  <Link
+                  <TiltLink
                     href="/trade"
                     className="rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-sm hover:shadow-md"
                   >
                     🏪 Trade Shares
-                  </Link>
+                  </TiltLink>
                   <Link
                     href="/leaderboard"
                     className="text-slate-700 hover:text-blue-600 transition-colors font-medium text-sm px-3 py-2 rounded-lg hover:bg-slate-50"
@@ -410,7 +412,7 @@ export default function Home() {
               </div>
             </div>
             {user && user.username === (process.env.NEXT_PUBLIC_OP_USERNAME || "operator") && (
-              <button
+              <TiltButton
                 onClick={() => setShowOperatorModal(true)}
                 className="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 hover:scale-110 transition-all duration-200 animate-pulse"
                 title="Add price point"
@@ -418,7 +420,7 @@ export default function Home() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-              </button>
+              </TiltButton>
             )}
           </div>
 
@@ -441,13 +443,13 @@ export default function Home() {
                 <p className="text-sm text-slate-600 animate-in fade-in-0 duration-300" style={{ animationDelay: '300ms' }}>Current stock positions and values</p>
               </div>
             </div>
-            <Link
+            <TiltLink
               href="/leaderboard"
               className="text-blue-600 hover:text-blue-700 font-medium text-sm transition-all duration-200 hover:scale-105 animate-in fade-in-0 slide-in-from-right-4 duration-500"
               style={{ animationDelay: '400ms' }}
             >
               🏆 View leaderboard →
-            </Link>
+            </TiltLink>
           </div>
           <PortfolioTable rows={dashboard.holdings} />
         </section>
@@ -460,14 +462,14 @@ export default function Home() {
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-slate-900">Add Price Point</h2>
-                <button
+                <TiltButton
                   onClick={() => setShowOperatorModal(false)}
-                  className="text-slate-400 hover:text-slate-600 transition-colors"
+                  className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
-                </button>
+                </TiltButton>
               </div>
 
               <form onSubmit={handleOperatorPriceUpdate} className="space-y-6">
@@ -526,14 +528,14 @@ export default function Home() {
                 )}
 
                 <div className="flex gap-3 pt-4">
-                  <button
+                  <TiltButton
                     type="button"
                     onClick={() => setShowOperatorModal(false)}
                     className="flex-1 bg-slate-100 text-slate-700 px-4 py-3 rounded-lg font-medium hover:bg-slate-200 transition-colors"
                   >
                     Cancel
-                  </button>
-                  <button
+                  </TiltButton>
+                  <TiltButton
                     type="submit"
                     disabled={updatingPrice || !operatorCompany || !operatorPrice}
                     className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
@@ -549,7 +551,7 @@ export default function Home() {
                     ) : (
                       "Add Price Point"
                     )}
-                  </button>
+                  </TiltButton>
                 </div>
               </form>
             </div>

@@ -1,6 +1,6 @@
 {
-  "version": "0.5.7",
-  "commitHash": "d4c9bef",
-  "commitMessage": "Add isPaused and isBanned flags to User model and update related functions for user account manageme",
-  "buildTime": "2026-01-05T13:05:07.473Z"
+  "version": "0.5.10",
+  "commitHash": "93124c5",
+  "commitMessage": "Remove console server and related API endpoints, refactor Home and Console components for improved u",
+  "buildTime": "2026-01-05T14:08:50.578Z"
 }

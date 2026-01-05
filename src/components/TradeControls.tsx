@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState, useTransition } from "react";
 import { buyShares, sellShares } from "@/app/actions";
+import { TiltButton } from "@/components/TiltButton";
 
 type CompanyOption = { symbol: string; name: string; price: number };
 type Holding = { symbol: string; shares: number };
@@ -62,26 +63,26 @@ export function TradeControls({
 
   return (
     <div className="flex items-center gap-3 animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
-      <button
+      <TiltButton
         onClick={() => {
           setMode("BUY");
           reset();
         }}
-        className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-700 hover:scale-105 transition-all duration-200 hover:shadow-lg animate-in fade-in-0 slide-in-from-left-4 duration-500"
+        className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-700 transition-all duration-200 hover:shadow-lg animate-in fade-in-0 slide-in-from-left-4 duration-500"
         style={{ animationDelay: '100ms' }}
       >
         📈 Buy shares
-      </button>
-      <button
+      </TiltButton>
+      <TiltButton
         onClick={() => {
           setMode("SELL");
           reset();
         }}
-        className="rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-rose-700 hover:scale-105 transition-all duration-200 hover:shadow-lg animate-in fade-in-0 slide-in-from-right-4 duration-500"
+        className="rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-rose-700 transition-all duration-200 hover:shadow-lg animate-in fade-in-0 slide-in-from-right-4 duration-500"
         style={{ animationDelay: '200ms' }}
       >
         📉 Sell shares
-      </button>
+      </TiltButton>
 
       {mode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in-0 duration-300">
@@ -161,18 +162,18 @@ export function TradeControls({
               )}
 
               <div className="flex items-center justify-end gap-3 animate-in fade-in-0 duration-400" style={{ animationDelay: '800ms' }}>
-                <button
+                <TiltButton
                   type="button"
                   onClick={close}
-                  className="rounded-md px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-100 hover:scale-105 transition-all duration-200 animate-in fade-in-0 slide-in-from-left-2 duration-300"
+                  className="rounded-md px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-100 transition-all duration-200 animate-in fade-in-0 slide-in-from-left-2 duration-300"
                   style={{ animationDelay: '850ms' }}
                 >
                   Cancel
-                </button>
-                <button
+                </TiltButton>
+                <TiltButton
                   type="submit"
                   disabled={isPending}
-                  className={`rounded-md px-4 py-2 text-sm font-semibold text-white shadow hover:scale-105 transition-all duration-200 animate-in fade-in-0 slide-in-from-right-2 duration-300 ${
+                  className={`rounded-md px-4 py-2 text-sm font-semibold text-white shadow transition-all duration-200 animate-in fade-in-0 slide-in-from-right-2 duration-300 ${
                     mode === "BUY"
                       ? "bg-emerald-600 hover:bg-emerald-700 hover:shadow-emerald-200"
                       : "bg-rose-600 hover:bg-rose-700 hover:shadow-rose-200"
@@ -188,7 +189,7 @@ export function TradeControls({
                   <span className={isPending ? 'animate-pulse' : ''}>
                     {isPending ? "Working..." : `${mode === "BUY" ? "💰 Buy" : "💸 Sell"} ${shares} shares`}
                   </span>
-                </button>
+                </TiltButton>
               </div>
             </form>
           </div>

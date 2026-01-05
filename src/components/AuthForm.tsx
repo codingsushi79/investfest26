@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { TiltButton } from "@/components/TiltButton";
 
 export function AuthForm() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -149,10 +150,10 @@ export function AuthForm() {
             </div>
           )}
 
-          <button
+          <TiltButton
             type="submit"
             disabled={loading}
-            className="flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:from-blue-700 hover:to-indigo-700 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:shadow-xl animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+            className="flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:shadow-xl animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
             style={{ animationDelay: isSignUp ? '1200ms' : '900ms' }}
           >
             {loading && (
@@ -164,7 +165,7 @@ export function AuthForm() {
             <span className={loading ? 'animate-pulse' : ''}>
               {loading ? "Please wait..." : (isSignUp ? "Create Account" : "Sign In")}
             </span>
-          </button>
+          </TiltButton>
         </form>
 
         <div className="text-center pt-4 border-t border-slate-200 animate-in fade-in-0 duration-500" style={{ animationDelay: isSignUp ? '1300ms' : '1000ms' }}>

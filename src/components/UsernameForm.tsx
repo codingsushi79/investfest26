@@ -2,6 +2,7 @@
 
 import { FormEvent, useState, useTransition } from "react";
 import { updateUsername } from "@/app/actions";
+import { TiltButton } from "@/components/TiltButton";
 
 export function UsernameForm({ initial }: { initial: string | null }) {
   const [username, setUsername] = useState(initial ?? "");
@@ -32,10 +33,10 @@ export function UsernameForm({ initial }: { initial: string | null }) {
           placeholder="choose a handle"
           style={{ animationDelay: '300ms' }}
         />
-        <button
+        <TiltButton
           type="submit"
           disabled={isPending}
-          className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700 hover:scale-105 disabled:opacity-60 transition-all duration-200 animate-in fade-in-0 slide-in-from-right-2 duration-400"
+          className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60 transition-all duration-200 animate-in fade-in-0 slide-in-from-right-2 duration-400"
           style={{ animationDelay: '400ms' }}
         >
           {isPending && (
@@ -47,7 +48,7 @@ export function UsernameForm({ initial }: { initial: string | null }) {
           <span className={isPending ? 'animate-pulse' : ''}>
             {isPending ? "Saving..." : "💾 Save"}
           </span>
-        </button>
+        </TiltButton>
       </div>
       {message && (
         <p className={`text-xs font-medium animate-in fade-in-0 slide-in-from-top-1 duration-300 ${message === "Saved" ? "text-emerald-700" : "text-rose-700"}`}>
