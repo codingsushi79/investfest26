@@ -13,6 +13,8 @@ export interface User {
   email: string | null;
   name: string | null;
   balance: number;
+  isPaused: boolean;
+  isBanned: boolean;
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -65,6 +67,8 @@ export async function createUser(
     email: user.email,
     name: user.name,
     balance: user.balance,
+    isPaused: user.isPaused,
+    isBanned: user.isBanned,
   };
 }
 
@@ -96,6 +100,8 @@ export async function authenticateUser(
     email: user.email,
     name: user.name,
     balance: user.balance,
+    isPaused: user.isPaused,
+    isBanned: user.isBanned,
   };
 }
 
@@ -126,6 +132,8 @@ export async function getCurrentUser(): Promise<User | null> {
     email: user.email,
     name: user.name,
     balance: user.balance,
+    isPaused: user.isPaused,
+    isBanned: user.isBanned,
   };
 }
 

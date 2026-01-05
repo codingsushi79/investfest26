@@ -48,6 +48,8 @@ export async function POST(request: NextRequest) {
         username: user.username,
         email: user.email,
         balance: user.balance,
+        isPaused: user.isPaused,
+        isBanned: user.isBanned,
       },
     });
   } catch (error) {

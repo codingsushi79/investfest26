@@ -9,6 +9,8 @@ export interface User {
   name: string | null;
   email: string | null;
   balance: number;
+  isPaused: boolean;
+  isBanned: boolean;
 }
 
 export interface Session {
@@ -95,6 +97,8 @@ export async function getCurrentUser(): Promise<User | null> {
       name: session.user.name,
       email: session.user.email,
       balance: session.user.balance,
+      isPaused: session.user.isPaused,
+      isBanned: session.user.isBanned,
     };
   } catch (error) {
     console.error("Error getting current user:", error);
