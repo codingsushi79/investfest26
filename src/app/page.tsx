@@ -230,12 +230,6 @@ export default function Home() {
             {user && user.username === (process.env.NEXT_PUBLIC_OP_USERNAME || "operator") && (
               <>
                 <Link
-                  href="/console"
-                  className="text-slate-700 hover:text-blue-600 transition-colors font-medium"
-                >
-                  Console
-                </Link>
-                <Link
                   href="/company-values"
                   className="text-purple-700 hover:text-purple-800 transition-colors font-medium"
                 >
@@ -434,24 +428,25 @@ export default function Home() {
           />
         </section>
 
-        <section className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+        <section className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-lg transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-8 duration-700">
+          <div className="flex items-center justify-between mb-6 animate-in fade-in-0 slide-in-from-top-4 duration-500">
+            <div className="flex items-center gap-3 animate-in fade-in-0 slide-in-from-left-4 duration-500" style={{ animationDelay: '100ms' }}>
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center animate-pulse">
                 <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-slate-900">Your Holdings</h2>
-                <p className="text-sm text-slate-600">Current stock positions and values</p>
+                <h2 className="text-xl font-semibold text-slate-900 animate-in fade-in-0 duration-300" style={{ animationDelay: '200ms' }}>📊 Your Holdings</h2>
+                <p className="text-sm text-slate-600 animate-in fade-in-0 duration-300" style={{ animationDelay: '300ms' }}>Current stock positions and values</p>
               </div>
             </div>
             <Link
               href="/leaderboard"
-              className="text-blue-600 hover:text-blue-700 font-medium text-sm transition-colors"
+              className="text-blue-600 hover:text-blue-700 font-medium text-sm transition-all duration-200 hover:scale-105 animate-in fade-in-0 slide-in-from-right-4 duration-500"
+              style={{ animationDelay: '400ms' }}
             >
-              View leaderboard →
+              🏆 View leaderboard →
             </Link>
           </div>
           <PortfolioTable rows={dashboard.holdings} />

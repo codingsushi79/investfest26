@@ -10,35 +10,36 @@ export function VersionIndicator() {
     : `v${versionInfo.version}`;
 
   return (
-    <div className="fixed bottom-4 left-4 z-50">
+    <div className="fixed bottom-4 left-4 z-50 animate-in fade-in-0 slide-in-from-left-4 duration-1000" style={{ animationDelay: '2000ms' }}>
       <div
-        className="bg-slate-200/80 backdrop-blur-sm text-slate-700 text-xs rounded-lg shadow-sm border border-slate-300/50 overflow-hidden transition-all duration-500 ease-in-out"
+        className="bg-slate-200/80 backdrop-blur-sm text-slate-700 text-xs rounded-lg shadow-sm border border-slate-300/50 overflow-hidden transition-all duration-500 ease-in-out hover:shadow-lg hover:scale-105 hover:bg-slate-300/80"
         onMouseEnter={() => setIsExpanded(true)}
         onMouseLeave={() => setIsExpanded(false)}
       >
         <div className="px-3 py-1.5 flex flex-col gap-1">
           <div className="flex items-center gap-2">
-            <span className="font-mono whitespace-nowrap">{displayVersion}</span>
+            <span className="font-mono whitespace-nowrap animate-pulse">📋 {displayVersion}</span>
             <div
               className={`flex items-center gap-2 overflow-hidden transition-all duration-500 ease-in-out ${
                 isExpanded ? "max-w-[500px] opacity-100" : "max-w-0 opacity-0"
               }`}
             >
-              <span className="text-slate-600 whitespace-nowrap">© 2025 Sasha Baranov</span>
-              <span className="text-slate-400">•</span>
+              <span className="text-slate-600 whitespace-nowrap animate-in fade-in-0 duration-300" style={{ animationDelay: '100ms' }}>© 2025 Sasha Baranov</span>
+              <span className="text-slate-400 animate-in fade-in-0 duration-300" style={{ animationDelay: '200ms' }}>•</span>
               <a
                 href="https://github.com/codingsushi79/investfest26"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-700 underline whitespace-nowrap transition-colors"
+                className="text-blue-600 hover:text-blue-700 underline whitespace-nowrap transition-all duration-200 hover:scale-110 animate-in fade-in-0 duration-300"
+                style={{ animationDelay: '300ms' }}
               >
-                GitHub
+                🔗 GitHub
               </a>
             </div>
           </div>
           {isExpanded && versionInfo.commitMessage && (
-            <div className="text-slate-600 text-xs italic max-w-[400px] truncate">
-              {versionInfo.commitMessage}
+            <div className="text-slate-600 text-xs italic max-w-[400px] truncate animate-in fade-in-0 slide-in-from-bottom-2 duration-400 border-t border-slate-300/30 pt-1 mt-1" style={{ animationDelay: '400ms' }}>
+              💬 {versionInfo.commitMessage}
             </div>
           )}
         </div>

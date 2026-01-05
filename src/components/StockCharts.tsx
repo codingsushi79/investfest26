@@ -71,8 +71,8 @@ export function StockCharts({ companies }: { companies: ChartCompany[] }) {
   const hasAnyPrices = companies.some((c) => c.prices.length > 0);
   if (!hasAnyPrices) {
     return (
-      <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-6 text-sm text-zinc-600">
-        No price data yet. Operator updates prices every 15 minutes via code.
+      <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-6 text-sm text-zinc-600 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+        📊 No price data yet. Operator updates prices every 15 minutes via code.
       </div>
     );
   }
@@ -117,30 +117,28 @@ export function StockCharts({ companies }: { companies: ChartCompany[] }) {
   });
 
   return (
-    <div className="bg-white rounded-xl border border-zinc-200 p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h3 className="text-lg font-semibold text-zinc-900">Stock Price History</h3>
-          <p className="text-sm text-zinc-600">All companies over time • Hover for details</p>
+    <div className="bg-white rounded-xl border border-zinc-200 p-6 shadow-sm hover:shadow-lg transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-6 duration-700">
+      <div className="flex items-center justify-between mb-6 animate-in fade-in-0 slide-in-from-top-4 duration-500">
+        <div className="animate-in fade-in-0 slide-in-from-left-4 duration-500" style={{ animationDelay: '100ms' }}>
+          <h3 className="text-lg font-semibold text-zinc-900 animate-in fade-in-0 duration-300" style={{ animationDelay: '200ms' }}>📈 Stock Price History</h3>
+          <p className="text-sm text-zinc-600 animate-in fade-in-0 duration-300" style={{ animationDelay: '300ms' }}>All companies over time • Hover for details</p>
         </div>
-        <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-            <span className="text-zinc-600">HH</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-            <span className="text-zinc-600">DMI</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
-            <span className="text-zinc-600">MG</span>
-          </div>
-          <div className="text-zinc-500">+ {companies.length - 3} more</div>
+        <div className="flex items-center gap-4 text-sm animate-in fade-in-0 slide-in-from-right-4 duration-500" style={{ animationDelay: '400ms' }}>
+          {companies.slice(0, 3).map((company, index) => (
+            <div key={company.symbol} className="flex items-center gap-2 animate-in fade-in-0 duration-300" style={{ animationDelay: `${500 + index * 100}ms` }}>
+              <div className={`w-3 h-3 rounded-full animate-pulse`} style={{ backgroundColor: COMPANY_COLORS[index % COMPANY_COLORS.length] }}></div>
+              <span className="text-zinc-600">{company.symbol}</span>
+            </div>
+          ))}
+          {companies.length > 3 && (
+            <div className="text-zinc-500 animate-in fade-in-0 duration-300" style={{ animationDelay: '800ms' }}>
+              + {companies.length - 3} more
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="h-96">
+      <div className="h-96 animate-in fade-in-0 duration-700" style={{ animationDelay: '600ms' }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />

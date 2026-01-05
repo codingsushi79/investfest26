@@ -1,6 +1,6 @@
 {
-  "version": "0.5.5",
-  "commitHash": "b9b9664",
-  "commitMessage": "Add user account management features including isPaused and isBanned flags in the User model, implem",
-  "buildTime": "2026-01-05T02:00:36.463Z"
+  "version": "0.5.7",
+  "commitHash": "d4c9bef",
+  "commitMessage": "Add isPaused and isBanned flags to User model and update related functions for user account manageme",
+  "buildTime": "2026-01-05T13:05:07.473Z"
 }
