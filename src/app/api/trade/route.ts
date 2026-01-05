@@ -16,6 +16,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
+    // Check if user is banned
+    if (user.isBanned) {
+      return NextResponse.json({ error: "Your account has been banned from trading" }, { status: 403 });
+    }
+
+    // Check if user is paused
+    if (user.isPaused) {
+      return NextResponse.json({ error: "Your account is currently paused from trading" }, { status: 403 });
+    }
+
     // Check if trading has ended (stored in a cookie or header, for now we'll check via request)
     // Note: In production, you might want to store this in the database
     // For now, we'll rely on client-side checks, but add server-side validation if needed

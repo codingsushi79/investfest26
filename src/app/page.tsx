@@ -324,23 +324,23 @@ export default function Home() {
         </div>
 
         {user ? (
-          <div className="grid gap-6 md:grid-cols-3">
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow duration-200">
+          <div className="grid gap-6 md:grid-cols-3 animate-in fade-in-0 slide-in-from-bottom-4">
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-pointer animate-in fade-in-0 slide-in-from-left-4" style={{ animationDelay: '100ms' }}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center animate-pulse">
                   <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                   </svg>
                 </div>
                 <div>
                   <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Available Cash</p>
-                  <p className="text-2xl font-bold text-slate-900">${dashboard.cash.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-slate-900 animate-in fade-in-0 slide-in-from-bottom-2">${dashboard.cash.toFixed(2)}</p>
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow duration-200">
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-pointer animate-in fade-in-0 slide-in-from-bottom-4" style={{ animationDelay: '200ms' }}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center animate-pulse">
                   <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                   </svg>
@@ -351,34 +351,34 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-shadow duration-200">
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-pointer animate-in fade-in-0 slide-in-from-right-4" style={{ animationDelay: '300ms' }}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center animate-pulse">
                   <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                 </div>
                 <div>
                   <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Total Value</p>
-                  <p className="text-2xl font-bold text-slate-900">${(dashboard.portfolioValue + dashboard.cash).toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-slate-900 animate-in fade-in-0 slide-in-from-bottom-2">${(dashboard.portfolioValue + dashboard.cash).toFixed(2)}</p>
                 </div>
               </div>
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-xl border-2 border-dashed border-slate-300 p-8 text-center shadow-sm">
-            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mb-4">
+          <div className="bg-white rounded-xl border-2 border-dashed border-slate-300 p-8 text-center shadow-sm hover:shadow-lg transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-6">
+            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mb-4 animate-bounce">
               <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Ready to Start Trading?</h3>
-            <p className="text-slate-600 mb-6 max-w-md mx-auto">
+            <h3 className="text-lg font-semibold text-slate-900 mb-2 animate-in fade-in-0 slide-in-from-top-2">Ready to Start Trading?</h3>
+            <p className="text-slate-600 mb-6 max-w-md mx-auto animate-in fade-in-0 slide-in-from-bottom-2">
               Create an account to begin your virtual stock trading journey and track your portfolio performance.
             </p>
             <Link
               href="/signin"
-              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-sm hover:shadow-md"
+              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 hover:scale-105 transition-all duration-200 shadow-sm hover:shadow-md animate-in fade-in-0 slide-in-from-bottom-4"
             >
               Get Started
               <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -388,13 +388,13 @@ export default function Home() {
           </div>
         )}
 
-        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-lg transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-slate-900 mb-1">
+              <h2 className="text-xl font-semibold text-slate-900 mb-1 animate-in fade-in-0 slide-in-from-left-2">
                 Portfolio Overview
               </h2>
-              <p className="text-slate-600">
+              <p className="text-slate-600 animate-in fade-in-0 slide-in-from-left-2" style={{ animationDelay: '100ms' }}>
                 Update your username to appear on the leaderboard and track your performance.
               </p>
             </div>
@@ -402,23 +402,23 @@ export default function Home() {
           </div>
         </div>
 
-        <section className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+        <section className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-lg transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center animate-pulse">
                 <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-slate-900">Price History</h2>
-                <p className="text-sm text-slate-600">Live charts updated every 15 minutes by the operator</p>
+                <h2 className="text-xl font-semibold text-slate-900 animate-in fade-in-0 slide-in-from-left-2">Price History</h2>
+                <p className="text-sm text-slate-600 animate-in fade-in-0 slide-in-from-left-2" style={{ animationDelay: '100ms' }}>Live charts updated every 15 minutes by the operator</p>
               </div>
             </div>
             {user && user.username === (process.env.NEXT_PUBLIC_OP_USERNAME || "operator") && (
               <button
                 onClick={() => setShowOperatorModal(true)}
-                className="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 transition-colors"
+                className="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 hover:scale-110 transition-all duration-200 animate-pulse"
                 title="Add price point"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
