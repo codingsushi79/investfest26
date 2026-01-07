@@ -59,7 +59,7 @@ export default function OffersPage() {
       const [sellResponse, buyResponse, userResponse] = await Promise.all([
         fetch('/api/offers/sell', { credentials: 'include' }),
         fetch('/api/offers/buy', { credentials: 'include' }),
-        fetch('/api/dashboard', { credentials: 'include' }),
+        fetch('/api/user', { credentials: 'include' }),
       ]);
 
       // Handle authentication errors

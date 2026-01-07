@@ -1,6 +1,6 @@
 {
-  "version": "0.5.36",
-  "commitHash": "fec545c",
-  "commitMessage": "Refactor navigation links in Home component to replace P2P Market with Trading Offers. Update authen",
-  "buildTime": "2026-01-07T14:06:03.202Z"
+  "version": "0.5.37",
+  "commitHash": "9c85189",
+  "commitMessage": "Refactor authentication handling in offers API routes to use 'auth-utils' for user retrieval. Update",
+  "buildTime": "2026-01-07T14:11:33.027Z"
 }

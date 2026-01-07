@@ -35,7 +35,7 @@ export default function CreateSellOfferPage() {
 
   const fetchUserData = async () => {
     try {
-      const response = await fetch('/api/dashboard', { credentials: 'include' });
+      const response = await fetch('/api/user', { credentials: 'include' });
       if (response.status === 401) {
         router.push('/signin');
         return;

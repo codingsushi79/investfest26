@@ -119,6 +119,8 @@ model SellOffer {
   seller   User     @relation("SellerOffers", fields: [sellerId], references: [id], onDelete: Cascade)
   company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   buyOffers BuyOffer[]
+
+  @@index([status, createdAt])
 }
 
 model BuyOffer {
@@ -132,5 +134,7 @@ model BuyOffer {
 
   sellOffer SellOffer @relation(fields: [sellOfferId], references: [id], onDelete: Cascade)
   buyer     User      @relation("BuyerOffers", fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@index([sellOfferId, status])
 }
 
