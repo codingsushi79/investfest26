@@ -35,7 +35,7 @@ export default function CreateSellOfferPage() {
 
   const fetchUserData = async () => {
     try {
-      const response = await fetch('/api/dashboard');
+      const response = await fetch('/api/dashboard', { credentials: 'include' });
       if (response.status === 401) {
         router.push('/signin');
         return;
@@ -73,6 +73,7 @@ export default function CreateSellOfferPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           companyId: selectedHolding,
           shares: parseInt(shares),

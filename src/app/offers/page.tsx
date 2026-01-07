@@ -40,6 +40,7 @@ export default function OffersPage() {
   const router = useRouter();
   const [sellOffers, setSellOffers] = useState<SellOffer[]>([]);
   const [buyOffers, setBuyOffers] = useState<BuyOffer[]>([]);
+  const [user, setUser] = useState<{ balance: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'sell' | 'buy'>('sell');
@@ -55,29 +56,33 @@ export default function OffersPage() {
   const fetchOffers = async () => {
     try {
       setLoading(true);
-      const [sellResponse, buyResponse] = await Promise.all([
-        fetch('/api/offers/sell'),
-        fetch('/api/offers/buy'),
+      const [sellResponse, buyResponse, userResponse] = await Promise.all([
+        fetch('/api/offers/sell', { credentials: 'include' }),
+        fetch('/api/offers/buy', { credentials: 'include' }),
+        fetch('/api/dashboard', { credentials: 'include' }),
       ]);
 
       // Handle authentication errors
-      if (sellResponse.status === 401 || buyResponse.status === 401) {
+      if (sellResponse.status === 401 || buyResponse.status === 401 || userResponse.status === 401) {
         router.push('/signin');
         return;
       }
 
-      if (!sellResponse.ok || !buyResponse.ok) {
+      if (!sellResponse.ok || !buyResponse.ok || !userResponse.ok) {
         const sellError = sellResponse.ok ? null : await sellResponse.json();
         const buyError = buyResponse.ok ? null : await buyResponse.json();
-        const errorMessage = sellError?.error || buyError?.error || 'Failed to fetch offers';
+        const userError = userResponse.ok ? null : await userResponse.json();
+        const errorMessage = sellError?.error || buyError?.error || userError?.error || 'Failed to fetch offers';
         throw new Error(errorMessage);
       }
 
       const sellData = await sellResponse.json();
       const buyData = await buyResponse.json();
+      const userData = await userResponse.json();
 
       setSellOffers(sellData.offers || []);
       setBuyOffers(buyData.offers || []);
+      setUser(userData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -118,6 +123,7 @@ export default function OffersPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           sellOfferId: selectedSellOffer.id,
           offeredPrice: parseFloat(buyOfferPrice),
@@ -147,6 +153,7 @@ export default function OffersPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           buyOfferId,
           action,
@@ -454,6 +461,9 @@ export default function OffersPage() {
                       ) : (
                         <p className="text-blue-600">Below asking price</p>
                       )}
+                      {user && selectedSellOffer && user.balance < selectedSellOffer.shares * parseFloat(buyOfferPrice) && (
+                        <p className="text-red-600">Insufficient balance (you have {formatCurrency(user.balance)})</p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -471,7 +481,12 @@ export default function OffersPage() {
                   </button>
                   <TiltButton
                     onClick={submitBuyOffer}
-                    disabled={submittingBuyOffer || !buyOfferPrice}
+                    disabled={
+                      submittingBuyOffer ||
+                      !buyOfferPrice ||
+                      !user ||
+                      (selectedSellOffer && user.balance < selectedSellOffer.shares * parseFloat(buyOfferPrice))
+                    }
                     className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-white font-medium hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors"
                   >
                     {submittingBuyOffer ? 'Submitting...' : 'Make Offer'}

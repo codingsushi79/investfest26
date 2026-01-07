@@ -62,8 +62,8 @@ export default function MyOffersPage() {
     try {
       setLoading(true);
       const [sellResponse, buyResponse] = await Promise.all([
-        fetch('/api/offers/my-sell-offers'),
-        fetch('/api/offers/my-buy-offers'),
+        fetch('/api/offers/my-sell-offers', { credentials: 'include' }),
+        fetch('/api/offers/my-buy-offers', { credentials: 'include' }),
       ]);
 
       // Handle authentication errors
@@ -98,6 +98,7 @@ export default function MyOffersPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           buyOfferId,
           action,
@@ -122,6 +123,7 @@ export default function MyOffersPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           sellOfferId,
         }),
