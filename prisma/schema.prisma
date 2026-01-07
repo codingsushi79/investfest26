@@ -25,6 +25,7 @@ model User {
   transactions  Transaction[]
   sellListings  P2PListing[]  @relation("SellerListings")
   buyListings   P2PListing[]  @relation("BuyerListings")
+  offersMade    P2POffer[]    @relation("OffererOffers")
 }
 
 model Account {
@@ -120,5 +121,19 @@ model P2PListing {
   seller   User     @relation("SellerListings", fields: [sellerId], references: [id], onDelete: Cascade)
   buyer    User?    @relation("BuyerListings", fields: [buyerId], references: [id], onDelete: SetNull)
   company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  offers   P2POffer[]
+}
+
+model P2POffer {
+  id            String   @id @default(cuid())
+  listingId     String
+  offererId     String
+  offeredPrice  Float
+  status        String   @default("pending") // pending, accepted, declined
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  listing P2PListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  offerer User       @relation("OffererOffers", fields: [offererId], references: [id], onDelete: Cascade)
 }
 

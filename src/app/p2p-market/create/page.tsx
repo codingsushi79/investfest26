@@ -249,19 +249,19 @@ export default function CreateP2PListingPage() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-md shadow-sm border-b border-slate-200/60">
+      <div className="bg-white dark:bg-zinc-800 shadow-sm border-b border-zinc-200 dark:border-zinc-700">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-zinc-900 animate-in fade-in-0 slide-in-from-left-4 duration-500">
                 Create P2P Listing 🏷️
               </h1>
-              <p className="text-slate-600 mt-2 animate-in fade-in-0 slide-in-from-left-2 duration-500" style={{ animationDelay: '100ms' }}>
+              <p className="text-zinc-600 dark:text-zinc-400 mt-2 animate-in fade-in-0 slide-in-from-left-2 duration-500" style={{ animationDelay: '100ms' }}>
                 Sell your shares directly to other players
               </p>
             </div>
             <Link href="/p2p-market">
-              <TiltButton className="bg-slate-100 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-200 transition-colors">
+              <TiltButton className="bg-zinc-100 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 px-4 py-2 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors">
                 ← Back to Market
               </TiltButton>
             </Link>
@@ -271,7 +271,7 @@ export default function CreateP2PListingPage() {
 
       {/* Form */}
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: '200ms' }}>
+        <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-700 p-8 animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: '200ms' }}>
           <form onSubmit={handleCreateListing} className="space-y-6">
             {/* Company Selection */}
             <div>

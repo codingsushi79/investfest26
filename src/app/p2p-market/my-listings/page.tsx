@@ -31,10 +31,27 @@ export default function MyP2PListingsPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [offers, setOffers] = useState<{[key: string]: any[]}>({});
+  const [processingOffer, setProcessingOffer] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  const fetchOffersForListing = async (listingId: string) => {
+    try {
+      const response = await fetch(`/api/p2p/listings/${listingId}/offers`);
+      if (response.ok) {
+        const offersData = await response.json();
+        setOffers(prev => ({
+          ...prev,
+          [listingId]: offersData
+        }));
+      }
+    } catch (error) {
+      console.error("Failed to fetch offers:", error);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -85,6 +102,47 @@ export default function MyP2PListingsPage() {
     }
   };
 
+  const handleOfferResponse = async (offerId: string, action: "accept" | "decline") => {
+    setProcessingOffer(offerId);
+
+    try {
+      const response = await fetch(`/api/p2p/offers/${offerId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ action }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert(result.message);
+        fetchData(); // Refresh listings and offers
+      } else {
+        const error = await response.json();
+        alert(error.error || "Failed to process offer");
+      }
+    } catch (error) {
+      console.error("Error processing offer:", error);
+      alert("Failed to process offer");
+    } finally {
+      setProcessingOffer(null);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
+      case "accepted":
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
+      case "declined":
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
+      default:
+        return "bg-zinc-100 text-zinc-800 dark:bg-zinc-900 dark:text-zinc-200";
+    }
+  };
+
   const formatCurrency = (amount: number) => {
     if (typeof amount !== 'number' || isNaN(amount)) {
       return '$0.00';
@@ -92,18 +150,6 @@ export default function MyP2PListingsPage() {
     return `$${amount.toFixed(2)}`;
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-      case "completed":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
-      case "cancelled":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
-      default:
-        return "bg-zinc-100 text-zinc-800 dark:bg-zinc-900 dark:text-zinc-200";
-    }
-  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -165,6 +211,11 @@ export default function MyP2PListingsPage() {
                   ← Back to Market
                 </TiltButton>
               </Link>
+              <Link href="/p2p-market/my-offers">
+                <TiltButton className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
+                  My Offers 💬
+                </TiltButton>
+              </Link>
               <Link href="/p2p-market/create">
                 <TiltButton className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
                   Create Listing ➕
@@ -223,6 +274,61 @@ export default function MyP2PListingsPage() {
                     key={listing.id}
                     className="bg-white dark:bg-zinc-800 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-700 p-6"
                   >
+                    {/* Offers Section */}
+                    {offers[listing.id] && offers[listing.id].length > 0 && (
+                      <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
+                          💬 Offers Received ({offers[listing.id].filter((o: any) => o.status === 'pending').length} pending)
+                        </h4>
+                        <div className="space-y-3">
+                          {offers[listing.id].map((offer: any) => (
+                            <div key={offer.id} className="flex items-center justify-between p-3 bg-white dark:bg-zinc-700 rounded-lg border border-blue-100 dark:border-blue-700">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-medium text-zinc-900 dark:text-zinc-100">{offer.offerer.username}</span>
+                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(offer.status)}`}>
+                                    {offer.status}
+                                  </span>
+                                </div>
+                                <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                                  {formatCurrency(offer.offeredPrice)} per share × {listing.shares} shares = {formatCurrency(offer.totalValue)}
+                                </div>
+                              </div>
+                              {offer.status === 'pending' && (
+                                <div className="flex gap-2 ml-4">
+                                  <button
+                                    onClick={() => handleOfferResponse(offer.id, 'accept')}
+                                    disabled={processingOffer === offer.id}
+                                    className="bg-green-600 text-white px-3 py-1 rounded text-sm font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                  >
+                                    {processingOffer === offer.id ? '...' : 'Accept'}
+                                  </button>
+                                  <button
+                                    onClick={() => handleOfferResponse(offer.id, 'decline')}
+                                    disabled={processingOffer === offer.id}
+                                    className="bg-red-600 text-white px-3 py-1 rounded text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                  >
+                                    {processingOffer === offer.id ? '...' : 'Decline'}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Show offers button if no offers loaded yet */}
+                    {(!offers[listing.id] || offers[listing.id].length === 0) && (
+                      <div className="mb-4">
+                        <button
+                          onClick={() => fetchOffersForListing(listing.id)}
+                          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium"
+                        >
+                          Check for offers →
+                        </button>
+                      </div>
+                    )}
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
