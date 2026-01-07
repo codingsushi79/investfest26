@@ -1,6 +1,6 @@
 {
-  "version": "0.5.24",
-  "commitHash": "a9db2d7",
-  "commitMessage": "Refactor P2P market components to remove dark mode styles and improve UI consistency. Update loading",
-  "buildTime": "2026-01-07T13:26:10.650Z"
+  "version": "0.5.26",
+  "commitHash": "290225b",
+  "commitMessage": "Refactor P2P listing logic to use company symbol for identification instead of ID, improving data co",
+  "buildTime": "2026-01-07T13:33:24.713Z"
 }
