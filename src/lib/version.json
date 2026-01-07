@@ -1,6 +1,6 @@
 {
-  "version": "0.5.37",
-  "commitHash": "9c85189",
-  "commitMessage": "Refactor authentication handling in offers API routes to use 'auth-utils' for user retrieval. Update",
-  "buildTime": "2026-01-07T14:11:33.027Z"
+  "version": "0.7.0",
+  "commitHash": "42efd0a",
+  "commitMessage": "Enhance Prisma schema by adding indexes for SellOffer and BuyOffer models to improve query performan",
+  "buildTime": "2026-01-07T16:19:49.065Z"
 }

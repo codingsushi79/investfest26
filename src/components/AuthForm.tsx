@@ -10,6 +10,7 @@ export function AuthForm() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -18,6 +19,13 @@ export function AuthForm() {
     e.preventDefault();
     setError("");
     setLoading(true);
+
+    // Validate terms agreement for sign up
+    if (isSignUp && !agreeToTerms) {
+      setError("You must agree to the Terms of Service and Privacy Policy to continue.");
+      setLoading(false);
+      return;
+    }
 
     try {
       const endpoint = isSignUp ? "/api/auth/signup" : "/api/auth/signin";
@@ -139,6 +147,41 @@ export function AuthForm() {
             />
           </div>
 
+          {isSignUp && (
+            <div className="animate-in fade-in-0 slide-in-from-left-4 duration-500" style={{ animationDelay: '1200ms' }}>
+              <div className="flex items-start space-x-3">
+                <input
+                  type="checkbox"
+                  id="agreeToTerms"
+                  checked={agreeToTerms}
+                  onChange={(e) => setAgreeToTerms(e.target.checked)}
+                  className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded focus:ring-2 transition-colors"
+                  required
+                />
+                <label htmlFor="agreeToTerms" className="text-sm text-slate-600 leading-relaxed">
+                  I agree to the{' '}
+                  <a
+                    href="/terms-of-service"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 font-medium underline transition-colors hover:scale-105 inline-block"
+                  >
+                    Terms of Service
+                  </a>
+                  {' '}and{' '}
+                  <a
+                    href="/privacy-policy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 font-medium underline transition-colors hover:scale-105 inline-block"
+                  >
+                    Privacy Policy
+                  </a>
+                </label>
+              </div>
+            </div>
+          )}
+
           {error && (
             <div className="rounded-lg bg-red-50 border border-red-200 p-4 animate-in fade-in-0 slide-in-from-top-2 duration-300">
               <div className="flex items-center gap-2">
@@ -152,9 +195,9 @@ export function AuthForm() {
 
           <TiltButton
             type="submit"
-            disabled={loading}
+            disabled={loading || (isSignUp && !agreeToTerms)}
             className="flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:shadow-xl animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-            style={{ animationDelay: isSignUp ? '1200ms' : '900ms' }}
+            style={{ animationDelay: isSignUp ? '1350ms' : '900ms' }}
           >
             {loading && (
               <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
@@ -168,7 +211,7 @@ export function AuthForm() {
           </TiltButton>
         </form>
 
-        <div className="text-center pt-4 border-t border-slate-200 animate-in fade-in-0 duration-500" style={{ animationDelay: isSignUp ? '1300ms' : '1000ms' }}>
+        <div className="text-center pt-4 border-t border-slate-200 animate-in fade-in-0 duration-500" style={{ animationDelay: isSignUp ? '1400ms' : '1000ms' }}>
           <button
             onClick={() => setIsSignUp(!isSignUp)}
             className="text-sm text-slate-600 hover:text-blue-600 font-medium transition-all duration-200 hover:scale-105 relative overflow-hidden group"
