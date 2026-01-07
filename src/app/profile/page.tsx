@@ -172,7 +172,7 @@ export default function ProfilePage() {
               <XAxis dataKey="date" />
               <YAxis />
               <Tooltip
-                formatter={(value: number) => `$${value.toFixed(2)}`}
+                formatter={(value: number | undefined) => value ? `$${value.toFixed(2)}` : '$0.00'}
                 labelStyle={{ color: "#1e293b" }}
               />
               <Legend />

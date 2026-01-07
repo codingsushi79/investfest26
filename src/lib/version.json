@@ -1,6 +1,6 @@
 {
-  "version": "0.7.0",
-  "commitHash": "42efd0a",
-  "commitMessage": "Enhance Prisma schema by adding indexes for SellOffer and BuyOffer models to improve query performan",
-  "buildTime": "2026-01-07T16:19:49.065Z"
+  "version": "0.7.5",
+  "commitHash": "a908f1f",
+  "commitMessage": "Update contact email addresses in Privacy Policy and Terms of Service pages to use investfest@google",
+  "buildTime": "2026-01-07T18:08:31.890Z"
 }

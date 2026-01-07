@@ -31,25 +31,15 @@ type CustomTooltipProps = {
     value: number;
     payload: ChartDataPoint;
   }>;
-  label?: string;
-  companies: ChartCompany[];
 };
 
-const CustomTooltip = ({ active, payload, label, companies }: CustomTooltipProps) => {
+const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
-    const data = payload[0];
-    const companySymbol = data.dataKey;
-    const price = data.value;
-    const period = label;
-
-    // Find company name
-    const company = companies.find(c => c.symbol === companySymbol);
+    const price = payload[0].value;
 
     return (
-      <div className="bg-white p-3 border border-gray-300 rounded-lg shadow-lg">
-        <p className="font-semibold text-gray-800">{`Company: ${companySymbol} - ${company?.name || 'Unknown'}`}</p>
-        <p className="text-gray-600">{`Period: ${period}`}</p>
-        <p className="text-green-600 font-medium">{`Price: $${price.toFixed(2)}`}</p>
+      <div className="bg-white px-2 py-1 border border-gray-300 rounded shadow-lg">
+        <p className="text-green-600 font-medium text-sm">{`$${price.toFixed(2)}`}</p>
       </div>
     );
   }
@@ -116,6 +106,20 @@ export function StockCharts({ companies }: { companies: ChartCompany[] }) {
     return dataPoint;
   });
 
+
+  // Check if we have valid chart data with actual values
+  const hasDataPoints = chartData.some(dataPoint =>
+    companies.some(company => dataPoint[company.symbol] !== undefined)
+  );
+
+  if (!chartData || chartData.length === 0 || !hasDataPoints) {
+    return (
+      <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-6 text-sm text-zinc-600 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+        📊 Preparing chart data...
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-xl border border-zinc-200 p-6 shadow-sm hover:shadow-lg transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-6 duration-700">
       <div className="flex items-center justify-between mb-6 animate-in fade-in-0 slide-in-from-top-4 duration-500">
@@ -138,8 +142,8 @@ export function StockCharts({ companies }: { companies: ChartCompany[] }) {
         </div>
       </div>
 
-      <div className="h-96 animate-in fade-in-0 duration-700" style={{ animationDelay: '600ms' }}>
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="animate-in fade-in-0 duration-700" style={{ animationDelay: '600ms' }}>
+        <ResponsiveContainer width="100%" height={400}>
           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
             <XAxis
@@ -150,10 +154,10 @@ export function StockCharts({ companies }: { companies: ChartCompany[] }) {
             <YAxis
               tick={{ fontSize: 12, fill: '#6b7280' }}
               axisLine={{ stroke: '#d1d5db' }}
-              domain={["dataMin - 10", "dataMax + 10"]}
+              domain={["dataMin - 50", "dataMax + 50"]}
               tickFormatter={(value) => `$${value}`}
             />
-            <Tooltip content={<CustomTooltip companies={companies} />} />
+            <Tooltip content={<CustomTooltip />} />
             <Legend />
 
             {companies.map((company, index) => (
