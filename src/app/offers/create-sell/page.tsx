@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { TiltButton } from '@/components/TiltButton';
 import { TiltLink } from '@/components/TiltLink';
 
@@ -19,6 +20,7 @@ interface UserData {
 }
 
 export default function CreateSellOfferPage() {
+  const router = useRouter();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [selectedHolding, setSelectedHolding] = useState<string>('');
   const [shares, setShares] = useState<string>('');
@@ -35,7 +37,7 @@ export default function CreateSellOfferPage() {
     try {
       const response = await fetch('/api/dashboard');
       if (response.status === 401) {
-        window.location.href = '/signin';
+        router.push('/signin');
         return;
       }
       if (!response.ok) throw new Error('Failed to fetch user data');

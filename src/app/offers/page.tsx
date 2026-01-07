@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { TiltButton } from '@/components/TiltButton';
 import { TiltLink } from '@/components/TiltLink';
 
@@ -36,6 +37,7 @@ interface BuyOffer {
 }
 
 export default function OffersPage() {
+  const router = useRouter();
   const [sellOffers, setSellOffers] = useState<SellOffer[]>([]);
   const [buyOffers, setBuyOffers] = useState<BuyOffer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,7 +62,7 @@ export default function OffersPage() {
 
       // Handle authentication errors
       if (sellResponse.status === 401 || buyResponse.status === 401) {
-        window.location.href = '/signin';
+        router.push('/signin');
         return;
       }
 

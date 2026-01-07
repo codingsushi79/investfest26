@@ -217,12 +217,6 @@ export default function Home() {
             >
               🏪 Trade Shares
             </TiltLink>
-            <TiltLink
-              href="/offers"
-              className="rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-sm font-semibold text-white hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-sm hover:shadow-md"
-            >
-              🤝 Trading Offers
-            </TiltLink>
             <Link
               href="/leaderboard"
               className="text-slate-700 hover:text-blue-600 transition-colors font-medium"
@@ -296,10 +290,10 @@ export default function Home() {
                     🏪 Trade Shares
                   </TiltLink>
                   <TiltLink
-                    href="/p2p-market"
+                    href="/offers"
                     className="rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-sm font-semibold text-white hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-sm hover:shadow-md"
                   >
-                    🤝 P2P Market
+                    🤝 Trading Offers
                   </TiltLink>
                   <Link
                     href="/leaderboard"
