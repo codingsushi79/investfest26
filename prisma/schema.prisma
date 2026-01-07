@@ -23,6 +23,8 @@ model User {
   sessions      Session[]
   holdings      Holding[]
   transactions  Transaction[]
+  sellListings  P2PListing[]  @relation("SellerListings")
+  buyListings   P2PListing[]  @relation("BuyerListings")
 }
 
 model Account {
@@ -68,6 +70,7 @@ model Company {
   prices    PricePoint[]
   holdings  Holding[]
   transactions Transaction[]
+  p2pListings P2PListing[]
 }
 
 model PricePoint {
@@ -100,5 +103,22 @@ model Transaction {
   createdAt  DateTime @default(now())
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+model P2PListing {
+  id            String   @id @default(cuid())
+  sellerId      String
+  buyerId       String?
+  companyId     String
+  shares        Int
+  pricePerShare Float
+  status        String   @default("active") // active, completed, cancelled
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  completedAt   DateTime?
+
+  seller   User     @relation("SellerListings", fields: [sellerId], references: [id], onDelete: Cascade)
+  buyer    User?    @relation("BuyerListings", fields: [buyerId], references: [id], onDelete: SetNull)
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 }
 

@@ -1,6 +1,6 @@
 {
-  "version": "0.5.10",
-  "commitHash": "93124c5",
-  "commitMessage": "Remove console server and related API endpoints, refactor Home and Console components for improved u",
-  "buildTime": "2026-01-05T14:08:50.578Z"
+  "version": "0.5.13",
+  "commitHash": "f49112a",
+  "commitMessage": "Implement page transition animations, enhance tilt effects for buttons and links, and improve loadin",
+  "buildTime": "2026-01-07T12:55:32.089Z"
 }
