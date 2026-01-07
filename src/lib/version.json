@@ -1,6 +1,6 @@
 {
-  "version": "0.5.26",
-  "commitHash": "290225b",
-  "commitMessage": "Refactor P2P listing logic to use company symbol for identification instead of ID, improving data co",
-  "buildTime": "2026-01-07T13:33:24.713Z"
+  "version": "0.5.30",
+  "commitHash": "85392e0",
+  "commitMessage": "Refactor CreateP2PListingPage component to streamline user flow and enhance UI. Remove unnecessary s",
+  "buildTime": "2026-01-07T13:44:59.815Z"
 }

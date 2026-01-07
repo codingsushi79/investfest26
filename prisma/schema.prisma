@@ -23,9 +23,8 @@ model User {
   sessions      Session[]
   holdings      Holding[]
   transactions  Transaction[]
-  sellListings  P2PListing[]  @relation("SellerListings")
-  buyListings   P2PListing[]  @relation("BuyerListings")
-  offersMade    P2POffer[]    @relation("OffererOffers")
+  sellOffers    SellOffer[]   @relation("SellerOffers")
+  buyOffers     BuyOffer[]    @relation("BuyerOffers")
 }
 
 model Account {
@@ -69,9 +68,9 @@ model Company {
   name      String
   createdAt DateTime  @default(now())
   prices    PricePoint[]
-  holdings  Holding[]
+  holdings    Holding[]
   transactions Transaction[]
-  p2pListings P2PListing[]
+  sellOffers   SellOffer[]
 }
 
 model PricePoint {
@@ -106,10 +105,9 @@ model Transaction {
   company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 }
 
-model P2PListing {
+model SellOffer {
   id            String   @id @default(cuid())
   sellerId      String
-  buyerId       String?
   companyId     String
   shares        Int
   pricePerShare Float
@@ -118,22 +116,21 @@ model P2PListing {
   updatedAt     DateTime @updatedAt
   completedAt   DateTime?
 
-  seller   User     @relation("SellerListings", fields: [sellerId], references: [id], onDelete: Cascade)
-  buyer    User?    @relation("BuyerListings", fields: [buyerId], references: [id], onDelete: SetNull)
+  seller   User     @relation("SellerOffers", fields: [sellerId], references: [id], onDelete: Cascade)
   company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  offers   P2POffer[]
+  buyOffers BuyOffer[]
 }
 
-model P2POffer {
+model BuyOffer {
   id            String   @id @default(cuid())
-  listingId     String
-  offererId     String
+  sellOfferId   String
+  buyerId       String
   offeredPrice  Float
   status        String   @default("pending") // pending, accepted, declined
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  listing P2PListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  offerer User       @relation("OffererOffers", fields: [offererId], references: [id], onDelete: Cascade)
+  sellOffer SellOffer @relation(fields: [sellOfferId], references: [id], onDelete: Cascade)
+  buyer     User      @relation("BuyerOffers", fields: [buyerId], references: [id], onDelete: Cascade)
 }
 

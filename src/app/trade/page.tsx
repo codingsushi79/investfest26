@@ -247,31 +247,14 @@ export default function TradePage() {
                 🏪 Trade with Market
               </button>
               <Link
-                href="/p2p-market"
+                href="/offers"
                 className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 text-center"
               >
-                🤝 P2P Market
+                🤝 Trading Offers
               </Link>
             </div>
           )}
         </div>
-
-        {/* P2P Market Info */}
-        {!tradingEnded && (
-          <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-6 mb-8">
-            <h3 className="text-lg font-semibold text-purple-900 mb-2">💡 Try the P2P Market!</h3>
-            <p className="text-purple-700 mb-4">
-              Buy shares directly from other players at negotiated prices. You might find better deals than the market rate!
-            </p>
-            <div className="flex flex-wrap gap-2 text-sm text-purple-600">
-              <span className="bg-purple-100 px-2 py-1 rounded-full">💰 Negotiate any price</span>
-              <span className="bg-purple-100 px-2 py-1 rounded-full">⚡ Instant transactions</span>
-              <span className="bg-purple-100 px-2 py-1 rounded-full">🤝 Direct player trading</span>
-              <span className="bg-purple-100 px-2 py-1 rounded-full">📈 vs 90% market sell price</span>
-            </div>
-          </div>
-        )}
-
 
         <div className="grid gap-8 lg:grid-cols-2">
 
