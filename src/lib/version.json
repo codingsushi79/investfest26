@@ -1,6 +1,6 @@
 {
-  "version": "0.7.6",
-  "commitHash": "5628d79",
-  "commitMessage": "Refactor Tooltip components in StockCharts and profile pages to handle undefined values gracefully. ",
-  "buildTime": "2026-01-07T18:12:02.081Z"
+  "version": "0.7.7",
+  "commitHash": "603c940",
+  "commitMessage": "Refactor Tooltip component in ModeratorProfileViewPage to handle undefined values more robustly, ens",
+  "buildTime": "2026-01-07T18:15:00.403Z"
 }
