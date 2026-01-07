@@ -55,6 +55,7 @@ export default function TermsOfServicePage() {
               <li>Share your account credentials with others</li>
               <li>Engage in any form of harassment or abusive behavior</li>
               <li>Manipulate or interfere with the platform's operation</li>
+              <li>Create multiple accounts</li>
             </ul>
 
             <h2 className="text-2xl font-bold text-slate-900 mb-4">5. Virtual Currency and Trading</h2>
