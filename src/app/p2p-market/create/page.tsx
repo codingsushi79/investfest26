@@ -181,7 +181,7 @@ export default function CreateP2PListingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center">
+      <div className="min-h-screen bg-zinc-50">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     );
@@ -189,9 +189,9 @@ export default function CreateP2PListingPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center">
+      <div className="min-h-screen bg-zinc-50">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-4">Please Sign In</h1>
+          <h1 className="text-2xl font-bold text-zinc-900">Please Sign In</h1>
           <Link href="/signin">
             <TiltButton className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
               Sign In 🔐
@@ -204,10 +204,10 @@ export default function CreateP2PListingPage() {
 
   if (user.isPaused || user.isBanned) {
     return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center">
+      <div className="min-h-screen bg-zinc-50">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-4">Account Suspended</h1>
-          <p className="text-zinc-600 dark:text-zinc-400 mb-6">
+          <h1 className="text-2xl font-bold text-zinc-900">Account Suspended</h1>
+          <p className="text-zinc-600">
             Your account is currently {user.isBanned ? "banned" : "paused"} and cannot create listings.
           </p>
           <Link href="/p2p-market">
@@ -222,11 +222,11 @@ export default function CreateP2PListingPage() {
 
   if (userHoldings.length === 0) {
     return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center">
+      <div className="min-h-screen bg-zinc-50">
         <div className="text-center max-w-md mx-auto px-4">
           <div className="text-6xl mb-4">📊</div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-4">No Holdings Found</h1>
-          <p className="text-zinc-600 dark:text-zinc-400 mb-6">
+          <h1 className="text-2xl font-bold text-zinc-900">No Holdings Found</h1>
+          <p className="text-zinc-600">
             You need to own shares before you can create P2P listings. Buy some shares on the main market first!
           </p>
           <div className="flex gap-3 justify-center">
@@ -247,21 +247,21 @@ export default function CreateP2PListingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
+    <div className="min-h-screen bg-zinc-50">
       {/* Header */}
-      <div className="bg-white dark:bg-zinc-800 shadow-sm border-b border-zinc-200 dark:border-zinc-700">
+      <div className="bg-white">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-zinc-900 animate-in fade-in-0 slide-in-from-left-4 duration-500">
                 Create P2P Listing 🏷️
               </h1>
-              <p className="text-zinc-600 dark:text-zinc-400 mt-2 animate-in fade-in-0 slide-in-from-left-2 duration-500" style={{ animationDelay: '100ms' }}>
+              <p className="text-zinc-600" style={{ animationDelay: '100ms' }}>
                 Sell your shares directly to other players
               </p>
             </div>
             <Link href="/p2p-market">
-              <TiltButton className="bg-zinc-100 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 px-4 py-2 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors">
+              <TiltButton className="bg-zinc-100">
                 ← Back to Market
               </TiltButton>
             </Link>
@@ -271,17 +271,17 @@ export default function CreateP2PListingPage() {
 
       {/* Form */}
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-700 p-8 animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: '200ms' }}>
+        <div className="bg-white" style={{ animationDelay: '200ms' }}>
           <form onSubmit={handleCreateListing} className="space-y-6">
             {/* Company Selection */}
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">
+              <label className="block text-sm font-medium text-zinc-700">
                 Select Company Shares to Sell
               </label>
               <select
                 value={selectedHolding}
                 onChange={(e) => setSelectedHolding(e.target.value)}
-                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-zinc-300"
                 required
               >
                 <option value="">Choose a company...</option>
@@ -292,7 +292,7 @@ export default function CreateP2PListingPage() {
                 ))}
               </select>
               {selectedHoldingData && (
-                <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                <div className="mt-2 text-sm text-zinc-600">
                   Current market price: {formatCurrency(selectedHoldingData.currentPrice)} per share
                 </div>
               )}
@@ -300,7 +300,7 @@ export default function CreateP2PListingPage() {
 
             {/* Shares Input */}
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">
+              <label className="block text-sm font-medium text-zinc-700">
                 Number of Shares to Sell
               </label>
               <input
@@ -310,11 +310,11 @@ export default function CreateP2PListingPage() {
                 value={shares}
                 onChange={(e) => setShares(e.target.value)}
                 placeholder="Enter number of shares"
-                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-zinc-300"
                 required
               />
               {selectedHoldingData && (
-                <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                <div className="mt-2 text-sm text-zinc-600">
                   Available: {maxShares} shares
                 </div>
               )}
@@ -322,7 +322,7 @@ export default function CreateP2PListingPage() {
 
             {/* Price Input */}
             <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">
+              <label className="block text-sm font-medium text-zinc-700">
                 Price per Share ($)
               </label>
               <input
@@ -332,21 +332,21 @@ export default function CreateP2PListingPage() {
                 value={pricePerShare}
                 onChange={(e) => setPricePerShare(e.target.value)}
                 placeholder="Enter your asking price"
-                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-zinc-300"
                 required
               />
               {selectedHoldingData && pricePerShare && (
                 <div className="mt-2 text-sm">
                   {parseFloat(pricePerShare) < selectedHoldingData.currentPrice ? (
-                    <span className="text-green-600 dark:text-green-400">
+                    <span className="text-green-600">
                       💰 You're offering a discount of {formatCurrency(selectedHoldingData.currentPrice - parseFloat(pricePerShare))} per share!
                     </span>
                   ) : parseFloat(pricePerShare) > selectedHoldingData.currentPrice ? (
-                    <span className="text-orange-600 dark:text-orange-400">
+                    <span className="text-orange-600">
                       ⚠️ You're asking more than the current market price
                     </span>
                   ) : (
-                    <span className="text-zinc-600 dark:text-zinc-400">
+                    <span className="text-zinc-600">
                       📊 At current market price
                     </span>
                   )}
@@ -356,12 +356,12 @@ export default function CreateP2PListingPage() {
 
             {/* Summary */}
             {shares && pricePerShare && selectedHoldingData && (
-              <div className="bg-zinc-50 dark:bg-zinc-700 rounded-lg p-4">
-                <h3 className="font-medium text-zinc-900 dark:text-zinc-100 mb-2">Listing Summary</h3>
-                <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+              <div className="bg-zinc-50">
+                <h3 className="font-medium text-zinc-900">Listing Summary</h3>
+                <div className="space-y-1 text-sm text-zinc-600">
                   <div>Shares: {shares}</div>
                   <div>Price per share: {formatCurrency(parseFloat(pricePerShare))}</div>
-                  <div className="font-medium text-zinc-900 dark:text-zinc-100">
+                  <div className="font-medium text-zinc-900">
                     Total value: {formatCurrency(totalValue)}
                   </div>
                   <div>
@@ -400,11 +400,11 @@ export default function CreateP2PListingPage() {
         </div>
 
         {/* Tips */}
-        <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
-          <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
+        <div className="mt-8 bg-blue-50">
+          <h3 className="font-medium text-blue-900">
             💡 Pro Tips for P2P Trading
           </h3>
-          <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-2">
+          <ul className="text-sm text-blue-800">
             <li>• Lower prices attract more buyers and sell faster</li>
             <li>• Consider current market trends when setting prices</li>
             <li>• You can cancel listings anytime before they're bought</li>

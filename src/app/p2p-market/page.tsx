@@ -187,42 +187,42 @@ export default function P2PMarketPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-zinc-900 dark:border-zinc-100"></div>
+      <div className="min-h-screen bg-zinc-50">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-zinc-900"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
+    <div className="min-h-screen bg-zinc-50">
       {/* Trading Ended Banner */}
       {tradingEnded && (
-        <div className="bg-red-50 dark:bg-red-900/20 border-b-2 border-red-200 dark:border-red-800">
+        <div className="bg-red-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="text-center">
-              <h2 className="text-xl font-bold text-red-700 dark:text-red-400 mb-2">Event Has Ended</h2>
-              <p className="text-red-600 dark:text-red-400">P2P trading is no longer available. You can still view listings for reference.</p>
+              <h2 className="text-xl font-bold text-red-700">Event Has Ended</h2>
+              <p className="text-red-600">P2P trading is no longer available. You can still view listings for reference.</p>
             </div>
           </div>
         </div>
       )}
 
       {/* Header */}
-      <div className="bg-white dark:bg-zinc-800 shadow-sm border-b border-zinc-200 dark:border-zinc-700">
+      <div className="bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 animate-in fade-in-0 slide-in-from-left-4 duration-500">
+              <h1 className="text-3xl font-bold text-zinc-900">
                 P2P Market 🏪
               </h1>
-              <p className="text-zinc-600 dark:text-zinc-400 mt-2 animate-in fade-in-0 slide-in-from-left-2 duration-500" style={{ animationDelay: '100ms' }}>
+              <p className="text-zinc-600" style={{ animationDelay: '100ms' }}>
                 {tradingEnded ? "View completed and remaining listings" : "Buy shares directly from other players at negotiated prices"}
               </p>
             </div>
             <div className="flex items-center gap-4">
               {user && (
                 <div className="text-right animate-in fade-in-0 slide-in-from-right-4 duration-500" style={{ animationDelay: '200ms' }}>
-                  <div className="text-sm text-zinc-600 dark:text-zinc-400">Balance</div>
+                  <div className="text-sm text-zinc-600">Balance</div>
                   <div className="text-lg font-semibold text-green-600">
                     {formatCurrency(user.balance)}
                   </div>
@@ -240,11 +240,11 @@ export default function P2PMarketPage() {
 
       {/* Filters and Controls */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-700 p-6 mb-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-500" style={{ animationDelay: '300ms' }}>
+        <div className="bg-white" style={{ animationDelay: '300ms' }}>
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
             <div className="flex flex-col sm:flex-row gap-4 flex-1">
               <div className="flex-1 max-w-md">
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                <label className="block text-sm font-medium text-zinc-700">
                   Search
                 </label>
                 <input
@@ -252,17 +252,17 @@ export default function P2PMarketPage() {
                   placeholder="Company symbol, name, or seller..."
                   value={filter}
                   onChange={(e) => setFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-zinc-300"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                <label className="block text-sm font-medium text-zinc-700">
                   Sort by
                 </label>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
+                  className="px-3 py-2 border border-zinc-300"
                 >
                   <option value="createdAt">Newest First</option>
                   <option value="pricePerShare">Price per Share</option>
@@ -293,10 +293,10 @@ export default function P2PMarketPage() {
         {filteredListings.length === 0 ? (
           <div className="text-center py-12 animate-in fade-in-0 duration-500" style={{ animationDelay: '400ms' }}>
             <div className="text-6xl mb-4">🏪</div>
-            <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
+            <h3 className="text-xl font-semibold text-zinc-900">
               {filter ? "No listings match your search" : "No active listings"}
             </h3>
-            <p className="text-zinc-600 dark:text-zinc-400 mb-6">
+            <p className="text-zinc-600">
               {filter ? "Try adjusting your search terms" : "Be the first to create a P2P listing!"}
             </p>
             <Link href="/p2p-market/create">
@@ -310,21 +310,21 @@ export default function P2PMarketPage() {
             {filteredListings.map((listing, index) => (
               <div
                 key={listing.id}
-                className="bg-white dark:bg-zinc-800 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-700 p-6 hover:shadow-lg transition-all duration-300 cursor-pointer animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+                className="bg-white"
                 style={{ animationDelay: `${400 + index * 100}ms` }}
               >
                 {/* Company Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                  <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                  <h3 className="text-lg font-semibold text-zinc-900">
                     {listing.companySymbol}
                   </h3>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                  <p className="text-sm text-zinc-600">
                     {listing.companyName}
                   </p>
                   </div>
                   {listing.discount > 0 && !isNaN(listing.discount) && (
-                    <div className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded-full text-xs font-medium">
+                    <div className="bg-green-100">
                       -{listing.discount.toFixed(1)}% off
                     </div>
                   )}
@@ -333,23 +333,23 @@ export default function P2PMarketPage() {
                 {/* Price Info */}
                 <div className="mb-4">
                   <div className="flex items-baseline gap-2 mb-2">
-                    <span className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+                    <span className="text-2xl font-bold text-zinc-900">
                       {formatCurrency(listing.pricePerShare)}
                     </span>
-                    <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                    <span className="text-sm text-zinc-600">
                       per share
                     </span>
                   </div>
                   <div className="flex items-center gap-4 text-sm">
-                    <span className="text-zinc-600 dark:text-zinc-400">
+                    <span className="text-zinc-600">
                       {listing.shares} shares
                     </span>
-                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                    <span className="font-medium text-zinc-900">
                       Total: {formatCurrency(listing.totalValue)}
                     </span>
                   </div>
                   {listing.currentMarketPrice > 0 && (
-                    <div className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">
+                    <div className="text-xs text-zinc-500">
                       Market: {formatCurrency(listing.currentMarketPrice)}
                     </div>
                   )}
@@ -357,10 +357,10 @@ export default function P2PMarketPage() {
 
                 {/* Seller Info */}
                 <div className="flex items-center justify-between mb-4">
-                  <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                  <div className="text-sm text-zinc-600">
                     Seller: <span className="font-medium">{listing.sellerUsername}</span>
                   </div>
-                  <div className="text-xs text-zinc-500 dark:text-zinc-500">
+                  <div className="text-xs text-zinc-500">
                     {new Date(listing.createdAt).toLocaleDateString()}
                   </div>
                 </div>
@@ -405,7 +405,7 @@ export default function P2PMarketPage() {
                 )}
 
                 {user && listing.sellerId === user.id && (
-                  <div className="w-full bg-zinc-100 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400 py-2 px-4 rounded-lg text-center text-sm">
+                  <div className="w-full bg-zinc-100">
                     Your Listing
                   </div>
                 )}
@@ -425,13 +425,13 @@ export default function P2PMarketPage() {
         {/* Offer Modal */}
         {showOfferModal && selectedListing && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white">
               <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Make an Offer</h2>
+                  <h2 className="text-2xl font-bold text-zinc-900">Make an Offer</h2>
                   <button
                     onClick={() => setShowOfferModal(false)}
-                    className="text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors"
+                    className="text-zinc-400 hover:text-zinc-600"
                   >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -440,24 +440,24 @@ export default function P2PMarketPage() {
                 </div>
 
                 {/* Listing Info */}
-                <div className="bg-zinc-50 dark:bg-zinc-700 rounded-lg p-4 mb-6">
+                <div className="bg-zinc-50">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
+                    <h3 className="font-semibold text-zinc-900">
                       {selectedListing.companySymbol} - {selectedListing.companyName}
                     </h3>
-                    <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                    <span className="text-sm text-zinc-600">
                       {selectedListing.shares} shares
                     </span>
                   </div>
-                  <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                  <div className="text-sm text-zinc-600">
                     Listed by: <span className="font-medium">{selectedListing.sellerUsername}</span>
                   </div>
-                  <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                  <div className="text-sm text-zinc-600">
                     Asking: {formatCurrency(selectedListing.pricePerShare)} per share
                     ({formatCurrency(selectedListing.totalValue)} total)
                   </div>
                   {selectedListing.currentMarketPrice > 0 && (
-                    <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                    <div className="text-sm text-zinc-600">
                       Market: {formatCurrency(selectedListing.currentMarketPrice)} per share
                     </div>
                   )}
@@ -466,7 +466,7 @@ export default function P2PMarketPage() {
                 <form onSubmit={(e) => { e.preventDefault(); handleMakeOffer(); }} className="space-y-6">
                   {/* Offer Price Input */}
                   <div>
-                    <label htmlFor="offerPrice" className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
+                    <label htmlFor="offerPrice" className="block text-sm font-semibold text-zinc-700">
                       Your Offer Price per Share ($)
                     </label>
                     <input
@@ -476,7 +476,7 @@ export default function P2PMarketPage() {
                       onChange={(e) => setOfferPrice(e.target.value)}
                       min="0.01"
                       step="0.01"
-                      className="block w-full rounded-lg border border-zinc-300 dark:border-zinc-600 px-4 py-3 text-sm bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500/20 transition-all"
+                      className="block w-full rounded-lg border border-zinc-300"
                       placeholder="Enter your offer price"
                       required
                     />
@@ -486,11 +486,11 @@ export default function P2PMarketPage() {
                   {offerPrice && selectedListing && (
                     <div className={`rounded-lg p-4 ${
                       parseFloat(offerPrice) >= selectedListing.pricePerShare
-                        ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
-                        : "bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800"
+                        ? "bg-green-50"
+                        : "bg-orange-50"
                     }`}>
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                        <span className="text-sm font-medium text-zinc-700">
                           Your offer:
                         </span>
                         <span className="font-semibold">
@@ -498,18 +498,18 @@ export default function P2PMarketPage() {
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                        <span className="text-sm text-zinc-600">
                           Total cost:
                         </span>
                         <span className={`font-bold text-lg ${
                           parseFloat(offerPrice) >= selectedListing.pricePerShare
-                            ? "text-green-600 dark:text-green-400"
-                            : "text-orange-600 dark:text-orange-400"
+                            ? "text-green-600"
+                            : "text-orange-600"
                         }`}>
                           {formatCurrency(parseFloat(offerPrice) * selectedListing.shares)}
                         </span>
                       </div>
-                      <div className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
+                      <div className="mt-2 text-xs text-zinc-600">
                         {parseFloat(offerPrice) >= selectedListing.pricePerShare
                           ? "💰 You're offering at or above the asking price!"
                           : "🤝 This is a negotiation offer - the seller can accept or decline"
@@ -523,7 +523,7 @@ export default function P2PMarketPage() {
                     <button
                       type="button"
                       onClick={() => setShowOfferModal(false)}
-                      className="flex-1 bg-zinc-100 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 px-4 py-3 rounded-lg font-medium hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors"
+                      className="flex-1 bg-zinc-100"
                     >
                       Cancel
                     </button>

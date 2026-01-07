@@ -48,6 +48,9 @@ export function SettingsCog() {
     setIsDark(newDark);
     updateTheme(newDark);
     localStorage.setItem("theme", newDark ? "dark" : "light");
+
+    // Force re-render by updating state
+    setIsDark(newDark);
   };
 
   const toggleMenu = () => {

@@ -1,6 +1,6 @@
 {
-  "version": "0.5.20",
-  "commitHash": "fba30d3",
-  "commitMessage": "Update trading logic to reflect a fairness policy for selling shares, ensuring users receive 90% of ",
-  "buildTime": "2026-01-07T13:19:47.044Z"
+  "version": "0.5.22",
+  "commitHash": "fb6934c",
+  "commitMessage": "Add P2POffer model and integrate offer functionality in P2P market. Enhance UI with offer modal and ",
+  "buildTime": "2026-01-07T13:23:50.252Z"
 }
