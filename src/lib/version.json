@@ -1,6 +1,6 @@
 {
-  "version": "0.7.5",
-  "commitHash": "a908f1f",
-  "commitMessage": "Update contact email addresses in Privacy Policy and Terms of Service pages to use investfest@google",
-  "buildTime": "2026-01-07T18:08:31.890Z"
+  "version": "0.7.6",
+  "commitHash": "5628d79",
+  "commitMessage": "Refactor Tooltip components in StockCharts and profile pages to handle undefined values gracefully. ",
+  "buildTime": "2026-01-07T18:12:02.081Z"
 }

@@ -315,7 +315,10 @@ export default function ModeratorProfileViewPage({ params }: { params: Promise<{
               <XAxis dataKey="date" />
               <YAxis />
               <Tooltip
-                formatter={(value: number | undefined) => value ? `$${value.toFixed(2)}` : '$0.00'}
+                formatter={(value: any) => {
+                  const numValue = typeof value === 'number' ? value : parseFloat(value);
+                  return isNaN(numValue) ? '$0.00' : `$${numValue.toFixed(2)}`;
+                }}
                 labelStyle={{ color: "#1e293b" }}
               />
               <Legend />
