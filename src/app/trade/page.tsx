@@ -126,7 +126,7 @@ export default function TradePage() {
       return;
     }
 
-    const totalCost = company.price * sharesNum;
+    const totalCost = tradeType === "buy" ? company.price * sharesNum : company.price * sharesNum * 0.9;
 
     // Check affordability for buying
     if (tradeType === "buy") {
@@ -156,7 +156,7 @@ export default function TradePage() {
       });
 
       if (response.ok) {
-        setSuccess(`${tradeType === "buy" ? "Bought" : "Sold"} ${sharesNum} shares of ${selectedCompany} for $${totalCost.toFixed(2)}`);
+        setSuccess(`${tradeType === "buy" ? "Bought" : "Sold"} ${sharesNum} shares of ${selectedCompany} for $${totalCost.toFixed(2)}${tradeType === "sell" ? " (90% of market price)" : ""}`);
         setShares("");
         setShowTradeModal(false);
         // Refresh data
@@ -264,9 +264,10 @@ export default function TradePage() {
               Buy shares directly from other players at negotiated prices. You might find better deals than the market rate!
             </p>
             <div className="flex flex-wrap gap-2 text-sm text-purple-600">
-              <span className="bg-purple-100 px-2 py-1 rounded-full">💰 Potentially cheaper prices</span>
+              <span className="bg-purple-100 px-2 py-1 rounded-full">💰 Negotiate any price</span>
               <span className="bg-purple-100 px-2 py-1 rounded-full">⚡ Instant transactions</span>
               <span className="bg-purple-100 px-2 py-1 rounded-full">🤝 Direct player trading</span>
+              <span className="bg-purple-100 px-2 py-1 rounded-full">📈 vs 90% market sell price</span>
             </div>
           </div>
         )}
@@ -359,6 +360,13 @@ export default function TradePage() {
                     <label className="block text-sm font-semibold text-slate-700 mb-3">
                       What would you like to do?
                     </label>
+                    {tradeType === "sell" && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                        <p className="text-sm text-blue-800">
+                          💡 <strong>Fairness Policy:</strong> When selling shares, you receive 90% of the current market price to encourage buying and maintain market balance.
+                        </p>
+                      </div>
+                    )}
                     <div className="flex gap-3">
                       <button
                         type="button"
@@ -451,7 +459,10 @@ export default function TradePage() {
                             </div>
                             <div className="flex justify-between items-center">
                               <span className="text-sm text-slate-600">
-                                Price per share: ${company?.price.toFixed(2)}
+                                {tradeType === "buy"
+                                  ? `Price per share: $${company?.price.toFixed(2)}`
+                                  : `Market price: $${company?.price.toFixed(2)} (you get 90%)`
+                                }
                               </span>
                               <span className={`font-bold text-lg ${
                                 tradeType === "buy" ? "text-green-600" : "text-red-600"

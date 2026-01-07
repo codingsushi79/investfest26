@@ -49,7 +49,8 @@ export async function POST(request: NextRequest) {
     }
 
     const price = company.prices[0].value;
-    const totalCost = price * shares;
+    // For selling, users receive 90% of the market price for fairness
+    const totalCost = type === "BUY" ? price * shares : price * shares * 0.9;
 
     if (type === "BUY") {
       // Check if user has enough balance
