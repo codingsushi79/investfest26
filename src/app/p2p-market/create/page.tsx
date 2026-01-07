@@ -41,6 +41,13 @@ export default function CreateP2PListingPage() {
   const [shares, setShares] = useState<string>("");
   const [pricePerShare, setPricePerShare] = useState<string>("");
 
+  const formatCurrency = (amount: number) => {
+    if (typeof amount !== 'number' || isNaN(amount)) {
+      return '$0.00';
+    }
+    return `$${amount.toFixed(2)}`;
+  };
+
   useEffect(() => {
     fetchData();
 
@@ -112,7 +119,13 @@ export default function CreateP2PListingPage() {
 
   const selectedHoldingData = userHoldings.find(h => h.companyId === selectedHolding);
   const maxShares = selectedHoldingData ? selectedHoldingData.shares : 0;
-  const totalValue = shares && pricePerShare ? parseInt(shares) * parseFloat(pricePerShare) : 0;
+  const totalValue = (() => {
+    if (!shares || !pricePerShare) return 0;
+    const sharesNum = parseInt(shares);
+    const priceNum = parseFloat(pricePerShare);
+    if (isNaN(sharesNum) || isNaN(priceNum)) return 0;
+    return sharesNum * priceNum;
+  })();
 
   const handleCreateListing = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -280,7 +293,7 @@ export default function CreateP2PListingPage() {
               </select>
               {selectedHoldingData && (
                 <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                  Current market price: ${selectedHoldingData.currentPrice.toFixed(2)} per share
+                  Current market price: {formatCurrency(selectedHoldingData.currentPrice)} per share
                 </div>
               )}
             </div>
@@ -326,7 +339,7 @@ export default function CreateP2PListingPage() {
                 <div className="mt-2 text-sm">
                   {parseFloat(pricePerShare) < selectedHoldingData.currentPrice ? (
                     <span className="text-green-600 dark:text-green-400">
-                      💰 You're offering a discount of ${(selectedHoldingData.currentPrice - parseFloat(pricePerShare)).toFixed(2)} per share!
+                      💰 You're offering a discount of {formatCurrency(selectedHoldingData.currentPrice - parseFloat(pricePerShare))} per share!
                     </span>
                   ) : parseFloat(pricePerShare) > selectedHoldingData.currentPrice ? (
                     <span className="text-orange-600 dark:text-orange-400">
@@ -347,12 +360,12 @@ export default function CreateP2PListingPage() {
                 <h3 className="font-medium text-zinc-900 dark:text-zinc-100 mb-2">Listing Summary</h3>
                 <div className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
                   <div>Shares: {shares}</div>
-                  <div>Price per share: ${parseFloat(pricePerShare).toFixed(2)}</div>
+                  <div>Price per share: {formatCurrency(parseFloat(pricePerShare))}</div>
                   <div className="font-medium text-zinc-900 dark:text-zinc-100">
-                    Total value: ${totalValue.toFixed(2)}
+                    Total value: {formatCurrency(totalValue)}
                   </div>
                   <div>
-                    Market value: ${(parseInt(shares) * selectedHoldingData.currentPrice).toFixed(2)}
+                    Market value: {formatCurrency(parseInt(shares) * selectedHoldingData.currentPrice)}
                   </div>
                   <div className={totalValue > parseInt(shares) * selectedHoldingData.currentPrice ? 'text-red-600' : 'text-green-600'}>
                     {totalValue > parseInt(shares) * selectedHoldingData.currentPrice ? '🔺' : '🔻'}
@@ -379,7 +392,7 @@ export default function CreateP2PListingPage() {
                     Creating Listing...
                   </div>
                 ) : (
-                  `Create Listing for $${totalValue.toFixed(2)} 🏷️`
+                  `Create Listing for ${formatCurrency(totalValue)} 🏷️`
                 )}
               </TiltButton>
             </div>

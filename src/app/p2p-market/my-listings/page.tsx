@@ -85,7 +85,12 @@ export default function MyP2PListingsPage() {
     }
   };
 
-  const formatCurrency = (amount: number) => `$${amount.toFixed(2)}`;
+  const formatCurrency = (amount: number) => {
+    if (typeof amount !== 'number' || isNaN(amount)) {
+      return '$0.00';
+    }
+    return `$${amount.toFixed(2)}`;
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {

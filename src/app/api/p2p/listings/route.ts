@@ -38,20 +38,25 @@ export async function GET(request: NextRequest) {
     });
 
     // Transform the data to include current market price for comparison
-    const listingsWithMarketPrice = listings.map(listing => ({
-      id: listing.id,
-      sellerId: listing.sellerId,
-      sellerUsername: listing.seller.username,
-      companyId: listing.companyId,
-      companySymbol: listing.company.symbol,
-      companyName: listing.company.name,
-      shares: listing.shares,
-      pricePerShare: listing.pricePerShare,
-      totalValue: listing.shares * listing.pricePerShare,
-      currentMarketPrice: listing.company.prices[0]?.value || 0,
-      discount: listing.company.prices[0] ? ((listing.company.prices[0].value - listing.pricePerShare) / listing.company.prices[0].value) * 100 : 0,
-      createdAt: listing.createdAt
-    }));
+    const listingsWithMarketPrice = listings.map(listing => {
+      const currentMarketPrice = listing.company.prices[0]?.value || 0;
+      const discount = currentMarketPrice > 0 ? ((currentMarketPrice - listing.pricePerShare) / currentMarketPrice) * 100 : 0;
+
+      return {
+        id: listing.id,
+        sellerId: listing.sellerId,
+        sellerUsername: listing.seller.username,
+        companyId: listing.companyId,
+        companySymbol: listing.company.symbol,
+        companyName: listing.company.name,
+        shares: listing.shares,
+        pricePerShare: listing.pricePerShare,
+        totalValue: listing.shares * listing.pricePerShare,
+        currentMarketPrice,
+        discount: isNaN(discount) ? 0 : discount,
+        createdAt: listing.createdAt
+      };
+    });
 
     return NextResponse.json(listingsWithMarketPrice);
   } catch (error) {

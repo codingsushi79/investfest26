@@ -97,7 +97,7 @@ export default function P2PMarketPage() {
 
       if (response.ok) {
         const result = await response.json();
-        alert(`Purchase successful! Paid $${result.totalCost.toFixed(2)} for ${result.shares} shares`);
+        alert(`Purchase successful! Paid ${formatCurrency(result.totalCost)} for ${result.shares} shares`);
         fetchListings(); // Refresh listings
         fetchUser(); // Refresh user balance
       } else {
@@ -133,7 +133,12 @@ export default function P2PMarketPage() {
       }
     });
 
-  const formatCurrency = (amount: number) => `$${amount.toFixed(2)}`;
+  const formatCurrency = (amount: number) => {
+    if (typeof amount !== 'number' || isNaN(amount)) {
+      return '$0.00';
+    }
+    return `$${amount.toFixed(2)}`;
+  };
 
   if (loading) {
     return (
@@ -273,7 +278,7 @@ export default function P2PMarketPage() {
                       {listing.companyName}
                     </p>
                   </div>
-                  {listing.discount > 0 && (
+                  {listing.discount > 0 && !isNaN(listing.discount) && (
                     <div className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded-full text-xs font-medium">
                       -{listing.discount.toFixed(1)}% off
                     </div>
