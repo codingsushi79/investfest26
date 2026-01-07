@@ -91,23 +91,24 @@ export default function CreateP2PListingPage() {
       if (dashboardResponse.ok) {
         const dashboardData = await dashboardResponse.json();
 
-        // Set companies
-        setCompanies(dashboardData.companies.map((company: any) => ({
-          id: company.id,
+        // Set companies first
+        const companyData = dashboardData.companies.map((company: any) => ({
+          id: company.symbol, // Use symbol as ID for easier matching
           symbol: company.symbol,
           name: company.name,
-          currentPrice: company.currentPrice
-        })));
+          currentPrice: company.prices[company.prices.length - 1]?.value || 0
+        }));
+        setCompanies(companyData);
 
         // Set user holdings
         if (dashboardData.holdings) {
           setUserHoldings(dashboardData.holdings.map((holding: any) => ({
-            companyId: holding.company.id,
-            companySymbol: holding.company.symbol,
-            companyName: holding.company.name,
+            companyId: holding.symbol, // Use symbol as ID
+            companySymbol: holding.symbol,
+            companyName: holding.name,
             shares: holding.shares,
-            currentPrice: holding.company.currentPrice
-          })));
+            currentPrice: holding.latestPrice
+          })).filter((holding: any) => holding.shares > 0)); // Only show holdings with shares
         }
       }
     } catch (error) {

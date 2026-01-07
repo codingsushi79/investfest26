@@ -106,12 +106,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // First, find the company by symbol (since frontend sends symbol as companyId)
+    const company = await prisma.company.findUnique({
+      where: { symbol: companyId }
+    });
+
+    if (!company) {
+      return NextResponse.json(
+        { error: "Company not found" },
+        { status: 404 }
+      );
+    }
+
     // Check if user has enough shares
     const holding = await prisma.holding.findUnique({
       where: {
         userId_companyId: {
           userId: user.id,
-          companyId: companyId
+          companyId: company.id
         }
       }
     });
@@ -123,23 +135,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if company exists
-    const company = await prisma.company.findUnique({
-      where: { id: companyId }
-    });
-
-    if (!company) {
-      return NextResponse.json(
-        { error: "Company not found" },
-        { status: 404 }
-      );
-    }
-
     // Create the P2P listing
     const listing = await prisma.p2PListing.create({
       data: {
         sellerId: user.id,
-        companyId: companyId,
+        companyId: company.id,
         shares: shares,
         pricePerShare: pricePerShare
       },
