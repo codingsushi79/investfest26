@@ -89,7 +89,7 @@ export default function TermsOfServicePage() {
 
             <h2 className="text-2xl font-bold text-slate-900 mb-4">10. Contact Information</h2>
             <p className="text-slate-700 mb-6">
-              If you have any questions about these Terms of Service, please contact us at support@investfest26.com.
+              If you have any questions about these Terms of Service, please contact us at investfest@googlegroups.com.
             </p>
           </div>
         </div>

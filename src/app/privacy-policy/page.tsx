@@ -105,7 +105,7 @@ export default function PrivacyPolicyPage() {
 
             <h2 className="text-2xl font-bold text-slate-900 mb-4">11. Contact Us</h2>
             <p className="text-slate-700 mb-6">
-              If you have any questions about this Privacy Policy, please contact us at privacy@investfest26.com.
+              If you have any questions about this Privacy Policy, please contact us at investfest@googlegroups.com.
             </p>
           </div>
         </div>
