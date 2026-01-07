@@ -34,6 +34,10 @@ export default function CreateSellOfferPage() {
   const fetchUserData = async () => {
     try {
       const response = await fetch('/api/dashboard');
+      if (response.status === 401) {
+        window.location.href = '/signin';
+        return;
+      }
       if (!response.ok) throw new Error('Failed to fetch user data');
 
       const data = await response.json();

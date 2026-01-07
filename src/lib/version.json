@@ -1,6 +1,6 @@
 {
-  "version": "0.5.30",
-  "commitHash": "85392e0",
-  "commitMessage": "Refactor CreateP2PListingPage component to streamline user flow and enhance UI. Remove unnecessary s",
-  "buildTime": "2026-01-07T13:44:59.815Z"
+  "version": "0.5.32",
+  "commitHash": "450ebf8",
+  "commitMessage": "Refactor P2P listing and offer models to enhance clarity and functionality. Update User model relati",
+  "buildTime": "2026-01-07T13:51:25.044Z"
 }

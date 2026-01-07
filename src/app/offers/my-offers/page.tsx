@@ -64,8 +64,17 @@ export default function MyOffersPage() {
         fetch('/api/offers/my-buy-offers'),
       ]);
 
+      // Handle authentication errors
+      if (sellResponse.status === 401 || buyResponse.status === 401) {
+        window.location.href = '/signin';
+        return;
+      }
+
       if (!sellResponse.ok || !buyResponse.ok) {
-        throw new Error('Failed to fetch offers');
+        const sellError = sellResponse.ok ? null : await sellResponse.json();
+        const buyError = buyResponse.ok ? null : await buyResponse.json();
+        const errorMessage = sellError?.error || buyError?.error || 'Failed to fetch offers';
+        throw new Error(errorMessage);
       }
 
       const sellData = await sellResponse.json();
