@@ -21,6 +21,16 @@ interface User {
   balance: number;
 }
 
+type HoldingsSortOption =
+  | "symbol-asc"
+  | "symbol-desc"
+  | "shares-desc"
+  | "shares-asc"
+  | "price-desc"
+  | "price-asc"
+  | "value-desc"
+  | "value-asc";
+
 export default function TradePage() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
@@ -34,6 +44,8 @@ export default function TradePage() {
   const [trading, setTrading] = useState(false);
   const [showTradeModal, setShowTradeModal] = useState(false);
   const [tradingEnded, setTradingEnded] = useState(false);
+  const [companyFilter, setCompanyFilter] = useState("");
+  const [sortOption, setSortOption] = useState<HoldingsSortOption>("value-desc");
   const router = useRouter();
 
   const fetchTradeData = useCallback(async () => {
@@ -173,6 +185,46 @@ export default function TradePage() {
   };
 
 
+  const normalizedFilter = companyFilter.trim().toLowerCase();
+
+  const enrichedHoldings = holdings.map((holding) => {
+    const company = companies.find((c) => c.symbol === holding.symbol);
+    const price = company?.price ?? 0;
+    const value = price * holding.shares;
+    const name = company?.name ?? holding.symbol;
+    return { ...holding, name, price, value };
+  });
+
+  const filteredHoldings = enrichedHoldings.filter((holding) => {
+    if (!normalizedFilter) return true;
+    return (
+      holding.symbol.toLowerCase().includes(normalizedFilter) ||
+      holding.name.toLowerCase().includes(normalizedFilter)
+    );
+  });
+
+  const displayedHoldings = [...filteredHoldings].sort((a, b) => {
+    switch (sortOption) {
+      case "shares-desc":
+        return b.shares - a.shares;
+      case "shares-asc":
+        return a.shares - b.shares;
+      case "price-desc":
+        return b.price - a.price;
+      case "price-asc":
+        return a.price - b.price;
+      case "value-desc":
+        return b.value - a.value;
+      case "value-asc":
+        return a.value - b.value;
+      case "symbol-desc":
+        return a.symbol.localeCompare(b.symbol) * -1;
+      case "symbol-asc":
+      default:
+        return a.symbol.localeCompare(b.symbol);
+    }
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
@@ -261,28 +313,90 @@ export default function TradePage() {
           {/* Holdings Summary */}
           <div className="space-y-6">
             <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">Your Holdings</h3>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">Your Holdings</h3>
+                  <p className="text-sm text-slate-500">
+                    Filter and sort your positions by company, price, or shares.
+                  </p>
+                </div>
+                {holdings.length > 0 && (
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <div className="sm:w-48">
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        Search by company
+                      </label>
+                      <input
+                        type="text"
+                        value={companyFilter}
+                        onChange={(e) => setCompanyFilter(e.target.value)}
+                        placeholder="Symbol or name"
+                        className="block w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                      />
+                    </div>
+                    <div className="sm:w-44">
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        Sort by
+                      </label>
+                      <select
+                        value={sortOption}
+                        onChange={(e) => setSortOption(e.target.value as HoldingsSortOption)}
+                        className="block w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                      >
+                        <option value="value-desc">Largest position value</option>
+                        <option value="shares-desc">Most shares</option>
+                        <option value="price-desc">Highest price</option>
+                        <option value="price-asc">Lowest price</option>
+                        <option value="symbol-asc">Symbol A → Z</option>
+                        <option value="symbol-desc">Symbol Z → A</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
               {holdings.length > 0 ? (
-                <div className="space-y-3">
-                  {holdings.map((holding) => {
-                    const company = companies.find(c => c.symbol === holding.symbol);
-                    const value = company ? company.price * holding.shares : 0;
-                    return (
-                      <div key={holding.symbol} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                displayedHoldings.length > 0 ? (
+                  <div className="space-y-3">
+                    {displayedHoldings.map((holding) => (
+                      <div
+                        key={holding.symbol}
+                        className="flex justify-between items-center p-3 bg-slate-50 rounded-lg"
+                      >
                         <div>
                           <div className="font-medium text-slate-900">{holding.symbol}</div>
-                          <div className="text-sm text-slate-600">{holding.shares} shares</div>
+                          <div className="text-xs text-slate-500">{holding.name}</div>
+                          <div className="text-sm text-slate-600 mt-1">
+                            {holding.shares} shares
+                          </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-semibold text-slate-900">${value.toFixed(2)}</div>
+                          <div className="font-semibold text-slate-900">
+                            ${holding.value.toFixed(2)}
+                          </div>
                           <div className="text-sm text-slate-600">
-                            @ ${company?.price.toFixed(2) || "0.00"}
+                            @ ${holding.price.toFixed(2)}
                           </div>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 border border-dashed border-slate-200 rounded-lg">
+                    <p className="text-sm font-medium text-slate-800 mb-1">
+                      No holdings match your search
+                    </p>
+                    <p className="text-xs text-slate-500 mb-2">
+                      Try adjusting your company filter or sort option.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setCompanyFilter("")}
+                      className="inline-flex items-center rounded-md bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-200 transition-colors"
+                    >
+                      Clear search
+                    </button>
+                  </div>
+                )
               ) : (
                 <p className="text-slate-500 text-center py-8">
                   You don&apos;t own any shares yet. Start trading to build your portfolio!
