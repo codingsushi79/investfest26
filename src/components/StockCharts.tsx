@@ -176,16 +176,26 @@ export function StockCharts({ companies }: { companies: ChartCompany[] }) {
             {companies.map((company, index) => (
               <Line
                 key={company.symbol}
-                type="monotone"
+                type="monotoneX"
                 dataKey={company.symbol}
                 stroke={COMPANY_COLORS[index % COMPANY_COLORS.length]}
-                strokeWidth={2.5}
+                strokeWidth={3}
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                dot={false}
+                dot={{
+                  r: 4,
+                  stroke: "#ffffff",
+                  strokeWidth: 1,
+                }}
+                activeDot={{
+                  r: 6,
+                  stroke: "#ffffff",
+                  strokeWidth: 2,
+                }}
                 isAnimationActive={false}
                 hide={!visibleSymbols.includes(company.symbol)}
                 name={`${company.symbol} - ${company.name}`}
+                style={{ shapeRendering: "geometricPrecision" }}
               />
             ))}
           </LineChart>
