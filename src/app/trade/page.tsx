@@ -83,6 +83,10 @@ export default function TradePage() {
     const ended = localStorage.getItem("tradingEnded") === "true";
     setTradingEnded(ended);
 
+    const intervalId = setInterval(() => {
+      fetchTradeData();
+    }, 30000);
+
     // Listen for storage changes (when event is ended/resumed in another tab)
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "tradingEnded") {
@@ -90,7 +94,10 @@ export default function TradePage() {
       }
     };
     window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, [fetchTradeData]);
 
   const handleTrade = async (e: React.FormEvent) => {

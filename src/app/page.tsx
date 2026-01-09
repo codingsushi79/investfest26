@@ -75,6 +75,14 @@ export default function Home() {
     // Check if trading has ended
     const ended = localStorage.getItem("tradingEnded") === "true";
     setTradingEnded(ended);
+
+    const intervalId = setInterval(() => {
+      fetchData();
+    }, 30000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
   }, []);
 
   const fetchData = async () => {

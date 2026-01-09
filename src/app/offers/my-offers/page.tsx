@@ -59,6 +59,10 @@ export default function MyOffersPage() {
 
   useEffect(() => {
     fetchMyOffers();
+    const intervalId = setInterval(() => {
+      fetchMyOffers();
+    }, 30000);
+    return () => clearInterval(intervalId);
   }, []);
 
   const fetchMyOffers = async () => {

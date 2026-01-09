@@ -100,6 +100,10 @@ export default function OffersPage() {
 
   useEffect(() => {
     fetchOffers();
+    const intervalId = setInterval(() => {
+      fetchOffers();
+    }, 30000);
+    return () => clearInterval(intervalId);
   }, []);
 
   const fetchOffers = async () => {
