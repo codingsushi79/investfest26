@@ -763,12 +763,13 @@ export default function OffersPage() {
               >
                 Close
               </button>
-              <TiltLink
-                href="/offers"
+              <button
+                type="button"
+                onClick={() => setConfirmation(null)}
                 className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
               >
                 Back to Offers
-              </TiltLink>
+              </button>
             </div>
           </div>
         </div>
