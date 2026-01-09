@@ -22,30 +22,6 @@ type ChartDataPoint = {
   [key: string]: string | number; // Dynamic keys for each company
 };
 
-type CustomTooltipProps = {
-  active?: boolean;
-  payload?: Array<{
-    color: string;
-    dataKey: string;
-    name: string;
-    value: number;
-    payload: ChartDataPoint;
-  }>;
-};
-
-const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
-  if (active && payload && payload.length) {
-    const price = payload[0].value;
-
-    return (
-      <div className="bg-white px-2 py-1 border border-gray-300 rounded shadow-lg">
-        <p className="text-green-600 font-medium text-sm">{`$${price.toFixed(2)}`}</p>
-      </div>
-    );
-  }
-  return null;
-};
-
 const COMPANY_COLORS = [
   "#3B82F6", // blue-500
   "#EF4444", // red-500
@@ -125,7 +101,7 @@ export function StockCharts({ companies }: { companies: ChartCompany[] }) {
       <div className="flex items-center justify-between mb-6 animate-in fade-in-0 slide-in-from-top-4 duration-500">
         <div className="animate-in fade-in-0 slide-in-from-left-4 duration-500" style={{ animationDelay: '100ms' }}>
           <h3 className="text-lg font-semibold text-zinc-900 animate-in fade-in-0 duration-300" style={{ animationDelay: '200ms' }}>📈 Stock Price History</h3>
-          <p className="text-sm text-zinc-600 animate-in fade-in-0 duration-300" style={{ animationDelay: '300ms' }}>All companies over time • Hover for details</p>
+          <p className="text-sm text-zinc-600 animate-in fade-in-0 duration-300" style={{ animationDelay: '300ms' }}>All companies over time</p>
         </div>
         <div className="flex items-center gap-4 text-sm animate-in fade-in-0 slide-in-from-right-4 duration-500" style={{ animationDelay: '400ms' }}>
           {companies.slice(0, 3).map((company, index) => (
@@ -157,7 +133,6 @@ export function StockCharts({ companies }: { companies: ChartCompany[] }) {
               domain={["dataMin - 50", "dataMax + 50"]}
               tickFormatter={(value) => `$${value}`}
             />
-            <Tooltip content={<CustomTooltip />} />
             <Legend />
 
             {companies.map((company, index) => (
@@ -166,7 +141,7 @@ export function StockCharts({ companies }: { companies: ChartCompany[] }) {
                 type="monotone"
                 dataKey={company.symbol}
                 stroke={COMPANY_COLORS[index % COMPANY_COLORS.length]}
-                strokeWidth={2}
+                strokeWidth={3}
                 dot={{ r: 3, fill: COMPANY_COLORS[index % COMPANY_COLORS.length] }}
                 activeDot={{
                   r: 6,
@@ -174,7 +149,7 @@ export function StockCharts({ companies }: { companies: ChartCompany[] }) {
                   stroke: '#fff',
                   strokeWidth: 2
                 }}
-                connectNulls={false}
+                connectNulls
                 name={`${company.symbol} - ${company.name}`}
               />
             ))}
