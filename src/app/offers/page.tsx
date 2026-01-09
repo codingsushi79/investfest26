@@ -51,6 +51,32 @@ const getDiscountPercent = (offer: SellOffer, prices: Record<string, number>) =>
   return ((marketPrice - offer.pricePerShare) / marketPrice) * 100;
 };
 
+const getDealLabel = (discountPercent: number | null) => {
+  if (discountPercent === null || discountPercent <= 0) return null;
+  if (discountPercent >= 25) {
+    return {
+      text: '🔥 Great deal',
+      className:
+        'inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-[11px] font-semibold text-green-800',
+    } as const;
+  }
+  if (discountPercent >= 15) {
+    return {
+      text: '👍 Good deal',
+      className:
+        'inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700',
+    } as const;
+  }
+  if (discountPercent >= 5) {
+    return {
+      text: '✅ Fair price',
+      className:
+        'inline-flex items-center rounded-full bg-sky-50 px-2.5 py-0.5 text-[11px] font-medium text-sky-700',
+    } as const;
+  }
+  return null;
+};
+
 export default function OffersPage() {
   const router = useRouter();
   const [sellOffers, setSellOffers] = useState<SellOffer[]>([]);
@@ -397,8 +423,9 @@ export default function OffersPage() {
                     const marketPrice = prices[offer.company.symbol];
                     const discountPercent =
                       marketPrice && marketPrice > 0
-                        ? ((marketPrice - offer.pricePerShare) / marketPrice) * 100
+                        ? getDiscountPercent(offer, prices)
                         : null;
+                    const dealLabel = getDealLabel(discountPercent);
 
                     return (
                       <div
@@ -411,7 +438,12 @@ export default function OffersPage() {
                               {offer.company.symbol[0]}
                             </div>
                             <div>
-                              <h3 className="font-semibold text-slate-900">{offer.company.name}</h3>
+                              <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                                {offer.company.name}
+                                {dealLabel && (
+                                  <span className={dealLabel.className}>{dealLabel.text}</span>
+                                )}
+                              </h3>
                               <p className="text-sm text-slate-600">{offer.company.symbol}</p>
                             </div>
                           </div>
