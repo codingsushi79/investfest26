@@ -28,6 +28,7 @@ export default function CreateSellOfferPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmation, setConfirmation] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUserData();
@@ -86,8 +87,11 @@ export default function CreateSellOfferPage() {
         throw new Error(errorData.error || 'Failed to create offer');
       }
 
-      // Redirect to offers page
-      window.location.href = '/offers';
+      setConfirmation(
+        `Sell offer created for ${selectedHoldingData.symbol} — ${shares} shares at $${parseFloat(
+          pricePerShare
+        ).toFixed(2)} per share`
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create offer');
     } finally {
@@ -299,6 +303,30 @@ export default function CreateSellOfferPage() {
           </form>
         </div>
       </div>
+
+      {confirmation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="max-w-md w-full rounded-2xl bg-white shadow-2xl p-6">
+            <h2 className="text-xl font-semibold text-slate-900 mb-2">Offer created</h2>
+            <p className="text-sm text-slate-700 mb-4">{confirmation}</p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmation(null)}
+                className="rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 transition-colors"
+              >
+                Close
+              </button>
+              <TiltLink
+                href="/offers"
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+              >
+                Back to Offers
+              </TiltLink>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

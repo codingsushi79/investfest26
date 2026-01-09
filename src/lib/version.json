@@ -1,6 +1,6 @@
 {
-  "version": "0.8.1",
+  "version": "0.8.2",
   "commitHash": "56dd32d",
-  "commitMessage": "Adjust holdings and add sorting for buy offers",
-  "buildTime": "2026-01-09T18:37:55.000Z"
+  "commitMessage": "Add confirmation screens for trading offers",
+  "buildTime": "2026-01-09T18:49:20.000Z"
 }
