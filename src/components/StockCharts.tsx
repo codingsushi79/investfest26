@@ -1,24 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
-  LineChart,
-  Line,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  ResponsiveContainer,
-} from "recharts";
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Tooltip as ChartTooltip,
+  Filler,
+} from "chart.js";
+import { Line } from "react-chartjs-2";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  ChartTooltip,
+  Filler,
+);
 
 type ChartCompany = {
   symbol: string;
   name: string;
   prices: { label: string; value: number }[];
-};
-
-type ChartDataPoint = {
-  period: string;
-  [key: string]: string | number; // Dynamic keys for each company
 };
 
 const COMPANY_COLORS = [
@@ -57,50 +63,59 @@ export function StockCharts({ companies }: { companies: ChartCompany[] }) {
   };
 
   // Build unified, sorted list of all periods across companies
-  const allPeriods = new Set<string>();
-  companies.forEach((company) => {
-    company.prices.forEach((price) => {
-      allPeriods.add(price.label);
-    });
-  });
-  const sortedPeriods = Array.from(allPeriods).sort(comparePeriod);
-
-  // Precompute quick lookup maps of prices by period per company
-  const priceByCompanyAndPeriod: Record<string, Record<string, number>> = {};
-  companies.forEach((company) => {
-    const map: Record<string, number> = {};
-    company.prices.forEach((price) => {
-      map[price.label] = price.value;
-    });
-    priceByCompanyAndPeriod[company.symbol] = map;
-  });
-
-  // Build chart data, carrying forward the last known price for each company
-  const chartData: ChartDataPoint[] = [];
-  const lastValues: Record<string, number | undefined> = {};
-
-  sortedPeriods.forEach((period) => {
-    const point: ChartDataPoint = { period };
-
+  const allPeriods = useMemo(() => {
+    const set = new Set<string>();
     companies.forEach((company) => {
-      const symbol = company.symbol;
-      const valueAtPeriod = priceByCompanyAndPeriod[symbol]?.[period];
-      if (typeof valueAtPeriod === "number") {
-        lastValues[symbol] = valueAtPeriod;
-      }
-      if (typeof lastValues[symbol] === "number") {
-        point[symbol] = lastValues[symbol] as number;
-      }
+      company.prices.forEach((price) => {
+        set.add(price.label);
+      });
+    });
+    return Array.from(set).sort(comparePeriod);
+  }, [companies]);
+
+  // Build datasets, carrying forward the last known price for each company
+  const datasets = useMemo(() => {
+    const bySymbol: Record<string, number[]> = {};
+    const lastValues: Record<string, number | undefined> = {};
+
+    companies.forEach((c) => {
+      bySymbol[c.symbol] = [];
     });
 
-    chartData.push(point);
-  });
+    allPeriods.forEach((period) => {
+      companies.forEach((company) => {
+        const symbol = company.symbol;
+        const pricePoint = company.prices.find((p) => p.label === period);
+        if (pricePoint) {
+          lastValues[symbol] = pricePoint.value;
+        }
+        const value = lastValues[symbol];
+        bySymbol[symbol].push(typeof value === "number" ? value : NaN);
+      });
+    });
 
-  const hasDataPoints = chartData.some((point) =>
-    companies.some((company) => typeof point[company.symbol] === "number")
-  );
+    return companies.map((company, index) => {
+      const color = COMPANY_COLORS[index % COMPANY_COLORS.length];
+      return {
+        label: `${company.symbol} - ${company.name}`,
+        data: bySymbol[company.symbol],
+        borderColor: color,
+        backgroundColor: color,
+        borderWidth: 3,
+        tension: 0.4,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointBackgroundColor: "#ffffff",
+        pointBorderColor: color,
+        pointBorderWidth: 2,
+        spanGaps: true,
+      };
+    });
+  }, [allPeriods, companies]);
 
-  if (!chartData.length || !hasDataPoints) {
+  const hasDataPoints = datasets.some((ds) => ds.data.some((v) => !Number.isNaN(v)));
+
+  if (!allPeriods.length || !hasDataPoints) {
     return (
       <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-6 text-sm text-zinc-600">
         📊 No chartable price history yet.
@@ -119,6 +134,54 @@ export function StockCharts({ companies }: { companies: ChartCompany[] }) {
         : [...prev, symbol]
     );
   };
+
+  const chartData = useMemo(() => {
+    const filteredDatasets = datasets.filter((ds) =>
+      visibleSymbols.some((sym) => ds.label.startsWith(sym + " "))
+    );
+
+    return {
+      labels: allPeriods,
+      datasets: filteredDatasets,
+    };
+  }, [allPeriods, datasets, visibleSymbols]);
+
+  const options = useMemo(
+    () => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: "nearest" as const,
+        intersect: false,
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          enabled: true,
+          callbacks: {
+            label: (ctx: any) => {
+              const value = ctx.parsed.y as number;
+              return `$${value.toFixed(2)}`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+        },
+        y: {
+          grid: {
+            color: "#e5e7eb",
+          },
+          ticks: {
+            callback: (value: number | string) => `$${Number(value).toFixed(0)}`,
+          },
+        },
+      },
+    }),
+    [],
+  );
 
   return (
     <div className="bg-white rounded-xl border border-zinc-200 p-6 shadow-sm">
@@ -159,47 +222,7 @@ export function StockCharts({ companies }: { companies: ChartCompany[] }) {
       </div>
 
       <div className="h-80">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 16, right: 24, left: 8, bottom: 16 }}>
-            <CartesianGrid stroke="#e5e7eb" />
-            <XAxis
-              dataKey="period"
-              tick={{ fontSize: 12, fill: "#6b7280" }}
-              axisLine={{ stroke: "#d1d5db" }}
-            />
-            <YAxis
-              tick={{ fontSize: 12, fill: "#6b7280" }}
-              axisLine={{ stroke: "#d1d5db" }}
-              tickFormatter={(value: number) => `$${value.toFixed(0)}`}
-            />
-
-            {companies.map((company, index) => (
-              <Line
-                key={company.symbol}
-                type="basis"
-                dataKey={company.symbol}
-                stroke={COMPANY_COLORS[index % COMPANY_COLORS.length]}
-                strokeWidth={3.5}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                dot={{
-                  r: 6,
-                  stroke: "#ffffff",
-                  strokeWidth: 2,
-                }}
-                activeDot={{
-                  r: 8,
-                  stroke: "#ffffff",
-                  strokeWidth: 3,
-                }}
-                isAnimationActive={false}
-                hide={!visibleSymbols.includes(company.symbol)}
-                name={`${company.symbol} - ${company.name}`}
-                style={{ shapeRendering: "geometricPrecision" }}
-              />
-            ))}
-          </LineChart>
-        </ResponsiveContainer>
+        <Line data={chartData} options={options} />
       </div>
     </div>
   );
