@@ -21,16 +21,6 @@ interface User {
   balance: number;
 }
 
-type HoldingsSortOption =
-  | "symbol-asc"
-  | "symbol-desc"
-  | "shares-desc"
-  | "shares-asc"
-  | "price-desc"
-  | "price-asc"
-  | "value-desc"
-  | "value-asc";
-
 export default function TradePage() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
@@ -45,7 +35,6 @@ export default function TradePage() {
   const [showTradeModal, setShowTradeModal] = useState(false);
   const [tradingEnded, setTradingEnded] = useState(false);
   const [companyFilter, setCompanyFilter] = useState("");
-  const [sortOption, setSortOption] = useState<HoldingsSortOption>("value-desc");
   const router = useRouter();
 
   const fetchTradeData = useCallback(async () => {
@@ -203,27 +192,7 @@ export default function TradePage() {
     );
   });
 
-  const displayedHoldings = [...filteredHoldings].sort((a, b) => {
-    switch (sortOption) {
-      case "shares-desc":
-        return b.shares - a.shares;
-      case "shares-asc":
-        return a.shares - b.shares;
-      case "price-desc":
-        return b.price - a.price;
-      case "price-asc":
-        return a.price - b.price;
-      case "value-desc":
-        return b.value - a.value;
-      case "value-asc":
-        return a.value - b.value;
-      case "symbol-desc":
-        return a.symbol.localeCompare(b.symbol) * -1;
-      case "symbol-asc":
-      default:
-        return a.symbol.localeCompare(b.symbol);
-    }
-  });
+  const displayedHoldings = filteredHoldings;
 
   if (loading) {
     return (
@@ -317,7 +286,7 @@ export default function TradePage() {
                 <div>
                   <h3 className="text-lg font-semibold text-slate-900">Your Holdings</h3>
                   <p className="text-sm text-slate-500">
-                    Filter and sort your positions by company, price, or shares.
+                    Filter your positions by company.
                   </p>
                 </div>
                 {holdings.length > 0 && (
@@ -333,23 +302,6 @@ export default function TradePage() {
                         placeholder="Symbol or name"
                         className="block w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
                       />
-                    </div>
-                    <div className="sm:w-44">
-                      <label className="block text-xs font-medium text-slate-700 mb-1">
-                        Sort by
-                      </label>
-                      <select
-                        value={sortOption}
-                        onChange={(e) => setSortOption(e.target.value as HoldingsSortOption)}
-                        className="block w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
-                      >
-                        <option value="value-desc">Largest position value</option>
-                        <option value="shares-desc">Most shares</option>
-                        <option value="price-desc">Highest price</option>
-                        <option value="price-asc">Lowest price</option>
-                        <option value="symbol-asc">Symbol A → Z</option>
-                        <option value="symbol-desc">Symbol Z → A</option>
-                      </select>
                     </div>
                   </div>
                 )}
@@ -386,7 +338,7 @@ export default function TradePage() {
                       No holdings match your search
                     </p>
                     <p className="text-xs text-slate-500 mb-2">
-                      Try adjusting your company filter or sort option.
+                      Try adjusting your company filter.
                     </p>
                     <button
                       type="button"

@@ -45,6 +45,8 @@ type SellOfferSortOption =
   | 'price-desc'
   | 'price-asc';
 
+type BuyOfferSortOption = 'recent' | 'price-desc' | 'price-asc';
+
 const getDiscountPercent = (offer: SellOffer, prices: Record<string, number>) => {
   const marketPrice = prices[offer.company.symbol];
   if (!marketPrice || marketPrice <= 0) return 0;
@@ -93,6 +95,7 @@ export default function OffersPage() {
   const [prices, setPrices] = useState<Record<string, number>>({});
   const [companyFilter, setCompanyFilter] = useState('');
   const [sortOption, setSortOption] = useState<SellOfferSortOption>('recent');
+  const [buySortOption, setBuySortOption] = useState<BuyOfferSortOption>('recent');
 
   useEffect(() => {
     fetchOffers();
@@ -288,6 +291,18 @@ export default function OffersPage() {
         if (diff !== 0) return diff;
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       }
+      case 'recent':
+      default:
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    }
+  });
+
+  const sortedBuyOffers = [...buyOffers].sort((a, b) => {
+    switch (buySortOption) {
+      case 'price-desc':
+        return b.offeredPrice - a.offeredPrice;
+      case 'price-asc':
+        return a.offeredPrice - b.offeredPrice;
       case 'recent':
       default:
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -518,7 +533,20 @@ export default function OffersPage() {
                 <p className="text-slate-600">Buy offers will appear here when users make offers on sell listings.</p>
               </div>
             ) : (
-              buyOffers.map((offer) => (
+              <>
+                <div className="flex justify-end items-center gap-2">
+                  <label className="text-sm font-medium text-slate-700">Sort by</label>
+                  <select
+                    value={buySortOption}
+                    onChange={(e) => setBuySortOption(e.target.value as BuyOfferSortOption)}
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  >
+                    <option value="recent">Most recent</option>
+                    <option value="price-desc">Highest price per share</option>
+                    <option value="price-asc">Lowest price per share</option>
+                  </select>
+                </div>
+                {sortedBuyOffers.map((offer) => (
                 <div
                   key={offer.id}
                   className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm"
@@ -578,9 +606,10 @@ export default function OffersPage() {
                         Decline
                       </TiltButton>
                     </div>
-                  </div>
                 </div>
-              ))
+                </div>
+              ))}
+              </>
             )}
           </div>
         )}

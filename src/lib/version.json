@@ -1,6 +1,6 @@
 {
-  "version": "0.8.0",
+  "version": "0.8.1",
   "commitHash": "56dd32d",
-  "commitMessage": "Add deal quality labels to sell offers",
-  "buildTime": "2026-01-09T18:35:50.000Z"
+  "commitMessage": "Adjust holdings and add sorting for buy offers",
+  "buildTime": "2026-01-09T18:37:55.000Z"
 }
