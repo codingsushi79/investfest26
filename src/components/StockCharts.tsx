@@ -1,14 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import {
   LineChart,
   Line,
   CartesianGrid,
   XAxis,
   YAxis,
-  Tooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts";
 
 type ChartCompany = {
@@ -109,33 +108,60 @@ export function StockCharts({ companies }: { companies: ChartCompany[] }) {
     );
   }
 
+  const [visibleSymbols, setVisibleSymbols] = useState<string[]>(
+    companies.map((c) => c.symbol)
+  );
+
+  const toggleSymbol = (symbol: string) => {
+    setVisibleSymbols((prev) =>
+      prev.includes(symbol)
+        ? prev.filter((s) => s !== symbol)
+        : [...prev, symbol]
+    );
+  };
+
   return (
     <div className="bg-white rounded-xl border border-zinc-200 p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <div>
           <h3 className="text-lg font-semibold text-zinc-900">📈 Stock Price History</h3>
           <p className="text-sm text-zinc-600">All companies over time</p>
         </div>
-        <div className="flex items-center gap-3 text-sm">
-          {companies.slice(0, 4).map((company, index) => (
-            <div key={company.symbol} className="flex items-center gap-2">
+      </div>
+
+      {/* Company visibility toggles */}
+      <div className="flex flex-wrap gap-2 mb-4 text-xs">
+        {companies.map((company, index) => {
+          const active = visibleSymbols.includes(company.symbol);
+          const color = COMPANY_COLORS[index % COMPANY_COLORS.length];
+          return (
+            <button
+              key={company.symbol}
+              type="button"
+              onClick={() => toggleSymbol(company.symbol)}
+              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 transition-colors ${
+                active
+                  ? "border-transparent bg-zinc-100 text-zinc-800"
+                  : "border-zinc-200 bg-white text-zinc-400"
+              }`}
+            >
               <span
-                className="inline-block w-3 h-3 rounded-full"
-                style={{ backgroundColor: COMPANY_COLORS[index % COMPANY_COLORS.length] }}
+                className="inline-block w-2.5 h-2.5 rounded-full"
+                style={{
+                  backgroundColor: color,
+                  opacity: active ? 1 : 0.25,
+                }}
               />
-              <span className="text-zinc-700">{company.symbol}</span>
-            </div>
-          ))}
-          {companies.length > 4 && (
-            <span className="text-zinc-500">+ {companies.length - 4} more</span>
-          )}
-        </div>
+              <span className="font-medium">{company.symbol}</span>
+            </button>
+          );
+        })}
       </div>
 
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 16, right: 24, left: 8, bottom: 8 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <LineChart data={chartData} margin={{ top: 8, right: 24, left: 8, bottom: 8 }}>
+            <CartesianGrid stroke="#e5e7eb" />
             <XAxis
               dataKey="period"
               tick={{ fontSize: 12, fill: "#6b7280" }}
@@ -146,7 +172,6 @@ export function StockCharts({ companies }: { companies: ChartCompany[] }) {
               axisLine={{ stroke: "#d1d5db" }}
               tickFormatter={(value: number) => `$${value.toFixed(0)}`}
             />
-            <Legend />
 
             {companies.map((company, index) => (
               <Line
@@ -154,9 +179,12 @@ export function StockCharts({ companies }: { companies: ChartCompany[] }) {
                 type="monotone"
                 dataKey={company.symbol}
                 stroke={COMPANY_COLORS[index % COMPANY_COLORS.length]}
-                strokeWidth={2}
+                strokeWidth={2.5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 dot={false}
                 isAnimationActive={false}
+                hide={!visibleSymbols.includes(company.symbol)}
                 name={`${company.symbol} - ${company.name}`}
               />
             ))}
