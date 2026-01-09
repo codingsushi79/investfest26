@@ -197,15 +197,14 @@ export function StockCharts({ companies }: { companies: ChartCompany[] }) {
               </div>
             `;
 
-            const { offsetLeft, offsetTop } = chart.canvas;
             const position = chart.canvas.getBoundingClientRect();
 
             tooltipEl.style.opacity = "1";
             tooltipEl.style.position = "absolute";
             tooltipEl.style.left =
-              position.left + window.scrollX + tooltip.caretX + offsetLeft + 12 + "px";
+              position.left + window.scrollX + tooltip.caretX + 16 + "px";
             tooltipEl.style.top =
-              position.top + window.scrollY + tooltip.caretY + offsetTop + 12 + "px";
+              position.top + window.scrollY + tooltip.caretY + 16 + "px";
           },
         },
       },
