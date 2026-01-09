@@ -160,7 +160,7 @@ export function StockCharts({ companies }: { companies: ChartCompany[] }) {
 
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 8, right: 24, left: 8, bottom: 8 }}>
+          <LineChart data={chartData} margin={{ top: 16, right: 24, left: 8, bottom: 16 }}>
             <CartesianGrid stroke="#e5e7eb" />
             <XAxis
               dataKey="period"
@@ -176,21 +176,21 @@ export function StockCharts({ companies }: { companies: ChartCompany[] }) {
             {companies.map((company, index) => (
               <Line
                 key={company.symbol}
-                type="monotoneX"
+                type="basis"
                 dataKey={company.symbol}
                 stroke={COMPANY_COLORS[index % COMPANY_COLORS.length]}
-                strokeWidth={3}
+                strokeWidth={3.5}
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 dot={{
-                  r: 4,
-                  stroke: "#ffffff",
-                  strokeWidth: 1,
-                }}
-                activeDot={{
                   r: 6,
                   stroke: "#ffffff",
                   strokeWidth: 2,
+                }}
+                activeDot={{
+                  r: 8,
+                  stroke: "#ffffff",
+                  strokeWidth: 3,
                 }}
                 isAnimationActive={false}
                 hide={!visibleSymbols.includes(company.symbol)}
