@@ -1,6 +1,6 @@
 {
-  "version": "0.7.7",
-  "commitHash": "603c940",
-  "commitMessage": "Refactor Tooltip component in ModeratorProfileViewPage to handle undefined values more robustly, ens",
-  "buildTime": "2026-01-07T18:15:00.403Z"
+  "version": "0.7.8",
+  "commitHash": "56dd32d",
+  "commitMessage": "Add migration for buy offer shares and update offers page",
+  "buildTime": "2026-01-09T18:21:22.000Z"
 }

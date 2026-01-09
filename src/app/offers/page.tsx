@@ -37,6 +37,20 @@ interface BuyOffer {
   };
 }
 
+type SellOfferSortOption =
+  | 'recent'
+  | 'shares-desc'
+  | 'shares-asc'
+  | 'discount-desc'
+  | 'price-desc'
+  | 'price-asc';
+
+const getDiscountPercent = (offer: SellOffer, prices: Record<string, number>) => {
+  const marketPrice = prices[offer.company.symbol];
+  if (!marketPrice || marketPrice <= 0) return 0;
+  return ((marketPrice - offer.pricePerShare) / marketPrice) * 100;
+};
+
 export default function OffersPage() {
   const router = useRouter();
   const [sellOffers, setSellOffers] = useState<SellOffer[]>([]);
@@ -50,6 +64,9 @@ export default function OffersPage() {
   const [buyOfferPrice, setBuyOfferPrice] = useState('');
   const [buyOfferShares, setBuyOfferShares] = useState('');
   const [submittingBuyOffer, setSubmittingBuyOffer] = useState(false);
+  const [prices, setPrices] = useState<Record<string, number>>({});
+  const [companyFilter, setCompanyFilter] = useState('');
+  const [sortOption, setSortOption] = useState<SellOfferSortOption>('recent');
 
   useEffect(() => {
     fetchOffers();
@@ -58,33 +75,46 @@ export default function OffersPage() {
   const fetchOffers = async () => {
     try {
       setLoading(true);
-      const [sellResponse, buyResponse, userResponse] = await Promise.all([
+      const [sellResponse, buyResponse, userResponse, pricesResponse] = await Promise.all([
         fetch('/api/offers/sell', { credentials: 'include' }),
         fetch('/api/offers/buy', { credentials: 'include' }),
         fetch('/api/user', { credentials: 'include' }),
+        fetch('/api/prices'),
       ]);
 
       // Handle authentication errors
-      if (sellResponse.status === 401 || buyResponse.status === 401 || userResponse.status === 401) {
+      if (
+        sellResponse.status === 401 ||
+        buyResponse.status === 401 ||
+        userResponse.status === 401
+      ) {
         router.push('/signin');
         return;
       }
 
-      if (!sellResponse.ok || !buyResponse.ok || !userResponse.ok) {
+      if (!sellResponse.ok || !buyResponse.ok || !userResponse.ok || !pricesResponse.ok) {
         const sellError = sellResponse.ok ? null : await sellResponse.json();
         const buyError = buyResponse.ok ? null : await buyResponse.json();
         const userError = userResponse.ok ? null : await userResponse.json();
-        const errorMessage = sellError?.error || buyError?.error || userError?.error || 'Failed to fetch offers';
+        const pricesError = pricesResponse.ok ? null : await pricesResponse.json();
+        const errorMessage =
+          sellError?.error ||
+          buyError?.error ||
+          userError?.error ||
+          pricesError?.error ||
+          'Failed to fetch offers';
         throw new Error(errorMessage);
       }
 
       const sellData = await sellResponse.json();
       const buyData = await buyResponse.json();
       const userData = await userResponse.json();
+      const pricesData = await pricesResponse.json();
 
       setSellOffers(sellData.offers || []);
       setBuyOffers(buyData.offers || []);
       setUser(userData);
+      setPrices(pricesData || {});
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -209,6 +239,38 @@ export default function OffersPage() {
     );
   }
 
+  const normalizedFilter = companyFilter.trim().toLowerCase();
+  const filteredSellOffers = sellOffers.filter((offer) => {
+    if (!normalizedFilter) return true;
+    const nameMatch = offer.company.name.toLowerCase().includes(normalizedFilter);
+    const symbolMatch = offer.company.symbol.toLowerCase().includes(normalizedFilter);
+    return nameMatch || symbolMatch;
+  });
+
+  const displayedSellOffers = [...filteredSellOffers].sort((a, b) => {
+    switch (sortOption) {
+      case 'shares-desc':
+        return b.shares - a.shares;
+      case 'shares-asc':
+        return a.shares - b.shares;
+      case 'price-desc':
+        return b.pricePerShare - a.pricePerShare;
+      case 'price-asc':
+        return a.pricePerShare - b.pricePerShare;
+      case 'discount-desc': {
+        const diff = getDiscountPercent(b, prices) - getDiscountPercent(a, prices);
+        if (diff !== 0) return diff;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      case 'recent':
+      default:
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    }
+  });
+
+  const hasAnySellOffers = sellOffers.length > 0;
+  const hasDisplayedSellOffers = displayedSellOffers.length > 0;
+
   return (
     <div className="min-h-screen bg-zinc-50">
       <div className="mx-auto max-w-7xl px-4 py-8">
@@ -268,7 +330,7 @@ export default function OffersPage() {
         {/* Content */}
         {activeTab === 'sell' ? (
           <div className="space-y-4">
-            {sellOffers.length === 0 ? (
+            {!hasAnySellOffers ? (
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">📈</div>
                 <h3 className="text-xl font-semibold text-slate-900 mb-2">No sell offers available</h3>
@@ -281,58 +343,138 @@ export default function OffersPage() {
                 </TiltLink>
               </div>
             ) : (
-              sellOffers.map((offer) => (
-                <div
-                  key={offer.id}
-                  className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-bold">
-                        {offer.company.symbol[0]}
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-slate-900">{offer.company.name}</h3>
-                        <p className="text-sm text-slate-600">{offer.company.symbol}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-slate-600">Listed by</p>
-                      <p className="font-medium text-slate-900">{offer.seller.username}</p>
-                    </div>
+              <>
+                {/* Filters & Sorting */}
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <div className="w-full md:max-w-sm">
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Search by company
+                    </label>
+                    <input
+                      type="text"
+                      value={companyFilter}
+                      onChange={(e) => setCompanyFilter(e.target.value)}
+                      placeholder="Start typing a company name or symbol..."
+                      className="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    />
                   </div>
-
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                    <div>
-                      <p className="text-sm text-slate-600">Shares</p>
-                      <p className="font-semibold text-slate-900">{offer.shares.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-600">Price per Share</p>
-                      <p className="font-semibold text-green-600">{formatCurrency(offer.pricePerShare)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-600">Total Value</p>
-                      <p className="font-semibold text-slate-900">
-                        {formatCurrency(offer.shares * offer.pricePerShare)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-600">Listed</p>
-                      <p className="font-semibold text-slate-900">{formatDate(offer.createdAt)}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end">
-                    <TiltButton
-                      onClick={() => handleMakeBuyOffer(offer)}
-                      className="rounded-lg bg-blue-600 px-4 py-2 text-white font-medium hover:bg-blue-700 transition-colors"
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-medium text-slate-700">Sort by</label>
+                    <select
+                      value={sortOption}
+                      onChange={(e) => setSortOption(e.target.value as SellOfferSortOption)}
+                      className="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
                     >
-                      Make Buy Offer
-                    </TiltButton>
+                      <option value="recent">Most recent</option>
+                      <option value="shares-desc">Highest shares</option>
+                      <option value="shares-asc">Lowest shares</option>
+                      <option value="discount-desc">Greatest discount vs market</option>
+                      <option value="price-desc">Highest price per share</option>
+                      <option value="price-asc">Lowest price per share</option>
+                    </select>
                   </div>
                 </div>
-              ))
+
+                {!hasDisplayedSellOffers ? (
+                  <div className="text-center py-12 border border-dashed border-slate-200 rounded-xl">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                      No offers match your filters
+                    </h3>
+                    <p className="text-slate-600 mb-2">
+                      Try adjusting your search or sort options.
+                    </p>
+                    {companyFilter && (
+                      <button
+                        onClick={() => setCompanyFilter('')}
+                        className="mt-2 rounded-lg bg-slate-200 px-4 py-2 text-sm text-slate-700 hover:bg-slate-300 transition-colors"
+                      >
+                        Clear search
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  displayedSellOffers.map((offer) => {
+                    const marketPrice = prices[offer.company.symbol];
+                    const discountPercent =
+                      marketPrice && marketPrice > 0
+                        ? ((marketPrice - offer.pricePerShare) / marketPrice) * 100
+                        : null;
+
+                    return (
+                      <div
+                        key={offer.id}
+                        className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-bold">
+                              {offer.company.symbol[0]}
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-slate-900">{offer.company.name}</h3>
+                              <p className="text-sm text-slate-600">{offer.company.symbol}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-slate-600">Listed by</p>
+                            <p className="font-medium text-slate-900">{offer.seller.username}</p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                          <div>
+                            <p className="text-sm text-slate-600">Shares</p>
+                            <p className="font-semibold text-slate-900">{offer.shares.toLocaleString()}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-slate-600">Price per Share</p>
+                            <p className="font-semibold text-green-600">
+                              {formatCurrency(offer.pricePerShare)}
+                            </p>
+                            {typeof marketPrice === 'number' && marketPrice > 0 && (
+                              <p className="mt-1 text-xs text-slate-500">
+                                Market: {formatCurrency(marketPrice)}{' '}
+                                {discountPercent !== null && discountPercent !== 0 && (
+                                  <span
+                                    className={
+                                      discountPercent > 0 ? 'text-green-600' : 'text-red-600'
+                                    }
+                                  >
+                                    (
+                                    {discountPercent > 0
+                                      ? `${discountPercent.toFixed(1)}% below`
+                                      : `${Math.abs(discountPercent).toFixed(1)}% above`}{' '}
+                                    market)
+                                  </span>
+                                )}
+                              </p>
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-sm text-slate-600">Total Value</p>
+                            <p className="font-semibold text-slate-900">
+                              {formatCurrency(offer.shares * offer.pricePerShare)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-slate-600">Listed</p>
+                            <p className="font-semibold text-slate-900">{formatDate(offer.createdAt)}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end">
+                          <TiltButton
+                            onClick={() => handleMakeBuyOffer(offer)}
+                            className="rounded-lg bg-blue-600 px-4 py-2 text-white font-medium hover:bg-blue-700 transition-colors"
+                          >
+                            Make Buy Offer
+                          </TiltButton>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </>
             )}
           </div>
         ) : (
