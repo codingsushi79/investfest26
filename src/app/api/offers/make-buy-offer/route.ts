@@ -6,6 +6,7 @@ import { z } from 'zod';
 const makeBuyOfferSchema = z.object({
   sellOfferId: z.string(),
   offeredPrice: z.number().positive(),
+  shares: z.number().int().positive(),
 });
 
 export async function POST(request: NextRequest) {
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { sellOfferId, offeredPrice } = makeBuyOfferSchema.parse(body);
+    const { sellOfferId, offeredPrice, shares } = makeBuyOfferSchema.parse(body);
 
     // Check if sell offer exists and is active
     const sellOffer = await prisma.sellOffer.findUnique({
@@ -47,8 +48,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user has sufficient balance
-    const totalCost = sellOffer.shares * offeredPrice;
+    // Ensure requested shares do not exceed listing
+    if (shares > sellOffer.shares) {
+      return NextResponse.json(
+        { error: 'Cannot request more shares than are listed' },
+        { status: 400 }
+      );
+    }
+
+    // Check if user has sufficient balance for the requested amount
+    const totalCost = shares * offeredPrice;
     if (user.balance < totalCost) {
       return NextResponse.json(
         { error: 'Insufficient balance' },
@@ -78,6 +87,7 @@ export async function POST(request: NextRequest) {
         sellOfferId,
         buyerId: user.id,
         offeredPrice,
+        shares,
       },
       include: {
         buyer: {

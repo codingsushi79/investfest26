@@ -60,13 +60,24 @@ export async function POST(request: NextRequest) {
     if (action === 'accept') {
       // Start a transaction to handle the trade
       await prisma.$transaction(async (tx) => {
+        const requestedShares = buyOffer.shares;
+        const listingShares = buyOffer.sellOffer.shares;
+
+        if (requestedShares <= 0) {
+          throw new Error('Invalid share quantity on offer');
+        }
+
+        if (requestedShares > listingShares) {
+          throw new Error('Not enough shares remaining in this listing');
+        }
+
         // Check if buyer still has sufficient balance
         const buyer = await tx.user.findUnique({
           where: { id: buyOffer.buyerId },
           select: { balance: true },
         });
 
-        const totalCost = buyOffer.sellOffer.shares * buyOffer.offeredPrice;
+        const totalCost = requestedShares * buyOffer.offeredPrice;
         if (!buyer || buyer.balance < totalCost) {
           throw new Error('Buyer has insufficient balance');
         }
@@ -81,7 +92,7 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        if (!sellerHolding || sellerHolding.shares < buyOffer.sellOffer.shares) {
+        if (!sellerHolding || sellerHolding.shares < requestedShares) {
           throw new Error('Seller has insufficient shares');
         }
 
@@ -105,7 +116,7 @@ export async function POST(request: NextRequest) {
               },
             },
             data: {
-              shares: buyerHolding.shares + buyOffer.sellOffer.shares,
+              shares: buyerHolding.shares + requestedShares,
             },
           });
         } else {
@@ -113,13 +124,13 @@ export async function POST(request: NextRequest) {
             data: {
               userId: buyOffer.buyerId,
               companyId: buyOffer.sellOffer.companyId,
-              shares: buyOffer.sellOffer.shares,
+              shares: requestedShares,
             },
           });
         }
 
         // Update seller's holding
-        if (sellerHolding.shares === buyOffer.sellOffer.shares) {
+        if (sellerHolding.shares === requestedShares) {
           // Remove the holding if all shares are sold
           await tx.holding.delete({
             where: {
@@ -139,7 +150,7 @@ export async function POST(request: NextRequest) {
               },
             },
             data: {
-              shares: sellerHolding.shares - buyOffer.sellOffer.shares,
+              shares: sellerHolding.shares - requestedShares,
             },
           });
         }
@@ -165,24 +176,35 @@ export async function POST(request: NextRequest) {
           data: { status: 'accepted' },
         });
 
-        // Update sell offer status to completed
-        await tx.sellOffer.update({
-          where: { id: buyOffer.sellOfferId },
-          data: {
-            status: 'completed',
-            completedAt: new Date(),
-          },
-        });
+        // Update sell offer shares and possibly status
+        const remainingShares = listingShares - requestedShares;
+        if (remainingShares === 0) {
+          await tx.sellOffer.update({
+            where: { id: buyOffer.sellOfferId },
+            data: {
+              status: 'completed',
+              completedAt: new Date(),
+              shares: 0,
+            },
+          });
 
-        // Decline all other pending offers on this sell offer
-        await tx.buyOffer.updateMany({
-          where: {
-            sellOfferId: buyOffer.sellOfferId,
-            status: 'pending',
-            id: { not: buyOfferId },
-          },
-          data: { status: 'declined' },
-        });
+          // Decline all other pending offers on this now-completed sell offer
+          await tx.buyOffer.updateMany({
+            where: {
+              sellOfferId: buyOffer.sellOfferId,
+              status: 'pending',
+              id: { not: buyOfferId },
+            },
+            data: { status: 'declined' },
+          });
+        } else {
+          await tx.sellOffer.update({
+            where: { id: buyOffer.sellOfferId },
+            data: {
+              shares: remainingShares,
+            },
+          });
+        }
 
         // Create transaction records
         await tx.transaction.create({
@@ -190,7 +212,7 @@ export async function POST(request: NextRequest) {
             userId: buyOffer.buyerId,
             companyId: buyOffer.sellOffer.companyId,
             type: 'BUY',
-            shares: buyOffer.sellOffer.shares,
+            shares: requestedShares,
             price: buyOffer.offeredPrice,
           },
         });
@@ -200,7 +222,7 @@ export async function POST(request: NextRequest) {
             userId: buyOffer.sellOffer.sellerId,
             companyId: buyOffer.sellOffer.companyId,
             type: 'SELL',
-            shares: buyOffer.sellOffer.shares,
+            shares: requestedShares,
             price: buyOffer.offeredPrice,
           },
         });

@@ -20,6 +20,7 @@ interface MySellOffer {
   buyOffers: {
     id: string;
     offeredPrice: number;
+    shares: number;
     status: string;
     createdAt: string;
     buyer: {
@@ -31,6 +32,7 @@ interface MySellOffer {
 interface MyBuyOffer {
   id: string;
   offeredPrice: number;
+  shares: number;
   status: string;
   createdAt: string;
   sellOffer: {
@@ -322,10 +324,10 @@ export default function MyOffersPage() {
                             <div className="flex items-center space-x-3">
                               <span className="font-medium text-slate-900">{buyOffer.buyer.username}</span>
                               <span className="text-sm text-slate-600">
-                                offered {formatCurrency(buyOffer.offeredPrice)}/share
+                                offered {formatCurrency(buyOffer.offeredPrice)}/share for {buyOffer.shares.toLocaleString()} shares
                               </span>
                               <span className="text-sm text-slate-600">
-                                total: {formatCurrency(buyOffer.offeredPrice * offer.shares)}
+                                total: {formatCurrency(buyOffer.offeredPrice * buyOffer.shares)}
                               </span>
                             </div>
                             <div className="flex items-center space-x-2">
@@ -406,8 +408,8 @@ export default function MyOffersPage() {
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                     <div>
-                      <p className="text-sm text-slate-600">Shares Offered</p>
-                      <p className="font-semibold text-slate-900">{offer.sellOffer.shares.toLocaleString()}</p>
+                      <p className="text-sm text-slate-600">Shares Requested</p>
+                      <p className="font-semibold text-slate-900">{offer.shares.toLocaleString()}</p>
                     </div>
                     <div>
                       <p className="text-sm text-slate-600">Your Offer</p>
@@ -416,7 +418,7 @@ export default function MyOffersPage() {
                     <div>
                       <p className="text-sm text-slate-600">Total Cost</p>
                       <p className="font-semibold text-slate-900">
-                        {formatCurrency(offer.sellOffer.shares * offer.offeredPrice)}
+                        {formatCurrency(offer.shares * offer.offeredPrice)}
                       </p>
                     </div>
                     <div>

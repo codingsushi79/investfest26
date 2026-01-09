@@ -22,6 +22,7 @@ interface SellOffer {
 
 interface BuyOffer {
   id: string;
+  shares: number;
   offeredPrice: number;
   createdAt: string;
   buyer: {
@@ -47,6 +48,7 @@ export default function OffersPage() {
   const [showBuyOfferModal, setShowBuyOfferModal] = useState(false);
   const [selectedSellOffer, setSelectedSellOffer] = useState<SellOffer | null>(null);
   const [buyOfferPrice, setBuyOfferPrice] = useState('');
+  const [buyOfferShares, setBuyOfferShares] = useState('');
   const [submittingBuyOffer, setSubmittingBuyOffer] = useState(false);
 
   useEffect(() => {
@@ -110,11 +112,12 @@ export default function OffersPage() {
   const handleMakeBuyOffer = (sellOffer: SellOffer) => {
     setSelectedSellOffer(sellOffer);
     setBuyOfferPrice(sellOffer.pricePerShare.toString());
+    setBuyOfferShares(sellOffer.shares.toString());
     setShowBuyOfferModal(true);
   };
 
   const submitBuyOffer = async () => {
-    if (!selectedSellOffer || !buyOfferPrice) return;
+    if (!selectedSellOffer || !buyOfferPrice || !buyOfferShares) return;
 
     setSubmittingBuyOffer(true);
     try {
@@ -127,6 +130,7 @@ export default function OffersPage() {
         body: JSON.stringify({
           sellOfferId: selectedSellOffer.id,
           offeredPrice: parseFloat(buyOfferPrice),
+          shares: parseInt(buyOfferShares, 10),
         }),
       });
 
@@ -138,6 +142,7 @@ export default function OffersPage() {
       setShowBuyOfferModal(false);
       setSelectedSellOffer(null);
       setBuyOfferPrice('');
+      setBuyOfferShares('');
       fetchOffers(); // Refresh the offers
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to make offer');
@@ -362,8 +367,8 @@ export default function OffersPage() {
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                     <div>
-                      <p className="text-sm text-slate-600">Shares Offered</p>
-                      <p className="font-semibold text-slate-900">{offer.sellOffer.shares.toLocaleString()}</p>
+                      <p className="text-sm text-slate-600">Shares Requested</p>
+                      <p className="font-semibold text-slate-900">{offer.shares.toLocaleString()}</p>
                     </div>
                     <div>
                       <p className="text-sm text-slate-600">Offered Price</p>
@@ -372,7 +377,7 @@ export default function OffersPage() {
                     <div>
                       <p className="text-sm text-slate-600">Total Value</p>
                       <p className="font-semibold text-slate-900">
-                        {formatCurrency(offer.sellOffer.shares * offer.offeredPrice)}
+                        {formatCurrency(offer.shares * offer.offeredPrice)}
                       </p>
                     </div>
                     <div>
@@ -436,32 +441,57 @@ export default function OffersPage() {
                   </div>
                 </div>
 
-                <div className="mb-6">
-                  <label htmlFor="offerPrice" className="block text-sm font-medium text-slate-900 mb-2">
-                    Your Offer Price per Share
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">$</span>
+                <div className="mb-6 space-y-4">
+                  <div>
+                    <label htmlFor="offerPrice" className="block text-sm font-medium text-slate-900 mb-2">
+                      Your Offer Price per Share
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500">$</span>
+                      <input
+                        type="number"
+                        id="offerPrice"
+                        value={buyOfferPrice}
+                        onChange={(e) => setBuyOfferPrice(e.target.value)}
+                        min="0.01"
+                        step="0.01"
+                        className="block w-full rounded-lg border border-slate-300 pl-8 pr-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="offerShares" className="block text-sm font-medium text-slate-900 mb-2">
+                      Number of Shares to Buy
+                    </label>
                     <input
                       type="number"
-                      id="offerPrice"
-                      value={buyOfferPrice}
-                      onChange={(e) => setBuyOfferPrice(e.target.value)}
-                      min="0.01"
-                      step="0.01"
-                      className="block w-full rounded-lg border border-slate-300 pl-8 pr-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
-                      placeholder="0.00"
+                      id="offerShares"
+                      value={buyOfferShares}
+                      onChange={(e) => setBuyOfferShares(e.target.value)}
+                      min="1"
+                      max={selectedSellOffer.shares}
+                      className="block w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                      placeholder="Enter number of shares"
                     />
+                    <p className="mt-1 text-xs text-slate-500">
+                      Max available: {selectedSellOffer.shares.toLocaleString()} shares
+                    </p>
                   </div>
-                  {buyOfferPrice && (
+
+                  {buyOfferPrice && buyOfferShares && (
                     <div className="mt-2 text-sm">
-                      <p className="text-slate-600">Total cost: {formatCurrency(selectedSellOffer.shares * parseFloat(buyOfferPrice))}</p>
+                      <p className="text-slate-600">
+                        Total cost:{' '}
+                        {formatCurrency((parseInt(buyOfferShares || '0', 10) || 0) * parseFloat(buyOfferPrice))}
+                      </p>
                       {parseFloat(buyOfferPrice) >= selectedSellOffer.pricePerShare ? (
-                        <p className="text-green-600">Above asking price</p>
+                        <p className="text-green-600">At or above asking price</p>
                       ) : (
                         <p className="text-blue-600">Below asking price</p>
                       )}
-                      {user && selectedSellOffer && user.balance < selectedSellOffer.shares * parseFloat(buyOfferPrice) && (
+                      {user && selectedSellOffer && (parseInt(buyOfferShares || '0', 10) || 0) * parseFloat(buyOfferPrice) > user.balance && (
                         <p className="text-red-600">Insufficient balance (you have {formatCurrency(user.balance)})</p>
                       )}
                     </div>
@@ -484,8 +514,9 @@ export default function OffersPage() {
                     disabled={
                       submittingBuyOffer ||
                       !buyOfferPrice ||
+                      !buyOfferShares ||
                       !user ||
-                      (selectedSellOffer && user.balance < selectedSellOffer.shares * parseFloat(buyOfferPrice))
+                      (selectedSellOffer && (parseInt(buyOfferShares || '0', 10) || 0) * parseFloat(buyOfferPrice) > user.balance)
                     }
                     className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-white font-medium hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors"
                   >
