@@ -157,12 +157,55 @@ export function StockCharts({ companies }: { companies: ChartCompany[] }) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          enabled: true,
-          callbacks: {
-            label: (ctx: any) => {
-              const value = ctx.parsed.y as number;
-              return `$${value.toFixed(2)}`;
-            },
+          enabled: false, // use custom external tooltip for styling
+          external: (context: any) => {
+            const { chart, tooltip } = context;
+
+            let tooltipEl = document.getElementById("stock-chart-tooltip");
+            if (!tooltipEl) {
+              tooltipEl = document.createElement("div");
+              tooltipEl.id = "stock-chart-tooltip";
+              tooltipEl.className =
+                "pointer-events-none absolute z-50 text-xs text-slate-700";
+              document.body.appendChild(tooltipEl);
+            }
+
+            // Hide
+            if (tooltip.opacity === 0) {
+              tooltipEl.style.opacity = "0";
+              return;
+            }
+
+            const dataPoint = tooltip.dataPoints?.[0];
+            if (!dataPoint) return;
+
+            const label = dataPoint.dataset.label as string;
+            const value = dataPoint.parsed.y as number;
+            const xLabel = tooltip.title?.[0] ?? "";
+            const color = dataPoint.element.options.borderColor as string;
+
+            tooltipEl.innerHTML = `
+              <div class="rounded-xl bg-white border border-slate-200 shadow-lg px-3 py-2">
+                <div class="text-[11px] font-medium text-slate-500 mb-1">${xLabel}</div>
+                <div class="flex items-center gap-2">
+                  <span class="inline-block w-2.5 h-2.5 rounded-full" style="background:${color}"></span>
+                  <div class="flex flex-col">
+                    <span class="text-[11px] font-semibold text-slate-900">${label}</span>
+                    <span class="text-[11px] text-slate-600">$${value.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            `;
+
+            const { offsetLeft, offsetTop } = chart.canvas;
+            const position = chart.canvas.getBoundingClientRect();
+
+            tooltipEl.style.opacity = "1";
+            tooltipEl.style.position = "absolute";
+            tooltipEl.style.left =
+              position.left + window.scrollX + tooltip.caretX + offsetLeft + 12 + "px";
+            tooltipEl.style.top =
+              position.top + window.scrollY + tooltip.caretY + offsetTop + 12 + "px";
           },
         },
       },
