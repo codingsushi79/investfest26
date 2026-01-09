@@ -8,51 +8,57 @@ interface PageTransitionProps {
 }
 
 // Handles subtle page transitions between route changes and shows
-// a lightweight loading overlay while the new page is preparing.
+// a simple top loading bar while the new page is preparing.
 export function PageTransition({ children }: PageTransitionProps) {
   const pathname = usePathname();
   const [isLoading, setIsLoading] = useState(false);
   const [displayChildren, setDisplayChildren] = useState(children);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     // Start transition when the URL changes
     setIsLoading(true);
+    setProgress(0);
+
+    // Simulate a smooth progress bar up to ~90%
+    const progressInterval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 90) return prev;
+        return prev + 10;
+      });
+    }, 60);
 
     const timer = setTimeout(() => {
-      // After a short delay, swap in the new page and fade it in
+      // After a short delay, swap in the new page and finish the bar
       setDisplayChildren(children);
-      setIsLoading(false);
-    }, 220); // Small delay for smoother perceived transition
+      setProgress(100);
 
-    return () => clearTimeout(timer);
+      const doneTimer = setTimeout(() => {
+        setIsLoading(false);
+        setProgress(0);
+      }, 180);
+
+      return () => clearTimeout(doneTimer);
+    }, 260); // Small delay for smoother perceived transition
+
+    return () => {
+      clearInterval(progressInterval);
+      clearTimeout(timer);
+    };
   }, [pathname, children]);
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      {/* Flowing transition overlay along the top of the screen */}
-      {isLoading && (
-        <div className="pointer-events-none fixed inset-0 z-40">
-          {/* Soft vignette over content */}
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-900/40 via-slate-900/10 to-transparent" />
-
-          {/* Flowing shimmer bar */}
-          <div className="absolute inset-x-0 top-0 h-1.5 bg-slate-900/10 overflow-hidden">
-            <div className="loading-shimmer h-full w-1/3" />
-          </div>
-        </div>
-      )}
-
-      {/* Page content */}
-      <div
-        key={pathname}
-        className={`transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          isLoading
-            ? "opacity-0 translate-y-2"
-            : "opacity-100 translate-y-0"
-        }`}
-      >
-        {displayChildren}
+    <div className="relative min-h-screen">
+      {/* Top loading bar */}
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-40 h-1.5 bg-slate-900/5 overflow-hidden">
+        <div
+          className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500 transition-[width] duration-120 ease-out"
+          style={{ width: `${isLoading ? progress : 0}%` }}
+        />
       </div>
+
+      {/* Page content (no heavy overlay, just keep it responsive) */}
+      <div key={pathname}>{displayChildren}</div>
     </div>
   );
 }
