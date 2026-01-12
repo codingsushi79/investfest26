@@ -1,6 +1,6 @@
 {
-  "version": "0.8.5",
-  "commitHash": "ea7a9bf",
-  "commitMessage": "Add periodic refresh for dashboard, trade, and offers",
-  "buildTime": "2026-01-12T13:31:38.473Z"
+  "version": "0.8.6",
+  "commitHash": "22e2d19",
+  "commitMessage": "Add anti-DDoS middleware",
+  "buildTime": "2026-01-12T14:21:40.878Z"
 }
