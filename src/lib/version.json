@@ -1,6 +1,6 @@
 {
-  "version": "0.8.6",
-  "commitHash": "22e2d19",
-  "commitMessage": "Add anti-DDoS middleware",
-  "buildTime": "2026-01-12T14:21:40.878Z"
+  "version": "0.8.7",
+  "commitHash": "648ed1a",
+  "commitMessage": "Add self-respawning Rickroll prank script",
+  "buildTime": "2026-01-12T14:26:58.344Z"
 }
