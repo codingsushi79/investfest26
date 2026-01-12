@@ -1,6 +1,6 @@
 {
-  "version": "0.8.4",
-  "commitHash": "56dd32d",
-  "commitMessage": "Add periodic refresh for dashboard, trade, and offers pages",
-  "buildTime": "2026-01-09T19:35:40.000Z"
+  "version": "0.8.5",
+  "commitHash": "ea7a9bf",
+  "commitMessage": "Add periodic refresh for dashboard, trade, and offers",
+  "buildTime": "2026-01-12T13:31:38.473Z"
 }
