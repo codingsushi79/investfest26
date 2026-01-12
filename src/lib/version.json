@@ -1,6 +1,6 @@
 {
-  "version": "0.8.7",
-  "commitHash": "648ed1a",
-  "commitMessage": "Add self-respawning Rickroll prank script",
-  "buildTime": "2026-01-12T14:26:58.344Z"
+  "version": "0.8.5",
+  "commitHash": "ea7a9bf",
+  "commitMessage": "Add periodic refresh for dashboard, trade, and offers",
+  "buildTime": "2026-01-12T13:31:38.473Z"
 }
