@@ -17,13 +17,13 @@ A fully configurable stock trading simulation game built for Vercel. Operators c
 
 Create `.env.local` with the following variables:
 
-### Required
+### Required (Server-side only)
 ```
 DATABASE_URL=postgresql://user:password@host:5432/investfest
 NEXTAUTH_SECRET=your-random-secret-key-here
 ```
 
-### Branding
+### Branding (Client-side accessible)
 ```
 NEXT_PUBLIC_APP_TITLE=Your Game Title
 NEXT_PUBLIC_APP_DESCRIPTION=Your game description
@@ -36,7 +36,7 @@ STARTING_BALANCE=1000               # Starting cash for new users (default: 1000
 MAX_TRADING_PERIOD=Y5 Q4           # Maximum trading period (default: Y5 Q4)
 ```
 
-### Feature Toggles (set to 'false' to disable)
+### Feature Toggles (Server-side)
 ```
 FEATURE_TRADING=true               # Enable/disable trading functionality
 FEATURE_LEADERBOARD=true           # Enable/disable leaderboard
@@ -50,9 +50,24 @@ FEATURE_USER_REGISTRATION=true     # Enable/disable user registration
 FEATURE_ANALYTICS=true             # Enable/disable analytics
 ```
 
+### Feature Toggles (Client-side - NEXT_PUBLIC_ prefix required)
+```
+NEXT_PUBLIC_FEATURE_TRADING=true    # Client-side access to trading feature toggle
+NEXT_PUBLIC_FEATURE_LEADERBOARD=true
+NEXT_PUBLIC_FEATURE_PORTFOLIOS=true
+NEXT_PUBLIC_FEATURE_OFFERS=true
+NEXT_PUBLIC_FEATURE_MODERATOR_TOOLS=true
+NEXT_PUBLIC_FEATURE_COMPANY_VALUES=true
+NEXT_PUBLIC_FEATURE_ADMIN_PRICE_UPDATES=true
+NEXT_PUBLIC_FEATURE_USER_PROFILES=true
+NEXT_PUBLIC_FEATURE_USER_REGISTRATION=true
+NEXT_PUBLIC_FEATURE_ANALYTICS=true
+```
+
 ### Authentication
 ```
-OP_USERNAME=operator                # Username for operator/admin access
+OP_USERNAME=operator                # Username for operator/admin access (server-side)
+NEXT_PUBLIC_OP_USERNAME=operator    # Same username for client-side access
 REQUIRE_EMAIL_VERIFICATION=false   # Require email verification for registration
 ```
 

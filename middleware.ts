@@ -1,6 +1,6 @@
 import type { NextFetchEvent, NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { securityConfig, featuresConfig } from "@/lib/config";
+import { getSecurityConfig, featuresConfig } from "@/lib/config";
 
 interface AntiDDoSConfig {
   /**
@@ -108,13 +108,6 @@ function createAntiDDoSMiddleware(config: AntiDDoSConfig) {
   };
 }
 
-const antiDdos = securityConfig.enableRateLimiting ? createAntiDDoSMiddleware({
-  maxRequestsPerWindow: securityConfig.maxRequestsPerMinute,
-  windowMs: 60_000,               // 60 seconds
-  blockDurationMs: 5 * 60_000,    // block for 5 minutes after abuse
-  redirectUrl: "/ddos-blocked",  // redirect suspected DDoS traffic
-}) : null;
-
 export function middleware(req: NextRequest, event: NextFetchEvent) {
   // Check feature toggles for specific routes
   const pathname = req.nextUrl.pathname;
@@ -144,9 +137,23 @@ export function middleware(req: NextRequest, event: NextFetchEvent) {
     return NextResponse.redirect(new URL('/', req.url));
   }
 
-  // Apply DDoS protection if enabled
-  if (antiDdos) {
-    return antiDdos(req, event);
+  // Apply DDoS protection if enabled (only on server-side)
+  if (typeof window === 'undefined') {
+    try {
+      const securityConfig = getSecurityConfig();
+      if (securityConfig.enableRateLimiting) {
+        const antiDdos = createAntiDDoSMiddleware({
+          maxRequestsPerWindow: securityConfig.maxRequestsPerMinute,
+          windowMs: 60_000,               // 60 seconds
+          blockDurationMs: 5 * 60_000,    // block for 5 minutes after abuse
+          redirectUrl: "/ddos-blocked",  // redirect suspected DDoS traffic
+        });
+        return antiDdos(req, event);
+      }
+    } catch (error) {
+      // If server config fails to load, skip DDoS protection
+      console.warn('Failed to load security config for middleware:', error);
+    }
   }
 
   return NextResponse.next();

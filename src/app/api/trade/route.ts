@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth-utils";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
-import { tradingConfig } from "@/lib/config";
+import { getTradingConfig } from "@/lib/config";
 
 const tradeSchema = z.object({
   symbol: z.string(),
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     const price = company.prices[0].value;
     // For selling, users receive configurable percentage of the market price for fairness
-    const sellPercentage = tradingConfig.sellToMarketPercentage / 100;
+    const sellPercentage = getTradingConfig().sellToMarketPercentage / 100;
     const totalCost = type === "BUY" ? price * shares : price * shares * sellPercentage;
 
     if (type === "BUY") {

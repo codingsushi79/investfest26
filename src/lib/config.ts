@@ -1,67 +1,97 @@
 import { z } from 'zod';
 
-// Configuration schema with validation
-const configSchema = z.object({
-  // App branding
+// Client-safe configuration schema (only NEXT_PUBLIC variables)
+const clientConfigSchema = z.object({
+  app: z.object({
+    title: z.string().default('InvestFest'),
+    description: z.string().default('Virtual stock trading game'),
+  }),
+  features: z.object({
+    trading: z.boolean().default(true),
+    leaderboard: z.boolean().default(true),
+    portfolios: z.boolean().default(true),
+    offers: z.boolean().default(true),
+    moderatorTools: z.boolean().default(true),
+    companyValues: z.boolean().default(true),
+    adminPriceUpdates: z.boolean().default(true),
+    userProfiles: z.boolean().default(true),
+    userRegistration: z.boolean().default(true),
+    analytics: z.boolean().default(true),
+  }),
+  auth: z.object({
+    operatorUsername: z.string().default('operator'),
+  }),
+});
+
+// Full server configuration schema
+const serverConfigSchema = z.object({
   app: z.object({
     title: z.string().default('InvestFest'),
     description: z.string().default('Virtual stock trading game'),
     version: z.string().default('1.0.0'),
   }),
-
-  // Trading settings
   trading: z.object({
     sellToMarketPercentage: z.number().min(0).max(100).default(90),
     startingBalance: z.number().positive().default(1000),
-    maxTradingPeriod: z.string().default('Y5 Q4'), // Y5 Q4
+    maxTradingPeriod: z.string().default('Y5 Q4'),
   }),
-
-  // Feature toggles
   features: z.object({
-    // Core features
     trading: z.boolean().default(true),
     leaderboard: z.boolean().default(true),
     portfolios: z.boolean().default(true),
     offers: z.boolean().default(true),
-
-    // Advanced features
     moderatorTools: z.boolean().default(true),
     companyValues: z.boolean().default(true),
     adminPriceUpdates: z.boolean().default(true),
-
-    // User features
     userProfiles: z.boolean().default(true),
     userRegistration: z.boolean().default(true),
-
-    // Analytics
     analytics: z.boolean().default(true),
   }),
-
-  // Authentication
   auth: z.object({
     operatorUsername: z.string().default('operator'),
     requireEmailVerification: z.boolean().default(false),
   }),
-
-  // Security
   security: z.object({
     enableRateLimiting: z.boolean().default(true),
     maxRequestsPerMinute: z.number().positive().default(60),
   }),
-
-  // Database
   database: z.object({
     url: z.string().url(),
   }),
-
-  // External services
   services: z.object({
     nextAuthSecret: z.string(),
   }),
 });
 
-// Load configuration from environment variables
-function loadConfig() {
+// Load client-safe configuration (only NEXT_PUBLIC variables)
+function loadClientConfig() {
+  const config = {
+    app: {
+      title: process.env.NEXT_PUBLIC_APP_TITLE || 'InvestFest',
+      description: process.env.NEXT_PUBLIC_APP_DESCRIPTION || 'Virtual stock trading game',
+    },
+    features: {
+      trading: process.env.NEXT_PUBLIC_FEATURE_TRADING !== 'false',
+      leaderboard: process.env.NEXT_PUBLIC_FEATURE_LEADERBOARD !== 'false',
+      portfolios: process.env.NEXT_PUBLIC_FEATURE_PORTFOLIOS !== 'false',
+      offers: process.env.NEXT_PUBLIC_FEATURE_OFFERS !== 'false',
+      moderatorTools: process.env.NEXT_PUBLIC_FEATURE_MODERATOR_TOOLS !== 'false',
+      companyValues: process.env.NEXT_PUBLIC_FEATURE_COMPANY_VALUES !== 'false',
+      adminPriceUpdates: process.env.NEXT_PUBLIC_FEATURE_ADMIN_PRICE_UPDATES !== 'false',
+      userProfiles: process.env.NEXT_PUBLIC_FEATURE_USER_PROFILES !== 'false',
+      userRegistration: process.env.NEXT_PUBLIC_FEATURE_USER_REGISTRATION !== 'false',
+      analytics: process.env.NEXT_PUBLIC_FEATURE_ANALYTICS !== 'false',
+    },
+    auth: {
+      operatorUsername: process.env.NEXT_PUBLIC_OP_USERNAME || 'operator',
+    },
+  };
+
+  return clientConfigSchema.parse(config);
+}
+
+// Load full server configuration (only call on server-side)
+function loadServerConfig() {
   // Check for required environment variables
   const requiredEnvVars = ['DATABASE_URL', 'NEXTAUTH_SECRET'];
   const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
@@ -102,15 +132,15 @@ function loadConfig() {
       maxRequestsPerMinute: parseInt(process.env.MAX_REQUESTS_PER_MINUTE || '60'),
     },
     database: {
-      url: process.env.DATABASE_URL,
+      url: process.env.DATABASE_URL!,
     },
     services: {
-      nextAuthSecret: process.env.NEXTAUTH_SECRET,
+      nextAuthSecret: process.env.NEXTAUTH_SECRET!,
     },
   };
 
   try {
-    return configSchema.parse(config);
+    return serverConfigSchema.parse(config);
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Configuration validation failed: ${error.message}`);
@@ -119,20 +149,50 @@ function loadConfig() {
   }
 }
 
-// Export the validated configuration
-export const config = loadConfig();
+// Export client-safe configuration (safe to use in client components)
+export const clientConfig = loadClientConfig();
 
-// Export individual config sections for convenience
-export const appConfig = config.app;
-export const tradingConfig = config.trading;
-export const featuresConfig = config.features;
-export const authConfig = config.auth;
-export const securityConfig = config.security;
+// Export individual client config sections for convenience
+export const appConfig = clientConfig.app;
+export const featuresConfig = clientConfig.features;
+export const authConfig = clientConfig.auth;
+
+// Server-side configuration (only available in server contexts)
+let serverConfig: ReturnType<typeof loadServerConfig> | null = null;
+
+export function getServerConfig() {
+  if (typeof window !== 'undefined') {
+    throw new Error('Server config cannot be accessed on the client side');
+  }
+
+  if (!serverConfig) {
+    serverConfig = loadServerConfig();
+  }
+
+  return serverConfig;
+}
+
+// Export server config sections (only use in server contexts)
+export function getTradingConfig() {
+  return getServerConfig().trading;
+}
+
+export function getSecurityConfig() {
+  return getServerConfig().security;
+}
+
+export function getDatabaseConfig() {
+  return getServerConfig().database;
+}
+
+export function getServicesConfig() {
+  return getServerConfig().services;
+}
 
 // Type exports
-export type AppConfig = typeof config.app;
-export type TradingConfig = typeof config.trading;
-export type FeaturesConfig = typeof config.features;
-export type AuthConfig = typeof config.auth;
-export type SecurityConfig = typeof config.security;
-export type Config = typeof config;
+export type AppConfig = typeof clientConfig.app;
+export type TradingConfig = ReturnType<typeof getTradingConfig>;
+export type FeaturesConfig = typeof clientConfig.features;
+export type AuthConfig = typeof clientConfig.auth;
+export type SecurityConfig = ReturnType<typeof getSecurityConfig>;
+export type Config = ReturnType<typeof getServerConfig>;
