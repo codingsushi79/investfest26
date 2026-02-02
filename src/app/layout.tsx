@@ -4,6 +4,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { VersionIndicator } from "@/components/VersionIndicator";
 import { PageTransition } from "@/components/PageTransition";
+import { appConfig, featuresConfig } from "@/lib/config";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "InvestFest 2026",
-  description: "Virtual stock trading game",
+  title: appConfig.title,
+  description: appConfig.description,
 };
 
 export default function RootLayout({

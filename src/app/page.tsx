@@ -7,6 +7,7 @@ import { PortfolioTable } from "@/components/PortfolioTable";
 import { UsernameForm } from "@/components/UsernameForm";
 import { TiltButton } from "@/components/TiltButton";
 import { TiltLink } from "@/components/TiltLink";
+import { appConfig, featuresConfig, authConfig } from "@/lib/config";
 
 interface User {
   id: string;
@@ -134,7 +135,7 @@ export default function Home() {
     console.log("Client-side user check:", {
       user,
       username: user?.username,
-      isOperator: user?.username === (process.env.NEXT_PUBLIC_OP_USERNAME || "operator")
+      isOperator: user?.username === authConfig.operatorUsername
     });
 
     setUpdatingPrice(true);
@@ -194,11 +195,11 @@ export default function Home() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-4">
             <div className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              InvestFest 2026
+              {appConfig.title}
             </div>
           </div>
           <div className="flex items-center gap-4 text-sm">
-            {user && user.username === (process.env.NEXT_PUBLIC_OP_USERNAME || "operator") && (
+            {user && user.username === authConfig.operatorUsername && (
               <TiltButton
                 onClick={() => {
                   const newState = !tradingEnded;
@@ -219,32 +220,40 @@ export default function Home() {
                 {tradingEnded ? "Resume Event" : "End Event"}
               </TiltButton>
             )}
-            <TiltLink
-              href="/trade"
-              className="rounded-lg bg-gradient-to-r from-green-600 to-green-700 px-4 py-2 font-semibold text-white hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-sm hover:shadow-md"
-            >
-              🏪 Trade Shares
-            </TiltLink>
-            <Link
-              href="/leaderboard"
-              className="text-slate-700 hover:text-blue-600 transition-colors font-medium"
-            >
-              Leaderboard
-            </Link>
-            <Link
-              href="/portfolios"
-              className="text-slate-700 hover:text-blue-600 transition-colors font-medium"
-            >
-              All portfolios
-            </Link>
-            {user && user.username === (process.env.NEXT_PUBLIC_OP_USERNAME || "operator") && (
+            {featuresConfig.trading && (
+              <TiltLink
+                href="/trade"
+                className="rounded-lg bg-gradient-to-r from-green-600 to-green-700 px-4 py-2 font-semibold text-white hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-sm hover:shadow-md"
+              >
+                🏪 Trade Shares
+              </TiltLink>
+            )}
+            {featuresConfig.leaderboard && (
+              <Link
+                href="/leaderboard"
+                className="text-slate-700 hover:text-blue-600 transition-colors font-medium"
+              >
+                Leaderboard
+              </Link>
+            )}
+            {featuresConfig.portfolios && (
+              <Link
+                href="/portfolios"
+                className="text-slate-700 hover:text-blue-600 transition-colors font-medium"
+              >
+                All portfolios
+              </Link>
+            )}
+            {user && user.username === authConfig.operatorUsername && (
               <>
-                <Link
-                  href="/company-values"
-                  className="text-purple-700 hover:text-purple-800 transition-colors font-medium"
-                >
-                  Company Values
-                </Link>
+                {featuresConfig.companyValues && (
+                  <Link
+                    href="/company-values"
+                    className="text-purple-700 hover:text-purple-800 transition-colors font-medium"
+                  >
+                    Company Values
+                  </Link>
+                )}
                 <Link
                   href="/moderator/profiles"
                   className="text-purple-700 hover:text-purple-800 transition-colors font-medium"
@@ -274,7 +283,7 @@ export default function Home() {
       <main className="mx-auto max-w-6xl space-y-8 px-4 py-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-slate-900">InvestFest Dashboard</h1>
+            <h1 className="text-2xl font-bold text-slate-900">{appConfig.title} Dashboard</h1>
             <p className="text-slate-600 leading-relaxed">
               Each player starts with $1,000 and can trade shares in 8 companies.
               Prices are updated every class period by the operator.
@@ -285,36 +294,46 @@ export default function Home() {
                   Signed in as <span className="text-blue-600">{user.username}</span>
                 </p>
                 <div className="flex gap-2">
-                  <Link
-                    href="/profile"
-                    className="text-slate-700 hover:text-blue-600 transition-colors font-medium text-sm px-3 py-2 rounded-lg hover:bg-slate-50"
-                  >
-                    Profile
-                  </Link>
-                  <TiltLink
-                    href="/trade"
-                    className="rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-sm hover:shadow-md"
-                  >
-                    🏪 Trade Shares
-                  </TiltLink>
-                  <TiltLink
-                    href="/offers"
-                    className="rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-sm font-semibold text-white hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-sm hover:shadow-md"
-                  >
-                    🤝 Trading Offers
-                  </TiltLink>
-                  <Link
-                    href="/leaderboard"
-                    className="text-slate-700 hover:text-blue-600 transition-colors font-medium text-sm px-3 py-2 rounded-lg hover:bg-slate-50"
-                  >
-                    Leaderboard
-                  </Link>
-                  <Link
-                    href="/portfolios"
-                    className="text-slate-700 hover:text-blue-600 transition-colors font-medium text-sm px-3 py-2 rounded-lg hover:bg-slate-50"
-                  >
-                    All portfolios
-                  </Link>
+                  {featuresConfig.userProfiles && (
+                    <Link
+                      href="/profile"
+                      className="text-slate-700 hover:text-blue-600 transition-colors font-medium text-sm px-3 py-2 rounded-lg hover:bg-slate-50"
+                    >
+                      Profile
+                    </Link>
+                  )}
+                  {featuresConfig.trading && (
+                    <TiltLink
+                      href="/trade"
+                      className="rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                    >
+                      🏪 Trade Shares
+                    </TiltLink>
+                  )}
+                  {featuresConfig.offers && (
+                    <TiltLink
+                      href="/offers"
+                      className="rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-sm font-semibold text-white hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                    >
+                      🤝 Trading Offers
+                    </TiltLink>
+                  )}
+                  {featuresConfig.leaderboard && (
+                    <Link
+                      href="/leaderboard"
+                      className="text-slate-700 hover:text-blue-600 transition-colors font-medium text-sm px-3 py-2 rounded-lg hover:bg-slate-50"
+                    >
+                      Leaderboard
+                    </Link>
+                  )}
+                  {featuresConfig.portfolios && (
+                    <Link
+                      href="/portfolios"
+                      className="text-slate-700 hover:text-blue-600 transition-colors font-medium text-sm px-3 py-2 rounded-lg hover:bg-slate-50"
+                    >
+                      All portfolios
+                    </Link>
+                  )}
                 </div>
               </div>
             )}
@@ -412,61 +431,67 @@ export default function Home() {
           </div>
         </div>
 
-        <section className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-lg transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center animate-pulse">
-                <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
+        {featuresConfig.trading && (
+          <section className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-lg transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center animate-pulse">
+                  <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-slate-900 animate-in fade-in-0 slide-in-from-left-2">Price History</h2>
+                  <p className="text-sm text-slate-600 animate-in fade-in-0 slide-in-from-left-2" style={{ animationDelay: '100ms' }}>Live charts updated every 15 minutes by the operator</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-xl font-semibold text-slate-900 animate-in fade-in-0 slide-in-from-left-2">Price History</h2>
-                <p className="text-sm text-slate-600 animate-in fade-in-0 slide-in-from-left-2" style={{ animationDelay: '100ms' }}>Live charts updated every 15 minutes by the operator</p>
-              </div>
+              {user && user.username === authConfig.operatorUsername && featuresConfig.adminPriceUpdates && (
+                <TiltButton
+                  onClick={() => setShowOperatorModal(true)}
+                  className="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 hover:scale-110 transition-all duration-200 animate-pulse"
+                  title="Add price point"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </TiltButton>
+              )}
             </div>
-            {user && user.username === (process.env.NEXT_PUBLIC_OP_USERNAME || "operator") && (
-              <TiltButton
-                onClick={() => setShowOperatorModal(true)}
-                className="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 hover:scale-110 transition-all duration-200 animate-pulse"
-                title="Add price point"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-              </TiltButton>
-            )}
-          </div>
 
 
-          <StockCharts
-            companies={dashboard.companies}
-          />
-        </section>
+            <StockCharts
+              companies={dashboard.companies}
+            />
+          </section>
+        )}
 
-        <section className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-lg transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-8 duration-700">
-          <div className="flex items-center justify-between mb-6 animate-in fade-in-0 slide-in-from-top-4 duration-500">
-            <div className="flex items-center gap-3 animate-in fade-in-0 slide-in-from-left-4 duration-500" style={{ animationDelay: '100ms' }}>
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center animate-pulse">
-                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
+        {featuresConfig.portfolios && (
+          <section className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-lg transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-8 duration-700">
+            <div className="flex items-center justify-between mb-6 animate-in fade-in-0 slide-in-from-top-4 duration-500">
+              <div className="flex items-center gap-3 animate-in fade-in-0 slide-in-from-left-4 duration-500" style={{ animationDelay: '100ms' }}>
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center animate-pulse">
+                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-slate-900 animate-in fade-in-0 duration-300" style={{ animationDelay: '200ms' }}>📊 Your Holdings</h2>
+                  <p className="text-sm text-slate-600 animate-in fade-in-0 duration-300" style={{ animationDelay: '300ms' }}>Current stock positions and values</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-xl font-semibold text-slate-900 animate-in fade-in-0 duration-300" style={{ animationDelay: '200ms' }}>📊 Your Holdings</h2>
-                <p className="text-sm text-slate-600 animate-in fade-in-0 duration-300" style={{ animationDelay: '300ms' }}>Current stock positions and values</p>
-              </div>
+              {featuresConfig.leaderboard && (
+                <TiltLink
+                  href="/leaderboard"
+                  className="text-blue-600 hover:text-blue-700 font-medium text-sm transition-all duration-200 hover:scale-105 animate-in fade-in-0 slide-in-from-right-4 duration-500"
+                  style={{ animationDelay: '400ms' }}
+                >
+                  🏆 View leaderboard →
+                </TiltLink>
+              )}
             </div>
-            <TiltLink
-              href="/leaderboard"
-              className="text-blue-600 hover:text-blue-700 font-medium text-sm transition-all duration-200 hover:scale-105 animate-in fade-in-0 slide-in-from-right-4 duration-500"
-              style={{ animationDelay: '400ms' }}
-            >
-              🏆 View leaderboard →
-            </TiltLink>
-          </div>
-          <PortfolioTable rows={dashboard.holdings} />
-        </section>
+            <PortfolioTable rows={dashboard.holdings} />
+          </section>
+        )}
       </main>
 
       {/* Operator Price Update Modal */}

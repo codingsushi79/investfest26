@@ -1,5 +1,6 @@
 import type { NextFetchEvent, NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { securityConfig, featuresConfig } from "@/lib/config";
 
 interface AntiDDoSConfig {
   /**
@@ -107,15 +108,48 @@ function createAntiDDoSMiddleware(config: AntiDDoSConfig) {
   };
 }
 
-const antiDdos = createAntiDDoSMiddleware({
-  maxRequestsPerWindow: 100,      // allow 100 requests per window
+const antiDdos = securityConfig.enableRateLimiting ? createAntiDDoSMiddleware({
+  maxRequestsPerWindow: securityConfig.maxRequestsPerMinute,
   windowMs: 60_000,               // 60 seconds
   blockDurationMs: 5 * 60_000,    // block for 5 minutes after abuse
   redirectUrl: "/ddos-blocked",  // redirect suspected DDoS traffic
-});
+}) : null;
 
 export function middleware(req: NextRequest, event: NextFetchEvent) {
-  return antiDdos(req, event);
+  // Check feature toggles for specific routes
+  const pathname = req.nextUrl.pathname;
+
+  // Feature toggle checks
+  if (pathname.startsWith('/leaderboard') && !featuresConfig.leaderboard) {
+    return NextResponse.redirect(new URL('/', req.url));
+  }
+
+  if (pathname.startsWith('/portfolios') && !featuresConfig.portfolios) {
+    return NextResponse.redirect(new URL('/', req.url));
+  }
+
+  if (pathname.startsWith('/offers') && !featuresConfig.offers) {
+    return NextResponse.redirect(new URL('/', req.url));
+  }
+
+  if (pathname.startsWith('/trade') && !featuresConfig.trading) {
+    return NextResponse.redirect(new URL('/', req.url));
+  }
+
+  if (pathname.startsWith('/company-values') && !featuresConfig.companyValues) {
+    return NextResponse.redirect(new URL('/', req.url));
+  }
+
+  if (pathname.startsWith('/moderator') && !featuresConfig.moderatorTools) {
+    return NextResponse.redirect(new URL('/', req.url));
+  }
+
+  // Apply DDoS protection if enabled
+  if (antiDdos) {
+    return antiDdos(req, event);
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
