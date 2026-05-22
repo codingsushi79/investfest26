@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { getCurrentUser } from "@/lib/auth-utils";
 import { AuthForm } from "@/components/AuthForm";
 
@@ -8,6 +9,10 @@ export default async function SignInPage() {
     redirect("/");
   }
 
-  return <AuthForm />;
+  return (
+    <Suspense>
+      <AuthForm />
+    </Suspense>
+  );
 }
 

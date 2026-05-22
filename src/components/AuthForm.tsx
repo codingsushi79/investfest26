@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { TiltButton } from "@/components/TiltButton";
 
 export function AuthForm() {
+  const searchParams = useSearchParams();
   const [isSignUp, setIsSignUp] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -14,6 +16,8 @@ export function AuthForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const verified = searchParams.get("verified") === "1";
+  const reset = searchParams.get("reset") === "1";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +48,16 @@ export function AuthForm() {
       const data = await response.json();
 
       if (!response.ok) {
+        if (data.requiresVerification && data.email) {
+          router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
+          return;
+        }
         setError(data.error || "An error occurred");
+        return;
+      }
+
+      if (data.requiresVerification && data.email) {
+        router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
         return;
       }
 
@@ -77,6 +90,16 @@ export function AuthForm() {
             }
           </p>
         </div>
+
+        {(verified || reset) && (
+          <div className="rounded-lg bg-green-50 border border-green-200 p-4">
+            <p className="text-sm text-green-800 font-medium text-center">
+              {verified
+                ? "Email verified. You can sign in now."
+                : "Password updated. Sign in with your new password."}
+            </p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-5 animate-in fade-in-0 duration-700" style={{ animationDelay: '500ms' }}>
           {isSignUp && (
@@ -146,6 +169,17 @@ export function AuthForm() {
               style={{ animationDelay: isSignUp ? '1150ms' : '850ms' }}
             />
           </div>
+
+          {!isSignUp && (
+            <div className="text-right">
+              <Link
+                href="/forgot-password"
+                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+              >
+                Forgot password?
+              </Link>
+            </div>
+          )}
 
           {isSignUp && (
             <div className="animate-in fade-in-0 slide-in-from-left-4 duration-500" style={{ animationDelay: '1200ms' }}>

@@ -68,7 +68,9 @@ NEXT_PUBLIC_FEATURE_ANALYTICS=true
 ```
 OP_USERNAME=operator                # Username for operator/admin access (server-side)
 NEXT_PUBLIC_OP_USERNAME=operator    # Same username for client-side access
-REQUIRE_EMAIL_VERIFICATION=false   # Require email verification for registration
+REQUIRE_EMAIL_VERIFICATION=true    # Require email verification for registration
+RESEND_API_KEY=re_...              # Resend API key for verification/reset emails
+EMAIL_FROM="InvestFest <noreply@your-domain.com>"  # Verified sender address
 ```
 
 ### Security

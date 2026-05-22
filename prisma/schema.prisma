@@ -17,6 +17,7 @@ model User {
   balance       Float         @default(1000)
   isPaused      Boolean       @default(false)
   isBanned      Boolean       @default(false)
+  emailVerified DateTime?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   accounts      Account[]
