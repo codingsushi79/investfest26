@@ -4,7 +4,14 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth-utils";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { ensureSeedData } from "@/lib/data";
+import { ensureSeedData, getTotalSharesByCompany } from "@/lib/data";
+import {
+  BASELINE_PERIOD,
+  BASELINE_SHARES,
+  getNextTimePeriod,
+  getTradingSharePrice,
+  isInBaselinePeriod,
+} from "@/lib/pricing";
 
 const tradeSchema = z.object({
   symbol: z.string().min(1),
@@ -47,13 +54,13 @@ export async function buyShares(raw: { symbol: string; shares: number }) {
 
   const company = await prisma.company.findUnique({
     where: { symbol: input.symbol },
-    include: { prices: { orderBy: { createdAt: "desc" }, take: 1 } },
+    include: { prices: { orderBy: { createdAt: "asc" } } },
   });
   if (!company || company.prices.length === 0) {
     throw new Error("Company or price not found");
   }
 
-  const price = company.prices[0].value;
+  const price = getTradingSharePrice(company.prices);
   const totalCost = price * input.shares;
 
   const userRecord = await prisma.user.findUnique({
@@ -113,7 +120,7 @@ export async function sellShares(raw: { symbol: string; shares: number }) {
 
   const company = await prisma.company.findUnique({
     where: { symbol: input.symbol },
-    include: { prices: { orderBy: { createdAt: "desc" }, take: 1 } },
+    include: { prices: { orderBy: { createdAt: "asc" } } },
   });
   if (!company || company.prices.length === 0) {
     throw new Error("Company or price not found");
@@ -127,7 +134,7 @@ export async function sellShares(raw: { symbol: string; shares: number }) {
     throw new Error("Not enough shares to sell");
   }
 
-  const price = company.prices[0].value;
+  const price = getTradingSharePrice(company.prices);
   const totalValue = price * input.shares;
 
   await prisma.$transaction(async (tx) => {
@@ -160,8 +167,9 @@ export async function sellShares(raw: { symbol: string; shares: number }) {
 const adminPriceSchema = z.array(
   z.object({
     symbol: z.string(),
-    label: z.string(),
-    value: z.number(),
+    label: z.string().optional(),
+    companyValue: z.number().positive(),
+    advancePeriod: z.boolean().optional(),
   })
 );
 
@@ -201,18 +209,67 @@ export async function adminUpdatePrices(rows: z.infer<typeof adminPriceSchema>) 
   const updates = adminPriceSchema.parse(rows);
   const companies = await prisma.company.findMany({
     where: { symbol: { in: updates.map((u) => u.symbol) } },
+    include: { prices: true },
   });
-  const companiesBySymbol = new Map(companies.map((c) => [c.symbol, c.id]));
+  const companiesBySymbol = new Map(companies.map((c) => [c.symbol, c]));
+  const totalSharesByCompany = await getTotalSharesByCompany();
 
   await prisma.$transaction(async (tx) => {
     for (const item of updates) {
-      const companyId = companiesBySymbol.get(item.symbol);
-      if (!companyId) continue;
+      const company = companiesBySymbol.get(item.symbol);
+      if (!company) continue;
+
+      const inBaseline = isInBaselinePeriod(company.prices);
+      const advancePeriod = item.advancePeriod === true;
+
+      if (inBaseline && !advancePeriod) {
+        const sharesOutstanding = BASELINE_SHARES;
+        const pricePerShare = item.companyValue / sharesOutstanding;
+        const existing = company.prices.find(
+          (point) => point.label === BASELINE_PERIOD
+        );
+
+        if (existing) {
+          await tx.pricePoint.update({
+            where: { id: existing.id },
+            data: {
+              value: pricePerShare,
+              companyValue: item.companyValue,
+              sharesOutstanding,
+            },
+          });
+        } else {
+          await tx.pricePoint.create({
+            data: {
+              companyId: company.id,
+              label: BASELINE_PERIOD,
+              value: pricePerShare,
+              companyValue: item.companyValue,
+              sharesOutstanding,
+            },
+          });
+        }
+        continue;
+      }
+
+      const sharesOutstanding = totalSharesByCompany.get(company.id) ?? 0;
+      if (sharesOutstanding <= 0) {
+        throw new Error(
+          `Cannot set company value for ${item.symbol}: no shares invested yet`
+        );
+      }
+
+      const label =
+        item.label?.trim() || getNextTimePeriod(company.prices);
+      const pricePerShare = item.companyValue / sharesOutstanding;
+
       await tx.pricePoint.create({
         data: {
-          companyId,
-          label: item.label,
-          value: item.value,
+          companyId: company.id,
+          label,
+          value: pricePerShare,
+          companyValue: item.companyValue,
+          sharesOutstanding,
         },
       });
     }
@@ -221,5 +278,6 @@ export async function adminUpdatePrices(rows: z.infer<typeof adminPriceSchema>) 
   revalidatePath("/");
   revalidatePath("/leaderboard");
   revalidatePath("/portfolios");
+  revalidatePath("/company-values");
 }
 

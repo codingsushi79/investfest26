@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth-utils";
 import { prisma } from "@/lib/prisma";
+import { getTradingSharePrice } from "@/lib/pricing";
 
 export async function GET() {
   try {
@@ -16,8 +17,7 @@ export async function GET() {
         company: {
           include: {
             prices: {
-              orderBy: { createdAt: "desc" },
-              take: 1, // Only latest price
+              orderBy: { createdAt: "asc" },
             },
           },
         },
@@ -29,7 +29,7 @@ export async function GET() {
       symbol: h.company.symbol,
       name: h.company.name,
       shares: h.shares,
-      latestPrice: h.company.prices[0]?.value ?? 0,
+      latestPrice: getTradingSharePrice(h.company.prices),
     }));
 
     return NextResponse.json({

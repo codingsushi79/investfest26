@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth-utils";
+import { getTotalSharesByCompany } from "@/lib/data";
 import { prisma } from "@/lib/prisma";
+import {
+  getLatestPricePoint,
+  getNextTimePeriod,
+  getSharesForCompanyValue,
+  getTradingSharePrice,
+  isInBaselinePeriod,
+} from "@/lib/pricing";
 
 export async function GET() {
   try {
@@ -18,6 +26,8 @@ export async function GET() {
       },
     });
 
+    const totalSharesByCompany = await getTotalSharesByCompany();
+
     // Get user holdings
     const holdings = await prisma.holding.findMany({
       where: { userId: user.id },
@@ -25,7 +35,7 @@ export async function GET() {
     });
 
     const latestPrices = new Map(
-      companies.map((c) => [c.id, c.prices[c.prices.length - 1]?.value ?? 0])
+      companies.map((c) => [c.id, getTradingSharePrice(c.prices)])
     );
 
     const holdingsWithValues = holdings.map((h) => {
@@ -41,15 +51,24 @@ export async function GET() {
 
     const invested = holdingsWithValues.reduce((sum, h) => sum + h.value, 0);
     const cash = user.balance;
-    const portfolioValue = invested; // Portfolio value is total worth of shares owned
+    const portfolioValue = invested;
 
     return NextResponse.json({
       user,
-      companies: companies.map(c => ({
-        symbol: c.symbol,
-        name: c.name,
-        prices: c.prices.map(p => ({ label: p.label, value: p.value })),
-      })),
+      companies: companies.map((c) => {
+        const actualShares = totalSharesByCompany.get(c.id) ?? 0;
+        const latest = getLatestPricePoint(c.prices);
+        return {
+          symbol: c.symbol,
+          name: c.name,
+          actualShares,
+          valuationShares: getSharesForCompanyValue(c.prices, actualShares),
+          inBaseline: isInBaselinePeriod(c.prices),
+          latestLabel: latest?.label ?? "Y0 Q4",
+          nextLabel: getNextTimePeriod(c.prices),
+          prices: c.prices.map((p) => ({ label: p.label, value: p.value })),
+        };
+      }),
       holdings: holdingsWithValues,
       cash,
       invested,

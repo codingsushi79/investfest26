@@ -75,12 +75,14 @@ model Company {
 }
 
 model PricePoint {
-  id         String   @id @default(cuid())
-  label      String
-  value      Float
-  companyId  String
-  createdAt  DateTime @default(now())
-  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id                String   @id @default(cuid())
+  label             String
+  value             Float
+  companyValue      Float?
+  sharesOutstanding Int?
+  companyId         String
+  createdAt         DateTime @default(now())
+  company           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 }
 
 model Holding {

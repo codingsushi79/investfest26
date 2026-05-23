@@ -18,7 +18,16 @@ interface User {
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [dashboard, setDashboard] = useState<{
-    companies: Array<{symbol: string, name: string, prices: Array<{label: string, value: number}>}>,
+    companies: Array<{
+      symbol: string;
+      name: string;
+      actualShares: number;
+      valuationShares: number;
+      inBaseline: boolean;
+      latestLabel: string;
+      nextLabel: string;
+      prices: Array<{ label: string; value: number }>;
+    }>;
     holdings: Array<{symbol: string, shares: number, name: string, latestPrice: number, value: number}>,
     cash: number,
     invested: number,
@@ -35,41 +44,10 @@ export default function Home() {
   // Operator modal state
   const [showOperatorModal, setShowOperatorModal] = useState(false);
   const [operatorCompany, setOperatorCompany] = useState("");
-  const [operatorPrice, setOperatorPrice] = useState("");
+  const [operatorCompanyValue, setOperatorCompanyValue] = useState("");
+  const [advancePeriod, setAdvancePeriod] = useState(false);
   const [updatingPrice, setUpdatingPrice] = useState(false);
   const [tradingEnded, setTradingEnded] = useState(false);
-
-  // Helper function to calculate next time period
-  const getNextTimePeriod = (companyPrices: Array<{label: string, value: number}>) => {
-    if (companyPrices.length === 0) {
-      return "Y1 Q1";
-    }
-
-    const lastLabel = companyPrices[companyPrices.length - 1].label;
-    const match = lastLabel.match(/Y(\d+)\s+Q(\d+)/);
-
-    if (!match) {
-      return "Y1 Q1";
-    }
-
-    let year = parseInt(match[1]);
-    let quarter = parseInt(match[2]);
-
-    if (quarter < 4) {
-      quarter += 1;
-    } else {
-      quarter = 1;
-      year += 1;
-    }
-
-    // Cap at Y5 Q4
-    if (year > 5) {
-      year = 5;
-      quarter = 4;
-    }
-
-    return `Y${year} Q${quarter}`;
-  };
 
   useEffect(() => {
     fetchData();
@@ -118,19 +96,25 @@ export default function Home() {
 
   const handleOperatorPriceUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!operatorCompany || !operatorPrice) return;
+    if (!operatorCompany || !operatorCompanyValue) return;
 
-    const priceValue = parseFloat(operatorPrice);
-    if (isNaN(priceValue) || priceValue <= 0) {
-      alert("Please enter a valid price greater than 0");
+    const companyValue = parseFloat(operatorCompanyValue);
+    if (isNaN(companyValue) || companyValue <= 0) {
+      alert("Please enter a valid company value greater than 0");
       return;
     }
 
-    // Find the selected company and calculate next time period
     const selectedCompany = dashboard.companies.find(c => c.symbol === operatorCompany);
     if (!selectedCompany) return;
 
-    const nextLabel = getNextTimePeriod(selectedCompany.prices);
+    const isAdvancing = !selectedCompany.inBaseline || advancePeriod;
+
+    if (isAdvancing && selectedCompany.actualShares <= 0) {
+      alert("Cannot advance past Y0 Q4 until students own shares in this company.");
+      return;
+    }
+
+    const nextLabel = selectedCompany.nextLabel;
 
     console.log("Client-side user check:", {
       user,
@@ -140,10 +124,10 @@ export default function Home() {
 
     setUpdatingPrice(true);
     try {
-      console.log("Sending price update:", {
+      console.log("Sending company value update:", {
         symbol: operatorCompany,
         label: nextLabel,
-        value: priceValue,
+        companyValue,
       });
 
       const response = await fetch("/api/admin/update-prices", {
@@ -151,8 +135,9 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify([{
           symbol: operatorCompany,
-          label: nextLabel,
-          value: priceValue,
+          label: isAdvancing ? nextLabel : selectedCompany.latestLabel,
+          companyValue,
+          advancePeriod: isAdvancing,
         }]),
       });
 
@@ -163,17 +148,18 @@ export default function Home() {
         console.log("Price update successful");
         setShowOperatorModal(false);
         setOperatorCompany("");
-        setOperatorPrice("");
+        setOperatorCompanyValue("");
+        setAdvancePeriod(false);
         // Refresh data
         await fetchData();
       } else {
         const errorData = await response.json();
         console.error("Price update failed:", errorData);
-        alert(`Failed to update price: ${errorData.error || "Unknown error"}`);
+        alert(`Failed to update company value: ${errorData.error || "Unknown error"}`);
       }
     } catch (error) {
       console.error("Error updating price:", error);
-      alert(`Error updating price: ${error instanceof Error ? error.message : "Unknown error"}`);
+      alert(`Error updating company value: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
       setUpdatingPrice(false);
     }
@@ -286,7 +272,8 @@ export default function Home() {
             <h1 className="text-2xl font-bold text-slate-900">{appConfig.title} Dashboard</h1>
             <p className="text-slate-600 leading-relaxed">
               Each player starts with $1,000 and can trade shares in 8 companies.
-              Prices are updated every class period by the operator.
+              During Y0 Q4, each company has 100 baseline shares. After Y0 Q4, company value
+              updates move invested share prices.
             </p>
             {user && (
               <div className="flex items-center gap-4">
@@ -442,14 +429,14 @@ export default function Home() {
                 </div>
                 <div>
                   <h2 className="text-xl font-semibold text-slate-900 animate-in fade-in-0 slide-in-from-left-2">Price History</h2>
-                  <p className="text-sm text-slate-600 animate-in fade-in-0 slide-in-from-left-2" style={{ animationDelay: '100ms' }}>Live charts updated every 15 minutes by the operator</p>
+                  <p className="text-sm text-slate-600 animate-in fade-in-0 slide-in-from-left-2" style={{ animationDelay: '100ms' }}>Share prices stay at $100 during Y0 Q4, then follow company value updates</p>
                 </div>
               </div>
               {user && user.username === authConfig.operatorUsername && featuresConfig.adminPriceUpdates && (
                 <TiltButton
                   onClick={() => setShowOperatorModal(true)}
                   className="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 hover:scale-110 transition-all duration-200 animate-pulse"
-                  title="Add price point"
+                  title="Set company value"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -494,13 +481,13 @@ export default function Home() {
         )}
       </main>
 
-      {/* Operator Price Update Modal */}
+      {/* Operator Company Value Modal */}
       {showOperatorModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-slate-900">Add Price Point</h2>
+                <h2 className="text-2xl font-bold text-slate-900">Set Company Value</h2>
                 <TiltButton
                   onClick={() => setShowOperatorModal(false)}
                   className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded"
@@ -518,7 +505,10 @@ export default function Home() {
                   </label>
                   <select
                     value={operatorCompany}
-                    onChange={(e) => setOperatorCompany(e.target.value)}
+                    onChange={(e) => {
+                      setOperatorCompany(e.target.value);
+                      setAdvancePeriod(false);
+                    }}
                     className="block w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
                     required
                   >
@@ -533,36 +523,95 @@ export default function Home() {
 
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Price ($)
+                    Company Value ($)
                   </label>
                   <input
                     type="number"
                     step="0.01"
                     min="0.01"
-                    value={operatorPrice}
-                    onChange={(e) => setOperatorPrice(e.target.value)}
+                    value={operatorCompanyValue}
+                    onChange={(e) => setOperatorCompanyValue(e.target.value)}
                     className="block w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
-                    placeholder="Enter price (e.g. 150.50)"
+                    placeholder="Enter total company value (e.g. 15000.00)"
                     required
                   />
                 </div>
 
                 {operatorCompany && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="text-sm font-medium text-blue-900">Next Time Period</span>
-                    </div>
-                    <p className="text-sm text-blue-800">
-                      Next period: <strong>
-                        {(() => {
-                          const selectedCompany = dashboard.companies.find(c => c.symbol === operatorCompany);
-                          return selectedCompany ? getNextTimePeriod(selectedCompany.prices) : "Y1 Q1";
-                        })()}
-                      </strong>
-                    </p>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+                    {(() => {
+                      const selectedCompany = dashboard.companies.find(c => c.symbol === operatorCompany);
+                      if (!selectedCompany) return null;
+
+                      const parsedValue = parseFloat(operatorCompanyValue);
+                      const isAdvancing = !selectedCompany.inBaseline || advancePeriod;
+                      const divisor = isAdvancing
+                        ? selectedCompany.actualShares
+                        : selectedCompany.valuationShares;
+                      const impliedPrice =
+                        divisor > 0 && !isNaN(parsedValue) && parsedValue > 0
+                          ? parsedValue / divisor
+                          : null;
+
+                      return (
+                        <>
+                          <div>
+                            <div className="flex items-center gap-2 mb-2">
+                              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <span className="text-sm font-medium text-blue-900">
+                                {selectedCompany.inBaseline && !advancePeriod
+                                  ? "Y0 Q4 Setup"
+                                  : "Next Time Period"}
+                              </span>
+                            </div>
+                            <p className="text-sm text-blue-800">
+                              {selectedCompany.inBaseline && !advancePeriod ? (
+                                <>Updating <strong>Y0 Q4</strong> company value (portfolios stay at $100/share)</>
+                              ) : (
+                                <>Advancing to <strong>{selectedCompany.nextLabel}</strong> (portfolio values will update)</>
+                              )}
+                            </p>
+                          </div>
+                          <div className="text-sm text-blue-800 space-y-1">
+                            <p>
+                              Share price = company value ÷ shares invested
+                            </p>
+                            <p>
+                              Shares for this update:{" "}
+                              <strong>
+                                {isAdvancing
+                                  ? selectedCompany.actualShares.toLocaleString()
+                                  : `${selectedCompany.valuationShares.toLocaleString()} (Y0 Q4 baseline)`}
+                              </strong>
+                            </p>
+                            {isAdvancing && selectedCompany.actualShares <= 0 ? (
+                              <p className="text-amber-700">
+                                Students must own shares before advancing past Y0 Q4.
+                              </p>
+                            ) : impliedPrice !== null ? (
+                              <p>
+                                New share price: <strong>${impliedPrice.toFixed(2)}</strong>
+                              </p>
+                            ) : null}
+                          </div>
+                          {selectedCompany.inBaseline && (
+                            <label className="flex items-start gap-3 text-sm text-blue-900">
+                              <input
+                                type="checkbox"
+                                checked={advancePeriod}
+                                onChange={(e) => setAdvancePeriod(e.target.checked)}
+                                className="mt-1 h-4 w-4 rounded border-blue-300 text-purple-600 focus:ring-purple-500"
+                              />
+                              <span>
+                                Advance to {selectedCompany.nextLabel} and start moving invested share prices
+                              </span>
+                            </label>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
 
@@ -576,7 +625,20 @@ export default function Home() {
                   </TiltButton>
                   <TiltButton
                     type="submit"
-                    disabled={updatingPrice || !operatorCompany || !operatorPrice}
+                    disabled={
+                      updatingPrice ||
+                      !operatorCompany ||
+                      !operatorCompanyValue ||
+                      (() => {
+                        const selectedCompany = dashboard.companies.find(
+                          (company) => company.symbol === operatorCompany
+                        );
+                        if (!selectedCompany) return true;
+                        const isAdvancing =
+                          !selectedCompany.inBaseline || advancePeriod;
+                        return isAdvancing && selectedCompany.actualShares <= 0;
+                      })()
+                    }
                     className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
                   >
                     {updatingPrice ? (
@@ -585,10 +647,13 @@ export default function Home() {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Generating...
+                        Updating...
                       </div>
                     ) : (
-                      "Add Price Point"
+                      advancePeriod ||
+                      !dashboard.companies.find((c) => c.symbol === operatorCompany)?.inBaseline
+                        ? "Set Company Value"
+                        : "Update Y0 Q4 Setup"
                     )}
                   </TiltButton>
                 </div>

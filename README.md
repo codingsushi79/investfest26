@@ -105,16 +105,23 @@ Visit `http://localhost:3000` and create an account or sign in.
 
 ## Admin Features
 
-### Price Updates
-Send an authenticated POST as the operator user to:
+### Company Value Updates
+Each period the operator sets a **company value** (e.g. $20,000 for a hot company, $150 for a quiet one). The server calculates:
+
+**share price = company value ÷ shares invested**
+
+- **Y0 Q4:** uses 100 baseline shares. Portfolios stay at $100/share until you advance.
+- **Y1 Q1+:** uses actual shares students hold at update time. Portfolio values move each period.
+
+Between updates, company value grows as more students invest (shares invested × current share price).
+
 ```
 POST /api/admin/update-prices
 [
-  { "symbol": "HH", "label": "y2 q1", "value": 125 },
-  { "symbol": "DMI", "label": "y2 q1", "value": 132 }
+  { "symbol": "HH", "companyValue": 20000, "advancePeriod": true },
+  { "symbol": "TMB", "companyValue": 150, "advancePeriod": true }
 ]
 ```
-Prices append as new points and charts/portfolio values update automatically.
 
 ### Event Management
 The operator can start/end trading events from the dashboard.

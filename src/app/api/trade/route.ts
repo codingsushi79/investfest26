@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth-utils";
 import { prisma } from "@/lib/prisma";
+import { getTradingSharePrice } from "@/lib/pricing";
 import { z } from "zod";
 import { getTradingConfig } from "@/lib/config";
 
@@ -39,17 +40,16 @@ export async function POST(request: NextRequest) {
       where: { symbol },
       include: {
         prices: {
-          orderBy: { createdAt: "desc" },
-          take: 1,
+          orderBy: { createdAt: "asc" },
         },
       },
     });
 
-    if (!company || !company.prices[0]) {
+    if (!company || company.prices.length === 0) {
       return NextResponse.json({ error: "Company or price not found" }, { status: 404 });
     }
 
-    const price = company.prices[0].value;
+    const price = getTradingSharePrice(company.prices);
     // For selling, users receive configurable percentage of the market price for fairness
     const sellPercentage = getTradingConfig().sellToMarketPercentage / 100;
     const totalCost = type === "BUY" ? price * shares : price * shares * sellPercentage;

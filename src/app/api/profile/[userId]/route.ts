@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getTradingSharePrice } from "@/lib/pricing";
 import { getCurrentUser } from "@/lib/auth-utils";
 import { prisma } from "@/lib/prisma";
 
@@ -169,7 +170,7 @@ export async function GET(
 
     // Calculate current portfolio value
     const latestPrices = new Map(
-      companies.map((c) => [c.id, c.prices[c.prices.length - 1]?.value ?? 0])
+      companies.map((c) => [c.id, getTradingSharePrice(c.prices)])
     );
 
     const currentHoldings = user.holdings.map((h) => {

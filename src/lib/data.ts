@@ -1,5 +1,13 @@
 import { cache } from "react";
 import { prisma } from "./prisma";
+import {
+  BASELINE_SHARE_PRICE,
+  BASELINE_SHARES,
+  getLatestCompanyValue,
+  getLatestPricePoint,
+  getTradingSharePrice,
+  isInBaselinePeriod,
+} from "./pricing";
 
 export const COMPANY_SYMBOLS = [
   { symbol: "HH", name: "Hazard Holdings" },
@@ -16,7 +24,6 @@ export const ensureSeedData = cache(async () => {
   const companyCount = await prisma.company.count();
 
   if (companyCount === 0) {
-    // Create companies and initial price points for new databases
     await prisma.$transaction(async (tx) => {
       for (const company of COMPANY_SYMBOLS) {
         const companyRecord = await tx.company.create({
@@ -26,30 +33,32 @@ export const ensureSeedData = cache(async () => {
           },
         });
 
-        // Create initial price point at $100 before Y1 Q1
+        // Y0 Q4 setup: $100/share × 100 baseline shares = $10,000 company value
         await tx.pricePoint.create({
           data: {
             companyId: companyRecord.id,
             label: "Y0 Q4",
-            value: 100,
+            value: BASELINE_SHARE_PRICE,
+            companyValue: BASELINE_SHARES * BASELINE_SHARE_PRICE,
+            sharesOutstanding: BASELINE_SHARES,
           },
         });
       }
     });
   } else {
-    // For existing databases, ensure all companies have initial price points
     const companies = await prisma.company.findMany({
       include: { prices: true },
     });
 
     for (const company of companies) {
       if (company.prices.length === 0) {
-        // Company has no price points, add initial one
         await prisma.pricePoint.create({
           data: {
             companyId: company.id,
             label: "Y0 Q4",
-            value: 100,
+            value: BASELINE_SHARE_PRICE,
+            companyValue: BASELINE_SHARES * BASELINE_SHARE_PRICE,
+            sharesOutstanding: BASELINE_SHARES,
           },
         });
       }
@@ -57,14 +66,26 @@ export const ensureSeedData = cache(async () => {
   }
 });
 
+function tradingPriceFromCompanyPrices(
+  prices: Array<{ label: string; value: number }>
+) {
+  return getTradingSharePrice(prices);
+}
+
 export async function getLatestPrices() {
   const companies = await prisma.company.findMany({
-    include: { prices: { orderBy: { createdAt: "desc" }, take: 1 } },
+    include: { prices: { orderBy: { createdAt: "asc" } } },
   });
   return new Map(
     companies
-      .filter((c) => c.prices[0])
-      .map((c) => [c.id, { price: c.prices[0].value, symbol: c.symbol }])
+      .filter((c) => c.prices.length > 0)
+      .map((c) => [
+        c.id,
+        {
+          price: tradingPriceFromCompanyPrices(c.prices),
+          symbol: c.symbol,
+        },
+      ])
   );
 }
 
@@ -85,7 +106,7 @@ export async function getDashboardData(userId?: string) {
   ]);
 
   const latestPrices = new Map(
-    companies.map((c) => [c.id, c.prices[c.prices.length - 1]?.value ?? 0])
+    companies.map((c) => [c.id, tradingPriceFromCompanyPrices(c.prices)])
   );
 
   const holdings =
@@ -117,19 +138,18 @@ export async function getDashboardData(userId?: string) {
 export async function getLeaderboard() {
   await ensureSeedData();
   const companies = await prisma.company.findMany({
-    include: { prices: { orderBy: { createdAt: "desc" }, take: 1 } },
+    include: { prices: { orderBy: { createdAt: "asc" } } },
   });
   const latestPriceById = new Map(
-    companies.map((c) => [c.id, c.prices[0]?.value ?? 0])
+    companies.map((c) => [c.id, tradingPriceFromCompanyPrices(c.prices)])
   );
 
   const users = await prisma.user.findMany({
     include: { holdings: true },
   });
 
-  // Filter out the operator account
   const opUsername = process.env.OP_USERNAME;
-  const filteredUsers = users.filter(user => user.username !== opUsername);
+  const filteredUsers = users.filter((user) => user.username !== opUsername);
 
   const rows = filteredUsers.map((user) => {
     const holdings = user.holdings.map((h) => {
@@ -143,7 +163,7 @@ export async function getLeaderboard() {
       };
     });
     const invested = holdings.reduce((sum, h) => sum + h.value, 0);
-    const portfolioValue = invested; // Portfolio value is total worth of shares owned
+    const portfolioValue = invested;
     return {
       userId: user.id,
       name: user.name,
@@ -162,19 +182,18 @@ export async function getLeaderboard() {
 export async function getAllPortfolios() {
   await ensureSeedData();
   const companies = await prisma.company.findMany({
-    include: { prices: { orderBy: { createdAt: "desc" }, take: 1 } },
+    include: { prices: { orderBy: { createdAt: "asc" } } },
   });
   const latestById = new Map(
-    companies.map((c) => [c.id, c.prices[0]?.value ?? 0])
+    companies.map((c) => [c.id, tradingPriceFromCompanyPrices(c.prices)])
   );
 
   const users = await prisma.user.findMany({
     include: { holdings: true },
   });
 
-  // Filter out the operator account
   const opUsername = process.env.OP_USERNAME;
-  const filteredUsers = users.filter(user => user.username !== opUsername);
+  const filteredUsers = users.filter((user) => user.username !== opUsername);
 
   return filteredUsers.map((u) => {
     const holdingsWithValues = u.holdings.map((h) => {
@@ -202,15 +221,36 @@ export async function getAllPortfolios() {
   });
 }
 
+export async function getTotalSharesByCompany() {
+  await ensureSeedData();
+
+  const opUsername = process.env.OP_USERNAME;
+  const holdings = await prisma.holding.findMany({
+    include: { user: true },
+  });
+
+  const filteredHoldings = holdings.filter(
+    (holding) => holding.user.username !== opUsername
+  );
+
+  const totals = new Map<string, number>();
+  for (const holding of filteredHoldings) {
+    totals.set(
+      holding.companyId,
+      (totals.get(holding.companyId) ?? 0) + holding.shares
+    );
+  }
+
+  return totals;
+}
+
 export async function getCompanyValues() {
   await ensureSeedData();
 
-  // Get all companies with current prices
   const companies = await prisma.company.findMany({
-    include: { prices: { orderBy: { createdAt: "desc" }, take: 1 } },
+    include: { prices: { orderBy: { createdAt: "asc" } } },
   });
 
-  // Get all holdings (excluding operator)
   const opUsername = process.env.OP_USERNAME;
   const holdings = await prisma.holding.findMany({
     include: {
@@ -219,24 +259,42 @@ export async function getCompanyValues() {
     },
   });
 
-  const filteredHoldings = holdings.filter(h => h.user.username !== opUsername);
+  const filteredHoldings = holdings.filter(
+    (holding) => holding.user.username !== opUsername
+  );
 
-  // Calculate total shares and market value for each company
-  const companyValues = companies.map(company => {
-    const companyHoldings = filteredHoldings.filter(h => h.companyId === company.id);
-    const totalShares = companyHoldings.reduce((sum, h) => sum + h.shares, 0);
-    const currentPrice = company.prices[0]?.value ?? 0;
-    const marketValue = totalShares * currentPrice;
+  const companyValues = companies.map((company) => {
+    const companyHoldings = filteredHoldings.filter(
+      (holding) => holding.companyId === company.id
+    );
+    const sharesInvested = companyHoldings.reduce(
+      (sum, holding) => sum + holding.shares,
+      0
+    );
+    const inBaseline = isInBaselinePeriod(company.prices);
+    const latest = getLatestPricePoint(company.prices);
+    const operatorCompanyValue = getLatestCompanyValue(company.prices);
+    const sharePrice = getTradingSharePrice(company.prices);
+    const sharesAtLastUpdate =
+      latest?.sharesOutstanding ?? (inBaseline ? BASELINE_SHARES : sharesInvested);
+
+    // Live company value grows as more shares are invested at the current share price
+    const liveCompanyValue = inBaseline
+      ? operatorCompanyValue
+      : sharesInvested * sharePrice;
 
     return {
       symbol: company.symbol,
       name: company.name,
-      totalShares,
-      currentPrice,
-      marketValue,
+      sharesInvested,
+      sharesAtLastUpdate,
+      sharePrice,
+      operatorCompanyValue,
+      companyValue: liveCompanyValue,
+      inBaseline,
+      latestPeriod: latest?.label ?? "Y0 Q4",
     };
   });
 
   return companyValues;
 }
-

@@ -6,9 +6,13 @@ import { useState, useEffect } from "react";
 interface CompanyValue {
   symbol: string;
   name: string;
-  totalShares: number;
-  currentPrice: number;
-  marketValue: number;
+  sharesInvested: number;
+  sharePrice: number;
+  operatorCompanyValue: number;
+  companyValue: number;
+  inBaseline?: boolean;
+  latestPeriod?: string;
+  sharesAtLastUpdate?: number;
 }
 
 export default function CompanyValuesPage() {
@@ -58,7 +62,10 @@ export default function CompanyValuesPage() {
     );
   }
 
-  const totalMarketValue = companyValues.reduce((sum, company) => sum + company.marketValue, 0);
+  const totalCompanyValue = companyValues.reduce(
+    (sum, company) => sum + company.companyValue,
+    0
+  );
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 px-4 py-8">
@@ -66,7 +73,8 @@ export default function CompanyValuesPage() {
         <div>
           <h1 className="text-3xl font-bold text-zinc-900">Company Values</h1>
           <p className="text-zinc-600 mt-1">
-            Total market value of outstanding shares for each company
+            Each period the operator sets a company value. Share price = company value ÷
+            shares invested. Popular companies can be worth $20k+ while others may be $100–200.
           </p>
         </div>
         <Link
@@ -77,16 +85,14 @@ export default function CompanyValuesPage() {
         </Link>
       </div>
 
-      {/* Summary Card */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white">
         <div className="text-center">
-          <div className="text-2xl font-bold mb-2">Total Market Value</div>
-          <div className="text-4xl font-extrabold">${totalMarketValue.toFixed(2)}</div>
-          <div className="text-blue-100 mt-2">Across all companies</div>
+          <div className="text-2xl font-bold mb-2">Total Company Value</div>
+          <div className="text-4xl font-extrabold">${totalCompanyValue.toFixed(2)}</div>
+          <div className="text-blue-100 mt-2">Across all companies (shares invested × share price)</div>
         </div>
       </div>
 
-      {/* Company Values Table */}
       <div className="bg-white rounded-lg shadow-sm border border-zinc-200 overflow-hidden">
         <table className="min-w-full divide-y divide-zinc-200">
           <thead className="bg-zinc-50">
@@ -95,16 +101,16 @@ export default function CompanyValuesPage() {
                 Company
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                Symbol
+                Period
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                Total Shares
+                Shares Invested
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                Current Price
+                Share Price
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                Market Value
+                Company Value
               </th>
             </tr>
           </thead>
@@ -113,19 +119,30 @@ export default function CompanyValuesPage() {
               <tr key={company.symbol} className="hover:bg-zinc-50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-zinc-900">{company.name}</div>
+                  <div className="text-xs font-semibold text-indigo-600">{company.symbol}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-semibold text-indigo-600">{company.symbol}</div>
+                  <div className="text-sm text-zinc-900">{company.latestPeriod ?? "Y0 Q4"}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-zinc-900">{company.totalShares.toLocaleString()}</div>
+                  <div className="text-sm text-zinc-900">
+                    {company.sharesInvested.toLocaleString()}
+                    {company.inBaseline ? (
+                      <span className="ml-2 text-xs text-blue-600">100 baseline in Y0 Q4</span>
+                    ) : null}
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-zinc-900">${company.currentPrice.toFixed(2)}</div>
+                  <div className="text-sm text-zinc-900">${company.sharePrice.toFixed(2)}</div>
+                  {!company.inBaseline && (company.sharesAtLastUpdate ?? 0) > 0 ? (
+                    <div className="text-xs text-zinc-500">
+                      ${company.operatorCompanyValue.toFixed(0)} ÷ {company.sharesAtLastUpdate} at {company.latestPeriod}
+                    </div>
+                  ) : null}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-semibold text-green-600">
-                    ${company.marketValue.toFixed(2)}
+                    ${company.companyValue.toFixed(2)}
                   </div>
                 </td>
               </tr>
@@ -134,7 +151,6 @@ export default function CompanyValuesPage() {
         </table>
       </div>
 
-      {/* Additional Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-lg p-4 border border-zinc-200">
           <div className="text-2xl font-bold text-zinc-900">{companyValues.length}</div>
@@ -142,15 +158,15 @@ export default function CompanyValuesPage() {
         </div>
         <div className="bg-white rounded-lg p-4 border border-zinc-200">
           <div className="text-2xl font-bold text-zinc-900">
-            {companyValues.reduce((sum, c) => sum + c.totalShares, 0).toLocaleString()}
+            {companyValues.reduce((sum, c) => sum + c.sharesInvested, 0).toLocaleString()}
           </div>
-          <div className="text-sm text-zinc-600">Total Shares Outstanding</div>
+          <div className="text-sm text-zinc-600">Total Shares Invested</div>
         </div>
         <div className="bg-white rounded-lg p-4 border border-zinc-200">
           <div className="text-2xl font-bold text-zinc-900">
-            ${(companyValues.reduce((sum, c) => sum + c.marketValue, 0) / companyValues.reduce((sum, c) => sum + c.totalShares, 0) || 0).toFixed(2)}
+            ${(totalCompanyValue / companyValues.reduce((sum, c) => sum + c.sharesInvested, 0) || 0).toFixed(2)}
           </div>
-          <div className="text-sm text-zinc-600">Average Share Price</div>
+          <div className="text-sm text-zinc-600">Weighted Avg Share Price</div>
         </div>
       </div>
     </div>
