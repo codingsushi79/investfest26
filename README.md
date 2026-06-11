@@ -7,7 +7,7 @@ A fully configurable stock trading simulation game built for Vercel. Operators c
 - **Configurable Branding**: Set custom title and description
 - **Feature Toggles**: Enable/disable different game features
 - **Flexible Trading**: Configurable sell-to-market percentage and starting balance
-- **User Management**: Registration, authentication, and moderator tools
+- **User Management**: Registration and authentication
 - **Real-time Charts**: Price history with operator-controlled updates
 - **Trading System**: Buy/sell at market prices with offer system
 - **Leaderboards**: Portfolio value rankings
@@ -42,7 +42,6 @@ FEATURE_TRADING=true               # Enable/disable trading functionality
 FEATURE_LEADERBOARD=true           # Enable/disable leaderboard
 FEATURE_PORTFOLIOS=true            # Enable/disable portfolio views
 FEATURE_OFFERS=true                # Enable/disable trading offers system
-FEATURE_MODERATOR_TOOLS=true       # Enable/disable moderator features
 FEATURE_COMPANY_VALUES=true        # Enable/disable company values page
 FEATURE_ADMIN_PRICE_UPDATES=true   # Enable/disable admin price updates
 FEATURE_USER_PROFILES=true         # Enable/disable user profiles
@@ -56,7 +55,6 @@ NEXT_PUBLIC_FEATURE_TRADING=true    # Client-side access to trading feature togg
 NEXT_PUBLIC_FEATURE_LEADERBOARD=true
 NEXT_PUBLIC_FEATURE_PORTFOLIOS=true
 NEXT_PUBLIC_FEATURE_OFFERS=true
-NEXT_PUBLIC_FEATURE_MODERATOR_TOOLS=true
 NEXT_PUBLIC_FEATURE_COMPANY_VALUES=true
 NEXT_PUBLIC_FEATURE_ADMIN_PRICE_UPDATES=true
 NEXT_PUBLIC_FEATURE_USER_PROFILES=true
@@ -126,9 +124,6 @@ POST /api/admin/update-prices
 ### Event Management
 The operator can start/end trading events from the dashboard.
 
-### User Management
-Moderators can view profiles and manage users (when enabled).
-
 ## Pages
 
 - `/` - Dashboard with charts, cash/holdings overview
@@ -137,5 +132,4 @@ Moderators can view profiles and manage users (when enabled).
 - `/portfolios` - All accounts' positions and cash (if enabled)
 - `/offers` - Trading offers system (if enabled)
 - `/company-values` - Company information (if enabled)
-- `/moderator/*` - Moderator tools (if enabled)
 - `/signin` - Authentication page for login/registration (if enabled)

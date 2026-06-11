@@ -3,7 +3,17 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { TiltButton } from "@/components/TiltButton";
+import { Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 const RESEND_COOLDOWN_SEC = 30;
 
@@ -27,7 +37,7 @@ export function VerifyEmailForm({ email }: { email: string }) {
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const timer = window.setInterval(() => {
-      setResendCooldown((seconds) => Math.max(0, seconds - 1));
+      setResendCooldown((s) => Math.max(0, s - 1));
     }, 1000);
     return () => window.clearInterval(timer);
   }, [resendCooldown]);
@@ -39,17 +49,10 @@ export function VerifyEmailForm({ email }: { email: string }) {
     }
   }, [code, loading]);
 
-  const handleCodeChange = (value: string) => {
-    setCode(value.replace(/\D/g, "").slice(0, 6));
-    setError("");
-  };
-
-  const handleVerify = async (e: React.FormEvent) => {
+  async function handleVerify(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    setSuccess("");
     setLoading(true);
-
     try {
       const response = await fetch("/api/auth/verify-email", {
         method: "POST",
@@ -57,31 +60,25 @@ export function VerifyEmailForm({ email }: { email: string }) {
         body: JSON.stringify({ email, code }),
       });
       const data = await response.json();
-
       if (!response.ok) {
         setError(data.error || "Verification failed");
         lastSubmittedCode.current = "";
         return;
       }
-
       setSuccess(data.success || "Email verified!");
-      setTimeout(() => {
-        router.push("/signin?verified=1");
-      }, 1000);
+      setTimeout(() => router.push("/signin?verified=1"), 1000);
     } catch {
       setError("Network error. Please try again.");
       lastSubmittedCode.current = "";
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const handleResend = async () => {
+  async function handleResend() {
     if (resendCooldown > 0 || resendLoading) return;
     setResendLoading(true);
     setError("");
-    setSuccess("");
-
     try {
       const response = await fetch("/api/auth/resend-verification", {
         method: "POST",
@@ -89,12 +86,10 @@ export function VerifyEmailForm({ email }: { email: string }) {
         body: JSON.stringify({ email }),
       });
       const data = await response.json();
-
       if (!response.ok) {
         setError(data.error || "Could not resend code");
         return;
       }
-
       setSuccess(data.success || "Code sent!");
       setResendCooldown(RESEND_COOLDOWN_SEC);
     } catch {
@@ -102,42 +97,38 @@ export function VerifyEmailForm({ email }: { email: string }) {
     } finally {
       setResendLoading(false);
     }
-  };
+  }
 
   if (!email) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 px-4">
-        <div className="w-full max-w-md space-y-6 rounded-2xl border border-slate-200/60 bg-white/80 backdrop-blur-md p-8 shadow-xl text-center">
-          <h1 className="text-2xl font-bold text-slate-900">Missing email</h1>
-          <p className="text-slate-600">
-            Start from sign up or sign in to verify your account.
-          </p>
-          <Link
-            href="/signin"
-            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-          >
+      <Card className="w-full max-w-sm">
+        <CardHeader className="text-center">
+          <CardTitle>Missing email</CardTitle>
+          <CardDescription>Start from sign up to verify your account.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Link href="/signin" className="text-sm text-primary hover:underline">
             Back to sign in
           </Link>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 px-4">
-      <div className="w-full max-w-md space-y-6 rounded-2xl border border-slate-200/60 bg-white/80 backdrop-blur-md p-8 shadow-xl">
-        <div className="space-y-3 text-center">
-          <h1 className="text-2xl font-bold text-slate-900">Enter your code</h1>
-          <p className="text-slate-600">Sent to {maskEmail(email)}</p>
+    <Card className="w-full max-w-sm">
+      <CardHeader className="text-center">
+        <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-xl bg-primary/15 text-primary">
+          <Mail className="size-6" />
         </div>
-
-        <form ref={formRef} onSubmit={handleVerify} className="space-y-5">
-          <input type="hidden" name="email" value={email} />
-          <input
-            id="verify-code"
-            name="code"
+        <CardTitle>Verify your email</CardTitle>
+        <CardDescription>Code sent to {maskEmail(email)}</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        <form ref={formRef} onSubmit={handleVerify}>
+          <Input
             value={code}
-            onChange={(e) => handleCodeChange(e.target.value)}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
             inputMode="numeric"
             autoComplete="one-time-code"
             pattern="\d{6}"
@@ -145,57 +136,40 @@ export function VerifyEmailForm({ email }: { email: string }) {
             placeholder="000000"
             autoFocus
             disabled={loading}
-            className="block w-full rounded-lg border border-slate-300 px-4 py-6 text-center font-mono text-3xl font-semibold tracking-[0.35em] focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50"
+            className={cn(
+              "h-16 text-center font-mono text-3xl tracking-[0.35em]",
+              "placeholder:tracking-[0.35em]"
+            )}
             required
           />
-
-          {loading && (
-            <p className="text-center text-sm text-slate-500">Verifying...</p>
-          )}
-
-          {error && (
-            <div className="rounded-lg bg-red-50 border border-red-200 p-4">
-              <p className="text-sm text-red-800 font-medium">{error}</p>
-            </div>
-          )}
-
-          {success && (
-            <div className="rounded-lg bg-green-50 border border-green-200 p-4">
-              <p className="text-sm text-green-800 font-medium">{success}</p>
-            </div>
-          )}
-
-          <TiltButton
-            type="submit"
-            disabled={loading || code.length !== 6}
-            className="flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? "Verifying..." : "Verify email"}
-          </TiltButton>
         </form>
 
-        <button
+        {error && (
+          <p className="text-sm text-destructive text-center">{error}</p>
+        )}
+        {success && (
+          <p className="text-sm text-primary text-center">{success}</p>
+        )}
+
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={handleResend}
           disabled={resendCooldown > 0 || resendLoading}
-          className="w-full text-sm text-slate-600 hover:text-blue-600 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          className="text-muted-foreground"
         >
           {resendLoading
-            ? "Sending..."
+            ? "Sending…"
             : resendCooldown > 0
-              ? `Resend code in ${resendCooldown}s`
+              ? `Resend in ${resendCooldown}s`
               : "Resend code"}
-        </button>
+        </Button>
 
-        <div className="text-center pt-4 border-t border-slate-200">
-          <Link
-            href="/signin"
-            className="text-sm text-slate-600 hover:text-blue-600 font-medium"
-          >
-            Back to sign in
-          </Link>
-        </div>
-      </div>
-    </div>
+        <Link href="/signin" className="text-center text-sm text-muted-foreground hover:text-primary">
+          Back to sign in
+        </Link>
+      </CardContent>
+    </Card>
   );
 }

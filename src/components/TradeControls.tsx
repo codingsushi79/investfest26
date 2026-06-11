@@ -3,6 +3,7 @@
 import { FormEvent, useMemo, useState, useTransition } from "react";
 import { buyShares, sellShares } from "@/app/actions";
 import { TiltButton } from "@/components/TiltButton";
+import { AC } from "@/lib/autocomplete";
 
 type CompanyOption = { symbol: string; name: string; price: number };
 type Holding = { symbol: string; shares: number };
@@ -128,6 +129,7 @@ export function TradeControls({
                   step={1}
                   value={shares}
                   onChange={(e) => setShares(Number(e.target.value))}
+                  autoComplete={AC.off}
                   className="w-full rounded-md border border-zinc-200 px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 hover:border-zinc-300 animate-in fade-in-0 slide-in-from-right-2 duration-400"
                   style={{ animationDelay: '500ms' }}
                 />

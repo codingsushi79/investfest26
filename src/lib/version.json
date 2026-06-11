@@ -1,6 +1,6 @@
 {
-  "version": "0.8.12",
-  "commitHash": "2e6b75d",
-  "commitMessage": "Refactor configuration handling and middleware for improved security and feature management",
-  "buildTime": "2026-05-22T23:30:35.545Z"
+  "version": "0.8.17",
+  "commitHash": "d4523ee",
+  "commitMessage": "Update company value management and dashboard features",
+  "buildTime": "2026-06-11T21:25:18.548Z"
 }

@@ -5,14 +5,13 @@ import { AuthForm } from "@/components/AuthForm";
 
 export default async function SignInPage() {
   const user = await getCurrentUser();
-  if (user) {
-    redirect("/");
-  }
+  if (user) redirect("/");
 
   return (
-    <Suspense>
-      <AuthForm />
-    </Suspense>
+    <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
+      <Suspense>
+        <AuthForm />
+      </Suspense>
+    </div>
   );
 }
-

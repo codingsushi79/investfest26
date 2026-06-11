@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTheme } from "next-themes";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -42,8 +43,8 @@ export function StockCharts({ companies }: { companies: ChartCompany[] }) {
   const hasAnyPrices = companies.some((c) => c.prices.length > 0);
   if (!hasAnyPrices) {
     return (
-      <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-6 text-sm text-zinc-600">
-        📊 No price data yet. Operator updates prices every 15 minutes via code.
+      <div className="rounded-xl border border-dashed border-border bg-muted/20 p-6 text-sm text-muted-foreground">
+        No price data yet. The operator updates company values each period.
       </div>
     );
   }
@@ -117,12 +118,13 @@ export function StockCharts({ companies }: { companies: ChartCompany[] }) {
 
   if (!allPeriods.length || !hasDataPoints) {
     return (
-      <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-6 text-sm text-zinc-600">
-        📊 No chartable price history yet.
+      <div className="rounded-xl border border-dashed border-border bg-muted/20 p-6 text-sm text-muted-foreground">
+        No chartable price history yet.
       </div>
     );
   }
 
+  const { resolvedTheme } = useTheme();
   const [visibleSymbols, setVisibleSymbols] = useState<string[]>(
     companies.map((c) => c.symbol)
   );
@@ -211,31 +213,38 @@ export function StockCharts({ companies }: { companies: ChartCompany[] }) {
       scales: {
         x: {
           grid: { display: false },
+          border: { display: false },
+          ticks: {
+            color:
+              resolvedTheme === "dark"
+                ? "rgba(255, 255, 255, 0.35)"
+                : "rgba(0, 0, 0, 0.45)",
+          },
         },
         y: {
           grid: {
-            color: "#e5e7eb",
+            color:
+              resolvedTheme === "dark"
+                ? "rgba(255, 255, 255, 0.06)"
+                : "rgba(0, 0, 0, 0.06)",
           },
+          border: { display: false },
           ticks: {
+            color:
+              resolvedTheme === "dark"
+                ? "rgba(255, 255, 255, 0.35)"
+                : "rgba(0, 0, 0, 0.45)",
             callback: (value: number | string) => `$${Number(value).toFixed(0)}`,
           },
         },
       },
     }),
-    [],
+    [resolvedTheme],
   );
 
   return (
-    <div className="bg-white rounded-xl border border-zinc-200 p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <h3 className="text-lg font-semibold text-zinc-900">📈 Stock Price History</h3>
-          <p className="text-sm text-zinc-600">All companies over time</p>
-        </div>
-      </div>
-
-      {/* Company visibility toggles */}
-      <div className="flex flex-wrap gap-2 mb-4 text-xs">
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
         {companies.map((company, index) => {
           const active = visibleSymbols.includes(company.symbol);
           const color = COMPANY_COLORS[index % COMPANY_COLORS.length];
@@ -244,10 +253,10 @@ export function StockCharts({ companies }: { companies: ChartCompany[] }) {
               key={company.symbol}
               type="button"
               onClick={() => toggleSymbol(company.symbol)}
-              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 transition-colors ${
+              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs transition-colors ${
                 active
-                  ? "border-transparent bg-zinc-100 text-zinc-800"
-                  : "border-zinc-200 bg-white text-zinc-400"
+                  ? "border-primary/30 bg-primary/10 text-foreground"
+                  : "border-border bg-background text-muted-foreground"
               }`}
             >
               <span

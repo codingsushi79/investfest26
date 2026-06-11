@@ -1,13 +1,30 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { TiltButton } from "@/components/TiltButton";
+import { LineChart } from "lucide-react";
+import { appConfig } from "@/lib/config";
+import { AC } from "@/lib/autocomplete";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export function AuthForm() {
   const searchParams = useSearchParams();
-  const [isSignUp, setIsSignUp] = useState(false);
+  const router = useRouter();
+  const verified = searchParams.get("verified") === "1";
+  const reset = searchParams.get("reset") === "1";
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -15,18 +32,13 @@ export function AuthForm() {
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const verified = searchParams.get("verified") === "1";
-  const reset = searchParams.get("reset") === "1";
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  async function handleSubmit(isSignUp: boolean) {
     setError("");
     setLoading(true);
 
-    // Validate terms agreement for sign up
     if (isSignUp && !agreeToTerms) {
-      setError("You must agree to the Terms of Service and Privacy Policy to continue.");
+      setError("You must agree to the Terms of Service and Privacy Policy.");
       setLoading(false);
       return;
     }
@@ -39,9 +51,7 @@ export function AuthForm() {
 
       const response = await fetch(endpoint, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
 
@@ -61,7 +71,6 @@ export function AuthForm() {
         return;
       }
 
-      // Success - redirect to home
       router.push("/");
       router.refresh();
     } catch {
@@ -69,197 +78,157 @@ export function AuthForm() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 px-4 animate-in fade-in-0 duration-1000">
-      <div className="w-full max-w-md space-y-6 rounded-2xl border border-slate-200/60 bg-white/80 backdrop-blur-md p-8 shadow-xl animate-in fade-in-0 slide-in-from-bottom-8 duration-700">
-        <div className="space-y-3 text-center">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center animate-in fade-in-0 zoom-in-95 duration-500" style={{ animationDelay: '200ms' }}>
-            <svg className="w-8 h-8 text-blue-600 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-slate-900 animate-in fade-in-0 slide-in-from-top-4 duration-500" style={{ animationDelay: '300ms' }}>
-            {isSignUp ? "Create Account" : "Welcome Back"}
-          </h1>
-          <p className="text-slate-600 animate-in fade-in-0 slide-in-from-bottom-2 duration-500" style={{ animationDelay: '400ms' }}>
-            {isSignUp
-              ? "Start with $1,000 virtual cash to trade stocks"
-              : "Sign in to continue your trading journey"
-            }
-          </p>
+    <Card className="w-full max-w-md">
+      <CardHeader className="text-center">
+        <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-xl bg-primary/15 text-primary">
+          <LineChart className="size-6" />
         </div>
-
-        {(verified || reset) && (
-          <div className="rounded-lg bg-green-50 border border-green-200 p-4">
-            <p className="text-sm text-green-800 font-medium text-center">
-              {verified
-                ? "Email verified. You can sign in now."
-                : "Password updated. Sign in with your new password."}
-            </p>
-          </div>
+        <CardTitle>{appConfig.title}</CardTitle>
+        <CardDescription>
+          Sign in or create an account to start trading with $1,000 virtual cash.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        {verified && (
+          <p className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-sm text-primary">
+            Email verified. You can sign in now.
+          </p>
+        )}
+        {reset && (
+          <p className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-sm text-primary">
+            Password updated. Sign in with your new password.
+          </p>
+        )}
+        {error && (
+          <p className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {error}
+          </p>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5 animate-in fade-in-0 duration-700" style={{ animationDelay: '500ms' }}>
-          {isSignUp && (
-            <>
-              <div className="animate-in fade-in-0 slide-in-from-left-4 duration-500" style={{ animationDelay: '600ms' }}>
-                <label htmlFor="name" className="block text-sm font-semibold text-slate-700 mb-2 animate-in fade-in-0 duration-300" style={{ animationDelay: '650ms' }}>
-                  Full Name <span className="text-slate-400 font-normal">(optional)</span>
-                </label>
-                <input
-                  type="text"
-                  id="name"
+        <Tabs defaultValue="sign-in">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="sign-in">Sign in</TabsTrigger>
+            <TabsTrigger value="sign-up">Sign up</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="sign-in" className="mt-4">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSubmit(false);
+              }}
+              className="flex flex-col gap-4"
+            >
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="sign-in-username">Username</Label>
+                <Input
+                  id="sign-in-username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  autoComplete={AC.off}
+                  required
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="sign-in-password">Password</Label>
+                  <Link href="/forgot-password" className="text-xs text-primary hover:underline">
+                    Forgot password?
+                  </Link>
+                </div>
+                <Input
+                  id="sign-in-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete={AC.currentPassword}
+                  required
+                  minLength={6}
+                />
+              </div>
+              <Button type="submit" disabled={loading} className="w-full">
+                {loading ? "Signing in…" : "Sign in"}
+              </Button>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="sign-up" className="mt-4">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSubmit(true);
+              }}
+              className="flex flex-col gap-4"
+            >
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="sign-up-name">Full name (optional)</Label>
+                <Input
+                  id="sign-up-name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="block w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 hover:border-slate-400 animate-in fade-in-0 slide-in-from-right-2 duration-500"
-                  placeholder="Enter your full name"
-                  style={{ animationDelay: '700ms' }}
+                  autoComplete={AC.off}
                 />
               </div>
-
-              <div className="animate-in fade-in-0 slide-in-from-left-4 duration-500" style={{ animationDelay: '750ms' }}>
-                <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-2 animate-in fade-in-0 duration-300" style={{ animationDelay: '800ms' }}>
-                  Email
-                </label>
-                <input
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="sign-up-email">Email</Label>
+                <Input
+                  id="sign-up-email"
                   type="email"
-                  id="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 hover:border-slate-400 animate-in fade-in-0 slide-in-from-right-2 duration-500"
-                  placeholder="Enter your email address"
+                  autoComplete={AC.email}
                   required
-                  style={{ animationDelay: '850ms' }}
                 />
               </div>
-            </>
-          )}
-
-          <div className="animate-in fade-in-0 slide-in-from-left-4 duration-500" style={{ animationDelay: isSignUp ? '900ms' : '600ms' }}>
-            <label htmlFor="username" className="block text-sm font-semibold text-slate-700 mb-2 animate-in fade-in-0 duration-300" style={{ animationDelay: isSignUp ? '950ms' : '650ms' }}>
-              Username
-            </label>
-            <input
-              type="text"
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="block w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 hover:border-slate-400 animate-in fade-in-0 slide-in-from-right-2 duration-500"
-              placeholder="Enter your username"
-              required
-              style={{ animationDelay: isSignUp ? '1000ms' : '700ms' }}
-            />
-          </div>
-
-          <div className="animate-in fade-in-0 slide-in-from-left-4 duration-500" style={{ animationDelay: isSignUp ? '1050ms' : '750ms' }}>
-            <label htmlFor="password" className="block text-sm font-semibold text-slate-700 mb-2 animate-in fade-in-0 duration-300" style={{ animationDelay: isSignUp ? '1100ms' : '800ms' }}>
-              Password {isSignUp && <span className="text-slate-400 font-normal">(min. 6 characters)</span>}
-            </label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="block w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 hover:border-slate-400 animate-in fade-in-0 slide-in-from-right-2 duration-500"
-              placeholder="Enter your password"
-              required
-              minLength={6}
-              style={{ animationDelay: isSignUp ? '1150ms' : '850ms' }}
-            />
-          </div>
-
-          {!isSignUp && (
-            <div className="text-right">
-              <Link
-                href="/forgot-password"
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-              >
-                Forgot password?
-              </Link>
-            </div>
-          )}
-
-          {isSignUp && (
-            <div className="animate-in fade-in-0 slide-in-from-left-4 duration-500" style={{ animationDelay: '1200ms' }}>
-              <div className="flex items-start space-x-3">
-                <input
-                  type="checkbox"
-                  id="agreeToTerms"
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="sign-up-username">Username</Label>
+                <Input
+                  id="sign-up-username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  autoComplete={AC.off}
+                  required
+                  minLength={3}
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="sign-up-password">Password</Label>
+                <Input
+                  id="sign-up-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete={AC.newPassword}
+                  required
+                  minLength={6}
+                />
+              </div>
+              <label className="flex items-start gap-3 text-sm">
+                <Checkbox
                   checked={agreeToTerms}
-                  onChange={(e) => setAgreeToTerms(e.target.checked)}
-                  className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded focus:ring-2 transition-colors"
-                  required
+                  onCheckedChange={(checked) => setAgreeToTerms(checked === true)}
                 />
-                <label htmlFor="agreeToTerms" className="text-sm text-slate-600 leading-relaxed">
-                  I agree to the{' '}
-                  <a
-                    href="/terms-of-service"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 font-medium underline transition-colors hover:scale-105 inline-block"
-                  >
+                <span className="text-muted-foreground leading-relaxed">
+                  I agree to the{" "}
+                  <Link href="/terms-of-service" className="text-primary hover:underline" target="_blank">
                     Terms of Service
-                  </a>
-                  {' '}and{' '}
-                  <a
-                    href="/privacy-policy"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 font-medium underline transition-colors hover:scale-105 inline-block"
-                  >
+                  </Link>{" "}
+                  and{" "}
+                  <Link href="/privacy-policy" className="text-primary hover:underline" target="_blank">
                     Privacy Policy
-                  </a>
-                </label>
-              </div>
-            </div>
-          )}
-
-          {error && (
-            <div className="rounded-lg bg-red-50 border border-red-200 p-4 animate-in fade-in-0 slide-in-from-top-2 duration-300">
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-red-500 flex-shrink-0 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-sm text-red-800 font-medium animate-in fade-in-0 duration-300" style={{ animationDelay: '100ms' }}>{error}</p>
-              </div>
-            </div>
-          )}
-
-          <TiltButton
-            type="submit"
-            disabled={loading || (isSignUp && !agreeToTerms)}
-            className="flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:shadow-xl animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-            style={{ animationDelay: isSignUp ? '1350ms' : '900ms' }}
-          >
-            {loading && (
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            )}
-            <span className={loading ? 'animate-pulse' : ''}>
-              {loading ? "Please wait..." : (isSignUp ? "Create Account" : "Sign In")}
-            </span>
-          </TiltButton>
-        </form>
-
-        <div className="text-center pt-4 border-t border-slate-200 animate-in fade-in-0 duration-500" style={{ animationDelay: isSignUp ? '1400ms' : '1000ms' }}>
-          <button
-            onClick={() => setIsSignUp(!isSignUp)}
-            className="text-sm text-slate-600 hover:text-blue-600 font-medium transition-all duration-200 hover:scale-105 relative overflow-hidden group"
-          >
-            <span className="relative z-10">
-              {isSignUp
-                ? "Already have an account? Sign in"
-                : "Don't have an account? Sign up"
-              }
-            </span>
-            <div className="absolute inset-0 bg-blue-50 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
-          </button>
-        </div>
-      </div>
-    </div>
+                  </Link>
+                </span>
+              </label>
+              <Button type="submit" disabled={loading || !agreeToTerms} className="w-full">
+                {loading ? "Creating account…" : "Create account"}
+              </Button>
+            </form>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 }

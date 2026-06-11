@@ -1,3 +1,14 @@
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { EmptyState } from "@/components/empty-state";
+import { PieChart } from "lucide-react";
+
 type HoldingRow = {
   symbol: string;
   name: string;
@@ -9,45 +20,42 @@ type HoldingRow = {
 export function PortfolioTable({ rows }: { rows: HoldingRow[] }) {
   if (rows.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-zinc-300 p-4 text-sm text-zinc-600">
-        You have no holdings yet. Use Buy shares to get started.
-      </div>
+      <EmptyState
+        icon={PieChart}
+        title="No holdings yet"
+        description="Buy shares from the trade page to build your portfolio."
+        action={{ href: "/trade", label: "Start trading" }}
+      />
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm hover:shadow-md transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-2">
-      <table className="min-w-full divide-y divide-zinc-200 text-sm">
-        <thead className="bg-zinc-50 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
-          <tr>
-            <th className="px-4 py-2">Company</th>
-            <th className="px-4 py-2">Shares</th>
-            <th className="px-4 py-2">Price</th>
-            <th className="px-4 py-2">Value</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-zinc-100">
-          {rows.map((row, index) => (
-            <tr
-              key={row.symbol}
-              className="hover:bg-zinc-50 hover:scale-[1.01] transition-all duration-200 cursor-pointer"
-              style={{ animationDelay: `${index * 50}ms` }}
-            >
-              <td className="px-4 py-2 font-medium text-zinc-900 animate-in fade-in-0 slide-in-from-left-2">
-                {row.symbol} <span className="text-xs text-zinc-500">{row.name}</span>
-              </td>
-              <td className="px-4 py-2 text-zinc-800 animate-in fade-in-0 slide-in-from-right-2">{row.shares}</td>
-              <td className="px-4 py-2 text-zinc-800 animate-in fade-in-0 slide-in-from-right-2">
-                ${row.latestPrice.toFixed(2)}
-              </td>
-              <td className="px-4 py-2 font-semibold text-zinc-900 animate-in fade-in-0 slide-in-from-right-2">
+    <div className="rounded-xl border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Company</TableHead>
+            <TableHead className="text-right">Shares</TableHead>
+            <TableHead className="text-right">Price</TableHead>
+            <TableHead className="text-right">Value</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((row) => (
+            <TableRow key={row.symbol}>
+              <TableCell>
+                <div className="font-medium">{row.symbol}</div>
+                <div className="text-xs text-muted-foreground">{row.name}</div>
+              </TableCell>
+              <TableCell className="text-right">{row.shares}</TableCell>
+              <TableCell className="text-right">${row.latestPrice.toFixed(2)}</TableCell>
+              <TableCell className="text-right font-medium">
                 ${row.value.toFixed(2)}
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 }
-

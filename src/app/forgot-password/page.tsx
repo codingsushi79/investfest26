@@ -6,5 +6,9 @@ export default async function ForgotPasswordPage({
   searchParams: Promise<{ email?: string }>;
 }) {
   const { email = "" } = await searchParams;
-  return <ForgotPasswordForm defaultEmail={email} />;
+  return (
+    <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
+      <ForgotPasswordForm defaultEmail={email} />
+    </div>
+  );
 }

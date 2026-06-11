@@ -1,16 +1,20 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 export default function DDoSBlockedPage() {
   return (
-    <main className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100 px-4">
-      <div className="max-w-md text-center space-y-4">
-        <h1 className="text-2xl font-semibold">Too many requests</h1>
-        <p className="text-sm text-slate-300">
-          We&apos;re seeing an unusually high number of requests from your connection.
-          Please slow down for a minute and then try again.
-        </p>
-        <p className="text-xs text-slate-500">
-          If you believe this is a mistake, wait a bit and refresh the page.
-        </p>
-      </div>
-    </main>
+    <div className="flex min-h-full items-center justify-center p-4">
+      <Card className="max-w-md text-center">
+        <CardHeader>
+          <CardTitle>Too many requests</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm text-muted-foreground">
+          <p>
+            We&apos;re seeing an unusually high number of requests from your connection.
+            Please wait a minute and try again.
+          </p>
+          <p className="text-xs">If this persists, refresh the page after a short break.</p>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

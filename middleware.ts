@@ -133,10 +133,6 @@ export function middleware(req: NextRequest, event: NextFetchEvent) {
     return NextResponse.redirect(new URL('/', req.url));
   }
 
-  if (pathname.startsWith('/moderator') && !featuresConfig.moderatorTools) {
-    return NextResponse.redirect(new URL('/', req.url));
-  }
-
   // Apply DDoS protection if enabled (only on server-side)
   if (typeof window === 'undefined') {
     try {

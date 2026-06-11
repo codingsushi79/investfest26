@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { AC } from "@/lib/autocomplete";
 
 export function LoginForm() {
   const [formData, setFormData] = useState({
@@ -39,7 +40,7 @@ export function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
       <div>
         <label htmlFor="usernameOrEmail" className="block text-sm font-medium text-zinc-700">
           Username or Email
@@ -48,6 +49,7 @@ export function LoginForm() {
           id="usernameOrEmail"
           type="text"
           required
+          autoComplete={AC.off}
           value={formData.usernameOrEmail}
           onChange={(e) => setFormData({ ...formData, usernameOrEmail: e.target.value })}
           className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
@@ -62,6 +64,7 @@ export function LoginForm() {
           id="password"
           type="password"
           required
+          autoComplete={AC.currentPassword}
           value={formData.password}
           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
           className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
@@ -122,7 +125,7 @@ export function RegisterForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
       <div>
         <label htmlFor="username" className="block text-sm font-medium text-zinc-700">
           Username
@@ -131,6 +134,7 @@ export function RegisterForm() {
           id="username"
           type="text"
           required
+          autoComplete={AC.off}
           value={formData.username}
           onChange={(e) => setFormData({ ...formData, username: e.target.value })}
           className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
@@ -145,6 +149,7 @@ export function RegisterForm() {
           id="email"
           type="email"
           required
+          autoComplete={AC.email}
           value={formData.email}
           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
           className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
@@ -160,6 +165,7 @@ export function RegisterForm() {
           type="password"
           required
           minLength={6}
+          autoComplete={AC.newPassword}
           value={formData.password}
           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
           className="mt-1 block w-full rounded-md border border-zinc-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
