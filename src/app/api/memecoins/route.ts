@@ -3,7 +3,11 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth-utils";
 import { assertFeatures, getFeaturesConfig, getMemecoinConfig } from "@/lib/config";
 import { getMemecoinMarket } from "@/lib/memecoin-data";
-import { createMemecoinSeed, normalizeMemecoinSymbol } from "@/lib/memecoin";
+import {
+  createMemecoinSeed,
+  driftFromPercentPerHour,
+  normalizeMemecoinSymbol,
+} from "@/lib/memecoin";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
@@ -34,8 +38,9 @@ const createSchema = z.object({
   name: z.string().min(1).max(60),
   description: z.string().max(280).optional(),
   startPrice: z.number().positive().optional(),
-  volatility: z.number().min(0).max(1).optional(),
-  drift: z.number().min(-1).max(1).optional(),
+  volatility: z.number().min(0).optional(),
+  /** Expected trend in percent per hour, not raw per-tick drift. */
+  trendPercentPerHour: z.number().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -62,6 +67,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Refuse a coin that would print money for whoever holds it.
+    const trend = input.trendPercentPerHour ?? config.defaultTrendPercentPerHour;
+    if (Math.abs(trend) > config.maxTrendPercentPerHour) {
+      return NextResponse.json(
+        {
+          error: `Trend must be between -${config.maxTrendPercentPerHour}% and +${config.maxTrendPercentPerHour}% per hour`,
+        },
+        { status: 400 }
+      );
+    }
+
+    const volatility = input.volatility ?? config.defaultVolatility;
+    if (volatility > config.maxVolatility) {
+      return NextResponse.json(
+        { error: `Volatility cannot exceed ${config.maxVolatility}` },
+        { status: 400 }
+      );
+    }
+
     const existing = await prisma.memecoin.findUnique({ where: { symbol } });
     if (existing) {
       return NextResponse.json(
@@ -77,8 +101,8 @@ export async function POST(request: NextRequest) {
         description: input.description?.trim() || null,
         seed: createMemecoinSeed(),
         basePrice: input.startPrice ?? config.defaultStartPrice,
-        volatility: input.volatility ?? config.defaultVolatility,
-        drift: input.drift ?? config.defaultDrift,
+        volatility,
+        drift: driftFromPercentPerHour(trend, config.tickSeconds),
         minPrice: config.minPrice,
         genesisAt: new Date(),
       },

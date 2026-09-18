@@ -19,13 +19,28 @@ export type MemecoinLike = {
 /** Guard against a pathological loop if a coin's genesis is far in the past. */
 const MAX_TICKS = 200_000;
 
-/** Deterministic uniform in (0, 1) from a seed and a tick index. */
+/** splitmix32: one call fully avalanches its input. */
+function mix(x: number) {
+  x = (x + 0x9e3779b9) | 0;
+  let t = x ^ (x >>> 16);
+  t = Math.imul(t, 0x21f0aaad);
+  t = t ^ (t >>> 15);
+  t = Math.imul(t, 0x735a2d97);
+  return (t ^ (t >>> 15)) >>> 0;
+}
+
+/**
+ * Deterministic uniform in (0, 1) from a seed and a tick index.
+ *
+ * The salt is folded in through its own full mixing round rather than xor'd at
+ * the end: Box-Muller needs its two uniforms to be independent, and salts that
+ * only differ in the last step stay correlated enough to clip the upper tail --
+ * which quietly biases every coin's price downward.
+ */
 function hashUniform(seed: number, tick: number, salt: number) {
-  let h = (seed ^ 0x9e3779b9) >>> 0;
-  h = Math.imul(h ^ tick, 0x85ebca6b) >>> 0;
-  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35) >>> 0;
-  h = Math.imul(h ^ salt, 0x27d4eb2f) >>> 0;
-  h = (h ^ (h >>> 16)) >>> 0;
+  let h = mix(seed);
+  h = mix(h + tick);
+  h = mix(h + salt);
   // Keep it strictly inside (0, 1) so Math.log never sees 0.
   return (h + 0.5) / 4294967296;
 }
@@ -62,8 +77,14 @@ function cumulativeLogReturn(coin: MemecoinLike, tick: number) {
     sum = 0;
   }
 
+  // The -sigma^2/2 term is what makes `drift` the coin's *actual* expected
+  // return. Without it, a coin set to "flat" still climbs on average, because
+  // the upside of a random walk compounds further than the downside does --
+  // which is free money for anyone who just holds.
+  const perTickDrift = coin.drift - (coin.volatility * coin.volatility) / 2;
+
   for (let i = from + 1; i <= tick; i++) {
-    sum += coin.drift + coin.volatility * normalAt(coin.seed, i);
+    sum += perTickDrift + coin.volatility * normalAt(coin.seed, i);
   }
 
   cumulativeCache.set(coin.id, { tick, sum });
@@ -160,6 +181,22 @@ export function getSecondsToNextTick(
   const elapsed = at.getTime() - genesis;
   if (elapsed <= 0) return Math.ceil((genesis - at.getTime()) / 1000);
   return Math.ceil((interval - (elapsed % interval)) / 1000);
+}
+
+/**
+ * Per-tick drift is a log return: unreadable to a human, and catastrophic if
+ * someone types a "reasonable looking" number like 1 (which is e^60 per hour
+ * at 60s ticks). Operators pick a percent-per-hour trend instead, and these
+ * convert between the two.
+ */
+export function driftFromPercentPerHour(percentPerHour: number, tickSeconds: number) {
+  const ticksPerHour = 3600 / Math.max(tickSeconds, 1);
+  return Math.log(1 + percentPerHour / 100) / ticksPerHour;
+}
+
+export function percentPerHourFromDrift(drift: number, tickSeconds: number) {
+  const ticksPerHour = 3600 / Math.max(tickSeconds, 1);
+  return (Math.exp(drift * ticksPerHour) - 1) * 100;
 }
 
 const SYMBOL_PATTERN = /^[A-Z0-9]{2,10}$/;

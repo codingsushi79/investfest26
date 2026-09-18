@@ -47,8 +47,13 @@ const serverConfigSchema = z.object({
     // Defaults applied to a new coin when the operator does not override them.
     defaultStartPrice: z.number().positive().default(1),
     defaultVolatility: z.number().min(0).max(1).default(0.02),
-    defaultDrift: z.number().min(-1).max(1).default(0),
+    defaultTrendPercentPerHour: z.number().min(-100).max(100).default(0),
     minPrice: z.number().positive().default(0.01),
+    // Hard ceilings on how a coin may be configured. A coin that trends up
+    // fast enough is just free money for whoever holds it, so the trend is
+    // capped in human units (percent per hour) rather than raw log-drift.
+    maxTrendPercentPerHour: z.number().min(0).max(100).default(15),
+    maxVolatility: z.number().min(0.0001).max(0.5).default(0.06),
     // Cash cut taken by the house on each memecoin sale, as a percentage.
     sellFeePercentage: z.number().min(0).max(100).default(0),
     maxCoins: z.number().int().positive().default(50),
@@ -156,8 +161,14 @@ function loadServerConfig() {
       tickSeconds: parseFloat(process.env.MEMECOIN_TICK_SECONDS || '60'),
       defaultStartPrice: parseFloat(process.env.MEMECOIN_DEFAULT_START_PRICE || '1'),
       defaultVolatility: parseFloat(process.env.MEMECOIN_DEFAULT_VOLATILITY || '0.02'),
-      defaultDrift: parseFloat(process.env.MEMECOIN_DEFAULT_DRIFT || '0'),
+      defaultTrendPercentPerHour: parseFloat(
+        process.env.MEMECOIN_DEFAULT_TREND_PERCENT_PER_HOUR || '0'
+      ),
       minPrice: parseFloat(process.env.MEMECOIN_MIN_PRICE || '0.01'),
+      maxTrendPercentPerHour: parseFloat(
+        process.env.MEMECOIN_MAX_TREND_PERCENT_PER_HOUR || '15'
+      ),
+      maxVolatility: parseFloat(process.env.MEMECOIN_MAX_VOLATILITY || '0.06'),
       sellFeePercentage: parseFloat(process.env.MEMECOIN_SELL_FEE_PERCENTAGE || '0'),
       maxCoins: parseInt(process.env.MEMECOIN_MAX_COINS || '50'),
       historyPoints: parseInt(process.env.MEMECOIN_HISTORY_POINTS || '60'),
