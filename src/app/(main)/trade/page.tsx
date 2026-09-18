@@ -26,6 +26,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AS_SELF,
+  ActingAsSelect,
+  useManagedFirms,
+} from "@/components/acting-as-select";
 import { AC } from "@/lib/autocomplete";
 import { useLiveRefresh } from "@/lib/live";
 import { cn } from "@/lib/utils";
@@ -57,6 +62,12 @@ export default function TradePage() {
   const [tradingEnded, setTradingEnded] = useState(false);
   const [companyFilter, setCompanyFilter] = useState("");
   const refreshLive = useLiveRefresh();
+  const managedFirms = useManagedFirms();
+  const [actingAs, setActingAs] = useState<string>(AS_SELF);
+  const activeFirm =
+    actingAs === AS_SELF
+      ? null
+      : managedFirms.find((firm) => firm.id === actingAs) ?? null;
 
   const fetchTradeData = useCallback(async () => {
     try {
@@ -130,30 +141,49 @@ export default function TradePage() {
         ? company.price * sharesNum
         : company.price * sharesNum * 0.9;
 
-    if (tradeType === "buy" && user && totalCost > user.balance) {
-      toast.error("Insufficient funds");
+    const availableCash = activeFirm ? activeFirm.balance : user?.balance ?? 0;
+    if (tradeType === "buy" && totalCost > availableCash) {
+      toast.error(
+        activeFirm ? "The firm does not have enough cash" : "Insufficient funds"
+      );
       return;
     }
 
     if (tradeType === "sell") {
-      const holding = holdings.find((h) => h.symbol === selectedCompany);
-      if (!holding || holding.shares < sharesNum) {
-        toast.error("Not enough shares");
+      const owned = activeFirm
+        ? activeFirm.holdings.find((h) => h.symbol === selectedCompany)?.shares ?? 0
+        : holdings.find((h) => h.symbol === selectedCompany)?.shares ?? 0;
+      if (owned < sharesNum) {
+        toast.error(
+          activeFirm ? "The firm does not hold that many shares" : "Not enough shares"
+        );
         return;
       }
     }
 
     setTrading(true);
     try {
-      const response = await fetch("/api/trade", {
+      const response = await fetch(
+        activeFirm ? `/api/firms/${activeFirm.id}/trade` : "/api/trade",
+        {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          symbol: selectedCompany,
-          shares: sharesNum,
-          type: tradeType.toUpperCase(),
-        }),
-      });
+        body: JSON.stringify(
+          activeFirm
+            ? {
+                assetType: "STOCK",
+                symbol: selectedCompany,
+                units: sharesNum,
+                type: tradeType.toUpperCase(),
+              }
+            : {
+                symbol: selectedCompany,
+                shares: sharesNum,
+                type: tradeType.toUpperCase(),
+              }
+        ),
+        }
+      );
 
       if (!response.ok) {
         const data = await response.json();
@@ -161,7 +191,9 @@ export default function TradePage() {
       }
 
       toast.success(
-        `${tradeType === "buy" ? "Bought" : "Sold"} ${sharesNum} shares of ${selectedCompany}`
+        `${activeFirm ? `${activeFirm.name}: ` : ""}${
+          tradeType === "buy" ? "Bought" : "Sold"
+        } ${sharesNum} shares of ${selectedCompany}`
       );
       setShares("");
       setDialogOpen(false);
@@ -335,6 +367,18 @@ export default function TradePage() {
             <DialogTitle>Trade shares</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleTrade} className="flex flex-col gap-4">
+            <ActingAsSelect
+              id="trade-acting-as"
+              label="Trading as"
+              firms={managedFirms}
+              value={actingAs}
+              onChange={(value) => {
+                setActingAs(value);
+                setShares("");
+              }}
+              selfBalance={user?.balance}
+            />
+
             <div className="grid grid-cols-2 gap-2">
               <Button
                 type="button"

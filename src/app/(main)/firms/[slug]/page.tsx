@@ -3,21 +3,14 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Store, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -91,8 +84,6 @@ export default function FirmDetailPage() {
 
   const [firm, setFirm] = useState<Firm | null>(null);
   const [balance, setBalance] = useState(0);
-  const [stocks, setStocks] = useState<string[]>([]);
-  const [coins, setCoins] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [investAmount, setInvestAmount] = useState("");
@@ -113,10 +104,6 @@ export default function FirmDetailPage() {
   const [newsBody, setNewsBody] = useState("");
   const [newsEmail, setNewsEmail] = useState(true);
 
-  const [assetType, setAssetType] = useState<"STOCK" | "CRYPTO">("STOCK");
-  const [tradeSymbol, setTradeSymbol] = useState("");
-  const [tradeUnits, setTradeUnits] = useState("");
-  const [tradeSide, setTradeSide] = useState<"BUY" | "SELL">("BUY");
 
   const fetchFirm = useCallback(async () => {
     try {
@@ -135,9 +122,6 @@ export default function FirmDetailPage() {
       if (dashboardRes.ok) {
         const dashboard = await dashboardRes.json();
         setBalance(dashboard.cash ?? 0);
-        setStocks(
-          (dashboard.companies ?? []).map((company: { symbol: string }) => company.symbol)
-        );
       }
 
       const newsRes = await fetch(`/api/firms/${slug}/news`);
@@ -146,15 +130,6 @@ export default function FirmDetailPage() {
         setNews(newsData.news ?? []);
       }
 
-      const coinsRes = await fetch("/api/crypto");
-      if (coinsRes.ok) {
-        const data = await coinsRes.json();
-        setCoins(
-          data.coins
-            .filter((coin: { isActive: boolean }) => coin.isActive)
-            .map((coin: { symbol: string }) => coin.symbol)
-        );
-      }
     } catch (error) {
       console.error("Failed to load firm:", error);
     } finally {
@@ -196,6 +171,32 @@ export default function FirmDetailPage() {
     }
   }
 
+  async function deleteFirm() {
+    if (!firm) return;
+    if (
+      !window.confirm(
+        `Delete ${firm.name}? Any cash left in it comes back to you. This cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const response = await fetch(`/api/firms/${firm.slug}`, { method: "DELETE" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Could not delete firm");
+
+      toast.success(data.message || "Firm deleted");
+      refreshLive();
+      router.push("/firms");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not delete firm");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex flex-col gap-6">
@@ -206,8 +207,6 @@ export default function FirmDetailPage() {
   }
 
   if (!firm) return null;
-
-  const symbolOptions = assetType === "STOCK" ? stocks : coins;
 
   return (
     <div className="flex flex-col gap-6">
@@ -225,6 +224,18 @@ export default function FirmDetailPage() {
       >
         {firm.isManager && <Badge>You manage this firm</Badge>}
         {!firm.isOpen && <Badge variant="outline">Closed to new money</Badge>}
+        {firm.isManager && (
+          <>
+            <Link href="/trade" className={buttonVariants({ size: "sm" })}>
+              <Store data-icon="inline-start" />
+              Trade for this firm
+            </Link>
+            <Button size="sm" variant="outline" onClick={deleteFirm} disabled={busy}>
+              <Trash2 data-icon="inline-start" />
+              Delete
+            </Button>
+          </>
+        )}
       </PageHeader>
 
       <div className="grid gap-4 sm:grid-cols-4">
@@ -385,106 +396,6 @@ export default function FirmDetailPage() {
         </Card>
       )}
 
-      {firm.isManager && firm.canTrade && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Trade client capital</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form
-              className="grid gap-3 sm:grid-cols-5 sm:items-end"
-              onSubmit={async (event) => {
-                event.preventDefault();
-                const units = parseFloat(tradeUnits);
-                if (!tradeSymbol || isNaN(units) || units <= 0) return;
-                const ok = await post(
-                  `/api/firms/${firm.slug}/trade`,
-                  { assetType, symbol: tradeSymbol, units, type: tradeSide },
-                  "Trade placed"
-                );
-                if (ok) setTradeUnits("");
-              }}
-            >
-              {firm.allowCrypto && (
-                <div className="flex flex-col gap-2">
-                  <Label>Asset</Label>
-                  <Select
-                    value={assetType}
-                    onValueChange={(value) => {
-                      if (!value) return;
-                      setAssetType(value as "STOCK" | "CRYPTO");
-                      setTradeSymbol("");
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="STOCK">Stocks</SelectItem>
-                      <SelectItem value="CRYPTO">Crypto</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              <div className="flex flex-col gap-2">
-                <Label>Symbol</Label>
-                <Select
-                  value={tradeSymbol}
-                  onValueChange={(value) => value && setTradeSymbol(value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pick one" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {symbolOptions.map((symbol) => (
-                      <SelectItem key={symbol} value={symbol}>
-                        {assetType === "CRYPTO" ? `$${symbol}` : symbol}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label>Side</Label>
-                <Select
-                  value={tradeSide}
-                  onValueChange={(value) => value && setTradeSide(value as "BUY" | "SELL")}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="BUY">Buy</SelectItem>
-                    <SelectItem value="SELL">Sell</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="trade-units">
-                  {assetType === "STOCK" ? "Shares" : "Coins"}
-                </Label>
-                <Input
-                  id="trade-units"
-                  type="number"
-                  step={assetType === "STOCK" ? "1" : "0.000001"}
-                  min="0"
-                  value={tradeUnits}
-                  onChange={(event) => setTradeUnits(event.target.value)}
-                  autoComplete={AC.off}
-                />
-              </div>
-
-              <Button type="submit" disabled={busy || !tradeSymbol || !tradeUnits}>
-                {tradeSide === "BUY" ? "Buy" : "Sell"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Updates</CardTitle>
@@ -587,8 +498,13 @@ export default function FirmDetailPage() {
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Positions</CardTitle>
+          {firm.isManager && (
+            <Link href="/trade" className="text-sm text-primary hover:underline">
+              Trade →
+            </Link>
+          )}
         </CardHeader>
         <CardContent>
           {firm.holdings.length === 0 ? (

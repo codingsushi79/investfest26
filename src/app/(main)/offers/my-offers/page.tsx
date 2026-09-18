@@ -154,6 +154,27 @@ export default function MyOffersPage() {
     }
   };
 
+  const handleDeleteSellOffer = async (sellOfferId: string) => {
+    if (!window.confirm('Delete this listing? This cannot be undone.')) return;
+
+    try {
+      const response = await fetch('/api/offers/delete-sell-offer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ sellOfferId }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Failed to delete listing');
+
+      toast.success('Listing deleted');
+      fetchMyOffers();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete listing');
+    }
+  };
+
   const handleCancelSellOffer = async (sellOfferId: string) => {
     try {
       const response = await fetch('/api/offers/cancel-sell-offer', {
@@ -335,7 +356,16 @@ export default function MyOffersPage() {
                   )}
 
                   {offer.status === 'active' && (
-                    <div className="flex justify-end">
+                    <div className="flex justify-end gap-2">
+                      {offer.buyOffers.filter((b) => b.status === 'pending').length ===
+                        0 && (
+                        <Button
+                          variant="outline"
+                          onClick={() => handleDeleteSellOffer(offer.id)}
+                        >
+                          Delete
+                        </Button>
+                      )}
                       <Button
                         variant="destructive"
                         onClick={() => handleCancelSellOffer(offer.id)}

@@ -113,3 +113,97 @@ export async function PATCH(
     return NextResponse.json({ error: (error as Error).message }, { status: 400 });
   }
 }
+
+/**
+ * Close a firm for good. Allowed only once the manager is the last one in it:
+ * other people's money must be out first, and positions must be sold, since
+ * deleting would otherwise strand shares the firm still holds. Whatever cash
+ * is left goes back to the manager.
+ */
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    assertFeatures("firms");
+
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const firm = await prisma.firm.findFirst({
+      where: { OR: [{ id }, { slug: id }] },
+      include: {
+        members: true,
+        holdings: true,
+        cryptoHoldings: true,
+        sellOffers: { where: { status: "active" } },
+        buyOffers: { where: { status: "pending" } },
+      },
+    });
+
+    if (!firm) {
+      return NextResponse.json({ error: "Firm not found" }, { status: 404 });
+    }
+    if (firm.managerId !== user.id) {
+      return NextResponse.json({ error: "Manager only" }, { status: 403 });
+    }
+
+    const others = firm.members.filter((member) => member.userId !== user.id);
+    if (others.length > 0) {
+      return NextResponse.json(
+        {
+          error: `${others.length} ${
+            others.length === 1 ? "client still has" : "clients still have"
+          } money invested. They have to withdraw before you can delete the firm.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    const openPositions =
+      firm.holdings.filter((h) => h.shares > 0).length +
+      firm.cryptoHoldings.filter((h) => h.units > 0).length;
+    if (openPositions > 0) {
+      return NextResponse.json(
+        { error: "Sell the firm's positions before deleting it" },
+        { status: 400 }
+      );
+    }
+
+    if (firm.sellOffers.length > 0 || firm.buyOffers.length > 0) {
+      return NextResponse.json(
+        { error: "Cancel the firm's open offers before deleting it" },
+        { status: 400 }
+      );
+    }
+
+    const refund = firm.balance;
+
+    await prisma.$transaction(async (tx) => {
+      if (refund > 0) {
+        await tx.user.update({
+          where: { id: user.id },
+          data: { balance: { increment: refund } },
+        });
+      }
+      // Memberships, news and ledger rows cascade from the firm.
+      await tx.firm.delete({ where: { id: firm.id } });
+    });
+
+    return NextResponse.json({
+      success: true,
+      refund,
+      message:
+        refund > 0
+          ? `${firm.name} deleted and $${refund.toFixed(2)} returned to you`
+          : `${firm.name} deleted`,
+    });
+  } catch (error) {
+    const message = (error as Error).message;
+    console.error("Firm delete error:", error);
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
+}

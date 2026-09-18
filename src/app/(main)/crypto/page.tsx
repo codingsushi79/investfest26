@@ -30,6 +30,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  AS_SELF,
+  ActingAsSelect,
+  useManagedFirms,
+} from "@/components/acting-as-select";
 import { AC } from "@/lib/autocomplete";
 import { useLive, useLiveRefresh } from "@/lib/live";
 import { cn } from "@/lib/utils";
@@ -82,6 +87,13 @@ export default function CryptoPage() {
   const sellFee = market?.sellFeePercentage ?? 0;
   const balance = account?.balance ?? 0;
 
+  const managedFirms = useManagedFirms();
+  const [actingAs, setActingAs] = useState<string>(AS_SELF);
+  const activeFirm =
+    actingAs === AS_SELF
+      ? null
+      : managedFirms.find((firm) => firm.id === actingAs) ?? null;
+
   const [createOpen, setCreateOpen] = useState(false);
   const [tradeCoin, setTradeCoin] = useState<Coin | null>(null);
   const [tradeType, setTradeType] = useState<"BUY" | "SELL">("BUY");
@@ -122,15 +134,21 @@ export default function CryptoPage() {
 
     setTrading(true);
     try {
-      const response = await fetch("/api/crypto/trade", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          symbol: liveTradeCoin.symbol,
-          units: parsedAmount,
-          type: tradeType,
-        }),
-      });
+      // A firm's coins are bought with firm cash, so those go through the
+      // firm's own trade endpoint.
+      const response = await fetch(
+        activeFirm ? `/api/firms/${activeFirm.id}/trade` : "/api/crypto/trade",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...(activeFirm ? { assetType: "CRYPTO" } : {}),
+            symbol: liveTradeCoin.symbol,
+            units: parsedAmount,
+            type: tradeType,
+          }),
+        }
+      );
 
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Trade failed");
@@ -264,7 +282,11 @@ export default function CryptoPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        disabled={!canTrade || coin.units <= 0}
+                        // A manager may be selling the firm's coins rather than
+                        // their own, so managing a firm is reason enough.
+                        disabled={
+                          !canTrade || (coin.units <= 0 && managedFirms.length === 0)
+                        }
                         onClick={() => openTrade(coin, "SELL")}
                       >
                         Sell
@@ -291,6 +313,18 @@ export default function CryptoPage() {
           </DialogHeader>
 
           <form onSubmit={submitTrade} className="flex flex-col gap-4">
+            <ActingAsSelect
+              id="crypto-acting-as"
+              label={tradeType === "BUY" ? "Buying as" : "Selling as"}
+              firms={managedFirms}
+              value={actingAs}
+              onChange={(value) => {
+                setActingAs(value);
+                setAmount("");
+              }}
+              selfBalance={balance}
+            />
+
             <div className="flex flex-col gap-2">
               <Label htmlFor="coin-amount">Coins</Label>
               <Input
@@ -305,7 +339,7 @@ export default function CryptoPage() {
                 autoFocus
                 required
               />
-              {tradeType === "SELL" && liveTradeCoin && (
+              {tradeType === "SELL" && liveTradeCoin && !activeFirm && (
                 <button
                   type="button"
                   className="self-start text-xs text-primary hover:underline"
