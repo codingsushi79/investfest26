@@ -99,10 +99,6 @@ const serverConfigSchema = z.object({
     operatorUsername: z.string().default('operator'),
     requireEmailVerification: z.boolean().default(false),
   }),
-  security: z.object({
-    enableRateLimiting: z.boolean().default(true),
-    maxRequestsPerMinute: z.number().positive().default(60),
-  }),
   database: z.object({
     url: z.string().url(),
   }),
@@ -218,10 +214,6 @@ function loadServerConfig() {
       operatorUsername: process.env.OP_USERNAME || 'operator',
       requireEmailVerification: process.env.REQUIRE_EMAIL_VERIFICATION === 'true',
     },
-    security: {
-      enableRateLimiting: process.env.ENABLE_RATE_LIMITING !== 'false',
-      maxRequestsPerMinute: parseInt(process.env.MAX_REQUESTS_PER_MINUTE || '60'),
-    },
     database: {
       url: process.env.DATABASE_URL!,
     },
@@ -268,10 +260,6 @@ export function getTradingConfig() {
   return getServerConfig().trading;
 }
 
-export function getSecurityConfig() {
-  return getServerConfig().security;
-}
-
 export function getCryptoConfig() {
   return getServerConfig().crypto;
 }
@@ -306,7 +294,6 @@ export type AppConfig = typeof clientConfig.app;
 export type TradingConfig = ReturnType<typeof getTradingConfig>;
 export type FeaturesConfig = typeof clientConfig.features;
 export type AuthConfig = typeof clientConfig.auth;
-export type SecurityConfig = ReturnType<typeof getSecurityConfig>;
 export type CryptoConfig = ReturnType<typeof getCryptoConfig>;
 export type FirmConfig = ReturnType<typeof getFirmConfig>;
 export type Config = ReturnType<typeof getServerConfig>;
