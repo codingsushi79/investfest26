@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
   // Pooled endpoint for the app's queries.
   url       = env("DATABASE_URL")
   // Neon's pooler cannot run migrations, so Prisma Migrate uses the direct
@@ -12,28 +12,30 @@ datasource db {
 }
 
 model User {
-  id                   String                @id @default(cuid())
-  email                String?               @unique
-  name                 String?
-  username             String                @unique
-  password             String
-  image                String?
-  balance              Float                 @default(1000)
-  isPaused             Boolean               @default(false)
-  isBanned             Boolean               @default(false)
-  emailVerified        DateTime?
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
-  accounts             Account[]
-  sessions             Session[]
-  holdings             Holding[]
-  transactions         Transaction[]
-  sellOffers           SellOffer[]           @relation("SellerOffers")
-  buyOffers            BuyOffer[]            @relation("BuyerOffers")
-  memecoinHoldings     MemecoinHolding[]
-  memecoinTransactions MemecoinTransaction[]
-  managedFirms         Firm[]                @relation("FirmManager")
-  firmMemberships      FirmMembership[]
+  id                 String              @id @default(cuid())
+  email              String?             @unique
+  name               String?
+  username           String              @unique
+  password           String
+  image              String?
+  balance            Float               @default(1000)
+  isPaused           Boolean             @default(false)
+  isBanned           Boolean             @default(false)
+  emailVerified      DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  accounts           Account[]
+  sessions           Session[]
+  holdings           Holding[]
+  transactions       Transaction[]
+  sellOffers         SellOffer[]         @relation("SellerOffers")
+  buyOffers          BuyOffer[]          @relation("BuyerOffers")
+  cryptoHoldings     CryptoHolding[]
+  cryptoTransactions CryptoTransaction[]
+  managedFirms       Firm[]              @relation("FirmManager")
+  firmMemberships    FirmMembership[]
+  newsPosts          NewsPost[]          @relation("NewsAuthor")
+  firmNews           FirmNews[]          @relation("FirmNewsAuthor")
 }
 
 model Account {
@@ -128,11 +130,16 @@ model SellOffer {
   updatedAt     DateTime  @updatedAt
   completedAt   DateTime?
 
+  /// Set when the listing belongs to a firm; sellerId is then the manager who placed it.
+  firmId String?
+
   seller    User       @relation("SellerOffers", fields: [sellerId], references: [id], onDelete: Cascade)
   company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  firm      Firm?      @relation("FirmSellOffers", fields: [firmId], references: [id], onDelete: Cascade)
   buyOffers BuyOffer[]
 
   @@index([status, createdAt])
+  @@index([firmId, status])
 }
 
 model BuyOffer {
@@ -145,13 +152,18 @@ model BuyOffer {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  /// Set when the bid comes from a firm; buyerId is then the manager who placed it.
+  firmId String?
+
   sellOffer SellOffer @relation(fields: [sellOfferId], references: [id], onDelete: Cascade)
   buyer     User      @relation("BuyerOffers", fields: [buyerId], references: [id], onDelete: Cascade)
+  firm      Firm?     @relation("FirmBuyOffers", fields: [firmId], references: [id], onDelete: Cascade)
 
   @@index([sellOfferId, status])
+  @@index([firmId, status])
 }
 
-model Memecoin {
+model Crypto {
   id          String   @id @default(cuid())
   symbol      String   @unique
   name        String
@@ -171,73 +183,80 @@ model Memecoin {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  holdings     MemecoinHolding[]
-  transactions MemecoinTransaction[]
-  firmHoldings FirmMemecoinHolding[]
+  holdings     CryptoHolding[]
+  transactions CryptoTransaction[]
+  firmHoldings FirmCryptoHolding[]
 }
 
-model MemecoinHolding {
-  id         String   @id @default(cuid())
-  userId     String
-  memecoinId String
-  units      Float    @default(0)
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  memecoin   Memecoin @relation(fields: [memecoinId], references: [id], onDelete: Cascade)
+model CryptoHolding {
+  id       String @id @default(cuid())
+  userId   String
+  cryptoId String
+  units    Float  @default(0)
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  crypto   Crypto @relation(fields: [cryptoId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, memecoinId])
+  @@unique([userId, cryptoId])
 }
 
-model MemecoinTransaction {
-  id         String   @id @default(cuid())
-  userId     String
-  memecoinId String
-  type       String // BUY or SELL
-  units      Float
-  price      Float
-  createdAt  DateTime @default(now())
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  memecoin   Memecoin @relation(fields: [memecoinId], references: [id], onDelete: Cascade)
+model CryptoTransaction {
+  id        String   @id @default(cuid())
+  userId    String
+  cryptoId  String
+  type      String // BUY or SELL
+  units     Float
+  price     Float
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  crypto    Crypto   @relation(fields: [cryptoId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
 }
 
 model Firm {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  slug        String   @unique
-  description String?
-  managerId   String
+  id                 String   @id @default(cuid())
+  name               String   @unique
+  slug               String   @unique
+  description        String?
+  managerId          String
   /// Uninvested cash held by the firm on behalf of its clients.
-  balance     Float    @default(0)
+  balance            Float    @default(0)
   /// Total fund units issued to clients. NAV per unit = (balance + holdings) / totalUnits.
-  totalUnits  Float    @default(0)
-  /// Percentage of each client deposit kept by the firm as a management fee.
-  feePercent  Float    @default(0)
-  isOpen      Boolean  @default(true)
-  isClosed    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  totalUnits         Float    @default(0)
+  /// Percentage of each client deposit taken by the manager as a fee.
+  depositFeePercent  Float    @default(0)
+  /// Percentage of each client withdrawal taken by the manager as a fee.
+  withdrawFeePercent Float    @default(0)
+  isOpen             Boolean  @default(true)
+  isClosed           Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
-  manager          User                  @relation("FirmManager", fields: [managerId], references: [id], onDelete: Cascade)
-  members          FirmMembership[]
-  holdings         FirmHolding[]
-  memecoinHoldings FirmMemecoinHolding[]
-  transactions     FirmTransaction[]
+  manager        User                @relation("FirmManager", fields: [managerId], references: [id], onDelete: Cascade)
+  members        FirmMembership[]
+  sellOffers     SellOffer[]         @relation("FirmSellOffers")
+  buyOffers      BuyOffer[]          @relation("FirmBuyOffers")
+  holdings       FirmHolding[]
+  cryptoHoldings FirmCryptoHolding[]
+  transactions   FirmTransaction[]
+  FirmNews       FirmNews[]
 
   @@index([isClosed, createdAt])
 }
 
 model FirmMembership {
-  id        String   @id @default(cuid())
-  firmId    String
-  userId    String
+  id         String   @id @default(cuid())
+  firmId     String
+  userId     String
   /// Fund units owned by this client.
-  units     Float    @default(0)
+  units      Float    @default(0)
   /// Lifetime cash deposited, used to show the client's profit/loss.
-  invested  Float    @default(0)
+  invested   Float    @default(0)
   /// Lifetime cash withdrawn.
-  withdrawn Float    @default(0)
-  joinedAt  DateTime @default(now())
+  withdrawn  Float    @default(0)
+  /// Whether this client wants the firm's email updates.
+  emailOptIn Boolean  @default(true)
+  joinedAt   DateTime @default(now())
 
   firm Firm @relation(fields: [firmId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -256,15 +275,15 @@ model FirmHolding {
   @@unique([firmId, companyId])
 }
 
-model FirmMemecoinHolding {
-  id         String   @id @default(cuid())
-  firmId     String
-  memecoinId String
-  units      Float    @default(0)
-  firm       Firm     @relation(fields: [firmId], references: [id], onDelete: Cascade)
-  memecoin   Memecoin @relation(fields: [memecoinId], references: [id], onDelete: Cascade)
+model FirmCryptoHolding {
+  id       String @id @default(cuid())
+  firmId   String
+  cryptoId String
+  units    Float  @default(0)
+  firm     Firm   @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  crypto   Crypto @relation(fields: [cryptoId], references: [id], onDelete: Cascade)
 
-  @@unique([firmId, memecoinId])
+  @@unique([firmId, cryptoId])
 }
 
 model FirmTransaction {
@@ -272,7 +291,7 @@ model FirmTransaction {
   firmId    String
   /// BUY, SELL, DEPOSIT or WITHDRAW
   type      String
-  /// STOCK, MEMECOIN or CASH
+  /// STOCK, CRYPTO or CASH
   assetType String   @default("STOCK")
   assetId   String?
   symbol    String?
@@ -283,6 +302,43 @@ model FirmTransaction {
   createdAt DateTime @default(now())
 
   firm Firm @relation(fields: [firmId], references: [id], onDelete: Cascade)
+
+  @@index([firmId, createdAt])
+}
+
+/// Site-wide announcements. Only the operator writes these.
+model NewsPost {
+  id          String    @id @default(cuid())
+  title       String
+  body        String
+  /// Pinned posts sort to the top of the news page.
+  isPinned    Boolean   @default(false)
+  isPublished Boolean   @default(true)
+  /// Set once the post has been emailed, so it never goes out twice.
+  emailedAt   DateTime?
+  authorId    String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  author User @relation("NewsAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([isPublished, isPinned, createdAt])
+}
+
+/// An update a firm's manager sends to that firm's investors.
+model FirmNews {
+  id         String    @id @default(cuid())
+  firmId     String
+  authorId   String
+  title      String
+  body       String
+  /// Set once the update has been emailed to the firm's clients.
+  emailedAt  DateTime?
+  recipients Int       @default(0)
+  createdAt  DateTime  @default(now())
+
+  firm   Firm @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  author User @relation("FirmNewsAuthor", fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([firmId, createdAt])
 }

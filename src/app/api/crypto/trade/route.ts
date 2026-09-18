@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth-utils";
-import { assertFeatures, getMemecoinConfig } from "@/lib/config";
-import { getMemecoinPrice } from "@/lib/memecoin";
+import { assertFeatures, getCryptoConfig } from "@/lib/config";
+import { getCryptoPrice } from "@/lib/crypto";
 import { prisma } from "@/lib/prisma";
 
 const tradeSchema = z.object({
@@ -18,7 +18,7 @@ function roundUnits(units: number) {
 
 export async function POST(request: NextRequest) {
   try {
-    assertFeatures("memecoins", "memecoinTrading");
+    assertFeatures("crypto", "cryptoTrading");
 
     const user = await getCurrentUser();
     if (!user) {
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Enter an amount above 0" }, { status: 400 });
     }
 
-    const coin = await prisma.memecoin.findUnique({
+    const coin = await prisma.crypto.findUnique({
       where: { symbol: symbol.trim().toUpperCase().replace(/^\$/, "") },
     });
     if (!coin) {
@@ -53,9 +53,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `$${coin.symbol} is delisted` }, { status: 400 });
     }
 
-    const config = getMemecoinConfig();
+    const config = getCryptoConfig();
     // The price comes from the coin's own walk — no operator, no order book.
-    const price = getMemecoinPrice(coin, config.tickSeconds);
+    const price = getCryptoPrice(coin, config.tickSeconds);
 
     if (type === "BUY") {
       const cost = price * units;
@@ -68,13 +68,13 @@ export async function POST(request: NextRequest) {
           where: { id: user.id },
           data: { balance: { decrement: cost } },
         });
-        await tx.memecoinHolding.upsert({
-          where: { userId_memecoinId: { userId: user.id, memecoinId: coin.id } },
+        await tx.cryptoHolding.upsert({
+          where: { userId_cryptoId: { userId: user.id, cryptoId: coin.id } },
           update: { units: { increment: units } },
-          create: { userId: user.id, memecoinId: coin.id, units },
+          create: { userId: user.id, cryptoId: coin.id, units },
         });
-        await tx.memecoinTransaction.create({
-          data: { userId: user.id, memecoinId: coin.id, type: "BUY", units, price },
+        await tx.cryptoTransaction.create({
+          data: { userId: user.id, cryptoId: coin.id, type: "BUY", units, price },
         });
       });
 
@@ -86,8 +86,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const holding = await prisma.memecoinHolding.findUnique({
-      where: { userId_memecoinId: { userId: user.id, memecoinId: coin.id } },
+    const holding = await prisma.cryptoHolding.findUnique({
+      where: { userId_cryptoId: { userId: user.id, cryptoId: coin.id } },
     });
     if (!holding || roundUnits(holding.units) < units) {
       return NextResponse.json({ error: "Insufficient coins" }, { status: 400 });
@@ -103,17 +103,17 @@ export async function POST(request: NextRequest) {
         data: { balance: { increment: proceeds } },
       });
       if (remaining <= 0) {
-        await tx.memecoinHolding.delete({
-          where: { userId_memecoinId: { userId: user.id, memecoinId: coin.id } },
+        await tx.cryptoHolding.delete({
+          where: { userId_cryptoId: { userId: user.id, cryptoId: coin.id } },
         });
       } else {
-        await tx.memecoinHolding.update({
-          where: { userId_memecoinId: { userId: user.id, memecoinId: coin.id } },
+        await tx.cryptoHolding.update({
+          where: { userId_cryptoId: { userId: user.id, cryptoId: coin.id } },
           data: { units: remaining },
         });
       }
-      await tx.memecoinTransaction.create({
-        data: { userId: user.id, memecoinId: coin.id, type: "SELL", units, price },
+      await tx.cryptoTransaction.create({
+        data: { userId: user.id, cryptoId: coin.id, type: "SELL", units, price },
       });
     });
 
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
     if (message.startsWith("Feature disabled")) {
       return NextResponse.json({ error: message }, { status: 404 });
     }
-    console.error("Memecoin trade error:", error);
+    console.error("Crypto trade error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

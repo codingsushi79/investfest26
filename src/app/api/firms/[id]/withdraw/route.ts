@@ -31,7 +31,7 @@ export async function POST(
 
     const firm = await prisma.firm.findFirst({
       where: { OR: [{ id }, { slug: id }] },
-      include: { holdings: true, memecoinHoldings: true, members: true },
+      include: { holdings: true, cryptoHoldings: true, members: true },
     });
     if (!firm) {
       return NextResponse.json({ error: "Firm not found" }, { status: 404 });
@@ -52,16 +52,20 @@ export async function POST(
 
     const prices = await getAssetPrices();
     const { navPerUnit } = valueFirm(firm, prices);
-    const payout = units * navPerUnit;
+    const gross = units * navPerUnit;
+    // The manager's cut of the withdrawal; managers don't charge themselves.
+    const isManager = firm.managerId === user.id;
+    const fee = isManager ? 0 : gross * (firm.withdrawFeePercent / 100);
+    const payout = gross - fee;
 
-    // Only the firm's uninvested cash can be paid out; the manager has to sell
-    // positions first if the fund is fully deployed.
-    if (payout > firm.balance + 1e-9) {
+    // Only the firm's uninvested cash can be paid out, and it has to cover the
+    // whole redemption including the fee; otherwise the manager sells first.
+    if (gross > firm.balance + 1e-9) {
       return NextResponse.json(
         {
           error: `The firm only has $${firm.balance.toFixed(
             2
-          )} in cash. Ask the manager to sell positions before withdrawing $${payout.toFixed(2)}.`,
+          )} in cash. Ask the manager to sell positions before withdrawing $${gross.toFixed(2)}.`,
         },
         { status: 400 }
       );
@@ -75,10 +79,17 @@ export async function POST(
         data: { balance: { increment: payout } },
       });
 
+      if (fee > 0) {
+        await tx.user.update({
+          where: { id: firm.managerId },
+          data: { balance: { increment: fee } },
+        });
+      }
+
       await tx.firm.update({
         where: { id: firm.id },
         data: {
-          balance: { decrement: payout },
+          balance: { decrement: gross },
           totalUnits: { decrement: units },
         },
       });
@@ -104,7 +115,7 @@ export async function POST(
           assetType: "CASH",
           units,
           price: navPerUnit,
-          amount: payout,
+          amount: gross,
           actorId: user.id,
         },
       });
@@ -113,8 +124,14 @@ export async function POST(
     return NextResponse.json({
       success: true,
       payout,
+      fee,
       navPerUnit,
-      message: `Withdrew $${payout.toFixed(2)} from ${firm.name}`,
+      message:
+        fee > 0
+          ? `Withdrew $${payout.toFixed(2)} from ${firm.name} after a $${fee.toFixed(
+              2
+            )} fee`
+          : `Withdrew $${payout.toFixed(2)} from ${firm.name}`,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

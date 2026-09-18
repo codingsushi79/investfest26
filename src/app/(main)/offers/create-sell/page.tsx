@@ -33,9 +33,22 @@ interface UserData {
   holdings: Holding[];
 }
 
+interface ManagedFirm {
+  id: string;
+  name: string;
+  slug: string;
+  balance: number;
+  holdings: Holding[];
+}
+
+/** Sentinel for "list these as myself" in the acting-as picker. */
+const AS_SELF = 'self';
+
 export default function CreateSellOfferPage() {
   const router = useRouter();
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [firms, setFirms] = useState<ManagedFirm[]>([]);
+  const [actingAs, setActingAs] = useState<string>(AS_SELF);
   const [selectedHolding, setSelectedHolding] = useState<string>('');
   const [shares, setShares] = useState<string>('');
   const [pricePerShare, setPricePerShare] = useState<string>('');
@@ -57,6 +70,15 @@ export default function CreateSellOfferPage() {
 
       const data = await response.json();
       setUserData(data);
+
+      // A manager can also list out of their firm's holdings.
+      const firmsResponse = await fetch('/api/firms/managed', {
+        credentials: 'include',
+      });
+      if (firmsResponse.ok) {
+        const firmsData = await firmsResponse.json();
+        setFirms(firmsData.firms ?? []);
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to load user data');
     } finally {
@@ -64,7 +86,11 @@ export default function CreateSellOfferPage() {
     }
   };
 
-  const selectedHoldingData = userData?.holdings.find(
+  const activeFirm =
+    actingAs === AS_SELF ? null : firms.find((firm) => firm.id === actingAs) ?? null;
+  const availableHoldings = activeFirm ? activeFirm.holdings : userData?.holdings ?? [];
+
+  const selectedHoldingData = availableHoldings.find(
     (h) => h.companyId === selectedHolding
   );
 
@@ -90,6 +116,7 @@ export default function CreateSellOfferPage() {
           companyId: selectedHolding,
           shares: parseInt(shares),
           pricePerShare: parseFloat(pricePerShare),
+          ...(activeFirm ? { firmId: activeFirm.id } : {}),
         }),
       });
 
@@ -99,9 +126,9 @@ export default function CreateSellOfferPage() {
       }
 
       toast.success(
-        `Sell offer created for ${selectedHoldingData.symbol} — ${shares} shares at $${parseFloat(
-          pricePerShare
-        ).toFixed(2)} per share`
+        `${activeFirm ? `${activeFirm.name} listed` : 'Sell offer created for'} ${
+          selectedHoldingData.symbol
+        } — ${shares} shares at $${parseFloat(pricePerShare).toFixed(2)} per share`
       );
       setSelectedHolding('');
       setShares('');
@@ -139,7 +166,11 @@ export default function CreateSellOfferPage() {
     );
   }
 
-  if (userData.holdings.length === 0) {
+  const hasAnythingToSell =
+    userData.holdings.length > 0 ||
+    firms.some((firm) => firm.holdings.length > 0);
+
+  if (!hasAnythingToSell) {
     return (
       <div className="flex flex-col gap-6">
         <PageHeader
@@ -169,6 +200,38 @@ export default function CreateSellOfferPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {firms.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="acting-as">Selling as</Label>
+                <Select
+                  value={actingAs}
+                  onValueChange={(value) => {
+                    if (!value) return;
+                    setActingAs(value);
+                    setSelectedHolding('');
+                    setShares('');
+                  }}
+                >
+                  <SelectTrigger id="acting-as">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={AS_SELF}>Myself</SelectItem>
+                    {firms.map((firm) => (
+                      <SelectItem key={firm.id} value={firm.id}>
+                        {firm.name} (firm)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {activeFirm && (
+                  <p className="text-xs text-muted-foreground">
+                    Proceeds go to the firm and are shared by its clients.
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="flex flex-col gap-2">
               <Label htmlFor="company">Select company</Label>
               <Select
@@ -184,7 +247,7 @@ export default function CreateSellOfferPage() {
                   <SelectValue placeholder="Choose a company…" />
                 </SelectTrigger>
                 <SelectContent>
-                  {userData.holdings.map((holding) => (
+                  {availableHoldings.map((holding) => (
                     <SelectItem key={holding.companyId} value={holding.companyId}>
                       {holding.name} ({holding.symbol}) — {holding.shares} shares @{' '}
                       {formatCurrency(holding.latestPrice)}

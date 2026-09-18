@@ -44,7 +44,7 @@ const TREND_PRESETS = [
  * Launch a coin. The operator picks its character (start price, how wild it
  * swings) but never its price — that belongs to the coin's own walk.
  */
-export function MemecoinCreateDialog({
+export function CryptoCreateDialog({
   open,
   onOpenChange,
   onSuccess,
@@ -66,7 +66,7 @@ export function MemecoinCreateDialog({
     setSaving(true);
 
     try {
-      const response = await fetch("/api/memecoins", {
+      const response = await fetch("/api/crypto", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -102,7 +102,7 @@ export function MemecoinCreateDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Launch a memecoin</DialogTitle>
+          <DialogTitle>Launch a coin</DialogTitle>
           <DialogDescription>
             The coin starts at your price and then moves on its own — nobody can
             set it after launch.

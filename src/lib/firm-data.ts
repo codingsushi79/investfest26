@@ -1,13 +1,13 @@
 import { prisma } from "./prisma";
-import { getMemecoinConfig } from "./config";
-import { getMemecoinPrice } from "./memecoin";
+import { getCryptoConfig } from "./config";
+import { getCryptoPrice } from "./crypto";
 import { getTradingSharePrice } from "./pricing";
 
 /** A fresh fund starts at $1.00 per unit, so a $100 deposit buys 100 units. */
 export const INITIAL_UNIT_PRICE = 1;
 
 export type FirmHoldingRow = {
-  assetType: "STOCK" | "MEMECOIN";
+  assetType: "STOCK" | "CRYPTO";
   symbol: string;
   name: string;
   units: number;
@@ -20,14 +20,14 @@ type FirmWithHoldings = {
   balance: number;
   totalUnits: number;
   holdings: Array<{ companyId: string; shares: number }>;
-  memecoinHoldings: Array<{ memecoinId: string; units: number }>;
+  cryptoHoldings: Array<{ cryptoId: string; units: number }>;
 };
 
 export async function getAssetPrices(at: Date = new Date()) {
-  const config = getMemecoinConfig();
+  const config = getCryptoConfig();
   const [companies, coins] = await Promise.all([
     prisma.company.findMany({ include: { prices: { orderBy: { createdAt: "asc" } } } }),
-    prisma.memecoin.findMany(),
+    prisma.crypto.findMany(),
   ]);
 
   return {
@@ -37,7 +37,7 @@ export async function getAssetPrices(at: Date = new Date()) {
       companies.map((c) => [c.id, getTradingSharePrice(c.prices)])
     ),
     coinPriceById: new Map(
-      coins.map((c) => [c.id, getMemecoinPrice(c, config.tickSeconds, at)])
+      coins.map((c) => [c.id, getCryptoPrice(c, config.tickSeconds, at)])
     ),
     companyById: new Map(companies.map((c) => [c.id, c])),
     coinById: new Map(coins.map((c) => [c.id, c])),
@@ -55,8 +55,8 @@ export function valueFirm(firm: FirmWithHoldings, prices: AssetPrices) {
     (sum, h) => sum + h.shares * (prices.stockPriceById.get(h.companyId) ?? 0),
     0
   );
-  const coinValue = firm.memecoinHoldings.reduce(
-    (sum, h) => sum + h.units * (prices.coinPriceById.get(h.memecoinId) ?? 0),
+  const coinValue = firm.cryptoHoldings.reduce(
+    (sum, h) => sum + h.units * (prices.coinPriceById.get(h.cryptoId) ?? 0),
     0
   );
   const nav = firm.balance + stockValue + coinValue;
@@ -85,13 +85,13 @@ export function describeFirmHoldings(
       };
     });
 
-  const coins: FirmHoldingRow[] = firm.memecoinHoldings
+  const coins: FirmHoldingRow[] = firm.cryptoHoldings
     .filter((h) => h.units > 0)
     .map((h) => {
-      const coin = prices.coinById.get(h.memecoinId);
-      const price = prices.coinPriceById.get(h.memecoinId) ?? 0;
+      const coin = prices.coinById.get(h.cryptoId);
+      const price = prices.coinPriceById.get(h.cryptoId) ?? 0;
       return {
-        assetType: "MEMECOIN" as const,
+        assetType: "CRYPTO" as const,
         symbol: coin?.symbol ?? "?",
         name: coin?.name ?? "Unknown",
         units: h.units,
@@ -106,7 +106,7 @@ export function describeFirmHoldings(
 const firmInclude = {
   manager: { select: { id: true, username: true, name: true } },
   holdings: true,
-  memecoinHoldings: true,
+  cryptoHoldings: true,
   members: { select: { id: true, userId: true, units: true, invested: true, withdrawn: true } },
 } as const;
 
@@ -133,7 +133,8 @@ export async function getFirmsOverview(userId?: string) {
         isManager: userId === firm.managerId,
         isOpen: firm.isOpen,
         isClosed: firm.isClosed,
-        feePercent: firm.feePercent,
+        depositFeePercent: firm.depositFeePercent,
+        withdrawFeePercent: firm.withdrawFeePercent,
         memberCount: firm.members.length,
         ...valuation,
         membership: membership
@@ -162,7 +163,7 @@ export async function getFirmDetail(slug: string, userId?: string) {
     include: {
       manager: { select: { id: true, username: true, name: true } },
       holdings: true,
-      memecoinHoldings: true,
+      cryptoHoldings: true,
       members: {
         include: { user: { select: { id: true, username: true, name: true } } },
         orderBy: { units: "desc" },
@@ -187,7 +188,8 @@ export async function getFirmDetail(slug: string, userId?: string) {
     isManager,
     isOpen: firm.isOpen,
     isClosed: firm.isClosed,
-    feePercent: firm.feePercent,
+    depositFeePercent: firm.depositFeePercent,
+    withdrawFeePercent: firm.withdrawFeePercent,
     totalUnits: firm.totalUnits,
     ...valuation,
     holdings: describeFirmHoldings(firm, prices),
@@ -207,6 +209,7 @@ export async function getFirmDetail(slug: string, userId?: string) {
           units: membership.units,
           invested: membership.invested,
           withdrawn: membership.withdrawn,
+          emailOptIn: membership.emailOptIn,
           value: membership.units * valuation.navPerUnit,
           profit:
             membership.units * valuation.navPerUnit +
@@ -227,27 +230,57 @@ export async function getFirmDetail(slug: string, userId?: string) {
   };
 }
 
-/** Value of each user's firm stakes, keyed by user id. */
-export async function getFirmValueByUser() {
+export type FirmStake = {
+  firmId: string;
+  name: string;
+  slug: string;
+  units: number;
+  value: number;
+  isManager: boolean;
+};
+
+/** Each user's firm stakes, keyed by user id, for standings and portfolios. */
+export async function getFirmStakesByUser() {
   const [firms, prices] = await Promise.all([
     prisma.firm.findMany({
-      include: { holdings: true, memecoinHoldings: true, members: true },
+      include: { holdings: true, cryptoHoldings: true, members: true },
     }),
     getAssetPrices(),
   ]);
 
-  const totals = new Map<string, number>();
+  const stakes = new Map<string, FirmStake[]>();
   for (const firm of firms) {
     const { navPerUnit } = valueFirm(firm, prices);
     for (const member of firm.members) {
-      totals.set(
-        member.userId,
-        (totals.get(member.userId) ?? 0) + member.units * navPerUnit
-      );
+      const list = stakes.get(member.userId) ?? [];
+      list.push({
+        firmId: firm.id,
+        name: firm.name,
+        slug: firm.slug,
+        units: member.units,
+        value: member.units * navPerUnit,
+        isManager: firm.managerId === member.userId,
+      });
+      stakes.set(member.userId, list);
     }
   }
 
-  return totals;
+  for (const list of stakes.values()) {
+    list.sort((a, b) => b.value - a.value);
+  }
+
+  return stakes;
+}
+
+/** Value of each user's firm stakes, keyed by user id. */
+export async function getFirmValueByUser() {
+  const stakes = await getFirmStakesByUser();
+  return new Map(
+    [...stakes].map(([userId, list]) => [
+      userId,
+      list.reduce((sum, stake) => sum + stake.value, 0),
+    ])
+  );
 }
 
 const SLUG_STRIP = /[^a-z0-9]+/g;

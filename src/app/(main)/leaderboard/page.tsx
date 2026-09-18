@@ -5,6 +5,8 @@ import { LeaderboardTable } from "@/components/LeaderboardTable";
 import { PageHeader } from "@/components/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 
+const LIVE_REFRESH_MS = Number(process.env.NEXT_PUBLIC_LIVE_REFRESH_MS || 8000);
+
 export default function LeaderboardPage() {
   const [rows, setRows] = useState<
     Array<{
@@ -19,10 +21,25 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/leaderboard")
-      .then((r) => (r.ok ? r.json() : []))
-      .then(setRows)
-      .finally(() => setLoading(false));
+    let cancelled = false;
+
+    const load = () =>
+      fetch("/api/leaderboard")
+        .then((r) => (r.ok ? r.json() : []))
+        .then((data) => {
+          if (!cancelled) setRows(data);
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+
+    load();
+    // Standings shift as prices and trades land, so keep them current.
+    const interval = setInterval(load, LIVE_REFRESH_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, []);
 
   if (loading) {

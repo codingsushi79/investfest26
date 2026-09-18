@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-utils';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { partyControlledBy, sellerParty } from '@/lib/offer-parties';
 
 const cancelSellOfferSchema = z.object({
   sellOfferId: z.string(),
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (sellOffer.sellerId !== user.id) {
+    if (!partyControlledBy(sellerParty(sellOffer), user.id)) {
       return NextResponse.json(
         { error: 'Unauthorized to cancel this offer' },
         { status: 403 }

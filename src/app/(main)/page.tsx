@@ -25,7 +25,11 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authConfig, featuresConfig } from "@/lib/config";
+import { useLiveRefresh } from "@/lib/live";
 import { cn } from "@/lib/utils";
+
+/** Shared cadence for anything that updates without a reload. */
+const LIVE_REFRESH_MS = Number(process.env.NEXT_PUBLIC_LIVE_REFRESH_MS || 8000);
 
 type DashboardState = {
   companies: Array<{
@@ -87,10 +91,13 @@ export default function DashboardPage() {
     }
   }
 
+  const refreshLive = useLiveRefresh();
+
   useEffect(() => {
     setTradingEnded(localStorage.getItem("tradingEnded") === "true");
     fetchData();
-    const interval = setInterval(fetchData, 30000);
+    // Dashboard numbers move whenever anyone trades, so keep them current.
+    const interval = setInterval(fetchData, LIVE_REFRESH_MS);
     return () => clearInterval(interval);
   }, []);
 
@@ -147,9 +154,9 @@ export default function DashboardPage() {
       description: "Peer-to-peer buy and sell offers",
       icon: Handshake,
     },
-    featuresConfig.memecoins && {
-      href: "/memecoins",
-      label: "Memecoins",
+    featuresConfig.crypto && {
+      href: "/crypto",
+      label: "Crypto",
       description: "Prices that move on their own",
       icon: Coins,
     },
@@ -297,14 +304,20 @@ export default function DashboardPage() {
             open={valueDialogOpen}
             onOpenChange={setValueDialogOpen}
             companies={dashboard.companies}
-            onSuccess={fetchData}
+            onSuccess={() => {
+              fetchData();
+              refreshLive();
+            }}
           />
           {featuresConfig.bulkPriceUpdates && (
             <BulkValueDialog
               open={bulkDialogOpen}
               onOpenChange={setBulkDialogOpen}
               companies={dashboard.companies}
-              onSuccess={fetchData}
+              onSuccess={() => {
+                fetchData();
+                refreshLive();
+              }}
             />
           )}
         </>

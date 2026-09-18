@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AC } from "@/lib/autocomplete";
+import { useLiveRefresh } from "@/lib/live";
 import { cn } from "@/lib/utils";
 
 const COMPANY_LIST = [
@@ -55,6 +56,7 @@ export default function TradePage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [tradingEnded, setTradingEnded] = useState(false);
   const [companyFilter, setCompanyFilter] = useState("");
+  const refreshLive = useLiveRefresh();
 
   const fetchTradeData = useCallback(async () => {
     try {
@@ -90,7 +92,10 @@ export default function TradePage() {
   useEffect(() => {
     setTradingEnded(localStorage.getItem("tradingEnded") === "true");
     fetchTradeData();
-    const interval = setInterval(fetchTradeData, 30000);
+    const interval = setInterval(
+      fetchTradeData,
+      Number(process.env.NEXT_PUBLIC_LIVE_REFRESH_MS || 8000)
+    );
     const onStorage = (e: StorageEvent) => {
       if (e.key === "tradingEnded") setTradingEnded(e.newValue === "true");
     };
@@ -161,6 +166,8 @@ export default function TradePage() {
       setShares("");
       setDialogOpen(false);
       await fetchTradeData();
+      // Push the new balance to the sidebar and any other live readers.
+      refreshLive();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Trade failed");
     } finally {

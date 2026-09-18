@@ -13,6 +13,7 @@ import {
   LineChart,
   LogOut,
   Menu,
+  Newspaper,
   Store,
   User,
   Users,
@@ -29,6 +30,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { appConfig, authConfig, featuresConfig } from "@/lib/config";
+import { useLive } from "@/lib/live";
 import { cn } from "@/lib/utils";
 
 type ShellUser = {
@@ -48,9 +50,10 @@ type NavLink = {
 
 const navLinks: NavLink[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/news", label: "News", icon: Newspaper, feature: "news" },
   { href: "/trade", label: "Trade", icon: Store, feature: "trading" },
   { href: "/offers", label: "Offers", icon: Handshake, feature: "offers" },
-  { href: "/memecoins", label: "Memecoins", icon: Coins, feature: "memecoins" },
+  { href: "/crypto", label: "Crypto", icon: Coins, feature: "crypto" },
   { href: "/firms", label: "Firms", icon: Briefcase, feature: "firms" },
   { href: "/leaderboard", label: "Leaderboard", icon: BarChart3, feature: "leaderboard" },
   { href: "/portfolios", label: "Portfolios", icon: Users, feature: "portfolios" },
@@ -133,6 +136,12 @@ export function AppShell({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const isOperator = user?.username === authConfig.operatorUsername;
+
+  // Keep the cash figure in the sidebar current without a reload.
+  const { data: liveUser } = useLive<{ balance: number }>(
+    user ? "/api/user" : null
+  );
+  const balance = liveUser?.balance ?? user?.balance ?? 0;
 
   if (!user) {
     return (
@@ -234,7 +243,7 @@ export function AppShell({
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{user.username}</p>
                   <p className="text-xs text-muted-foreground">
-                    ${user.balance.toFixed(2)} cash
+                    ${balance.toFixed(2)} cash
                   </p>
                 </div>
               </div>

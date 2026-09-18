@@ -36,7 +36,7 @@ export async function GET(
       ...detail,
       minDeposit: config.minDeposit,
       canTrade: features.firmTrading,
-      allowMemecoins: config.allowMemecoins && features.memecoins && features.memecoinTrading,
+      allowCrypto: config.allowCrypto && features.crypto && features.cryptoTrading,
     });
   } catch (error) {
     const message = (error as Error).message;
@@ -49,7 +49,8 @@ export async function GET(
 const patchSchema = z.object({
   description: z.string().max(280).nullable().optional(),
   isOpen: z.boolean().optional(),
-  feePercent: z.number().min(0).max(100).optional(),
+  depositFeePercent: z.number().min(0).max(100).optional(),
+  withdrawFeePercent: z.number().min(0).max(100).optional(),
 });
 
 /** The manager can edit the firm's pitch, fee and whether it takes new clients. */
@@ -77,9 +78,10 @@ export async function PATCH(
     const input = patchSchema.parse(await request.json());
     const config = getFirmConfig();
 
-    if (input.feePercent !== undefined && input.feePercent > config.maxFeePercentage) {
+    const requestedFees = [input.depositFeePercent, input.withdrawFeePercent];
+    if (requestedFees.some((fee) => fee !== undefined && fee > config.maxFeePercentage)) {
       return NextResponse.json(
-        { error: `Fee cannot exceed ${config.maxFeePercentage}%` },
+        { error: `Fees cannot exceed ${config.maxFeePercentage}%` },
         { status: 400 }
       );
     }
@@ -91,7 +93,12 @@ export async function PATCH(
           ? { description: input.description?.trim() || null }
           : {}),
         ...(input.isOpen !== undefined ? { isOpen: input.isOpen } : {}),
-        ...(input.feePercent !== undefined ? { feePercent: input.feePercent } : {}),
+        ...(input.depositFeePercent !== undefined
+          ? { depositFeePercent: input.depositFeePercent }
+          : {}),
+        ...(input.withdrawFeePercent !== undefined
+          ? { withdrawFeePercent: input.withdrawFeePercent }
+          : {}),
       },
     });
 

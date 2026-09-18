@@ -20,7 +20,7 @@ export async function GET() {
       canTrade: features.firmTrading,
       minDeposit: config.minDeposit,
       maxFeePercentage: config.maxFeePercentage,
-      allowMemecoins: config.allowMemecoins && features.memecoins,
+      allowCrypto: config.allowCrypto && features.crypto,
     });
   } catch (error) {
     const message = (error as Error).message;
@@ -33,7 +33,8 @@ export async function GET() {
 const createSchema = z.object({
   name: z.string().min(2).max(60),
   description: z.string().max(280).optional(),
-  feePercent: z.number().min(0).max(100).optional(),
+  depositFeePercent: z.number().min(0).max(100).optional(),
+  withdrawFeePercent: z.number().min(0).max(100).optional(),
 });
 
 /** Register a firm. The creator becomes its manager and trades for its clients. */
@@ -51,11 +52,15 @@ export async function POST(request: NextRequest) {
 
     const config = getFirmConfig();
     const input = createSchema.parse(await request.json());
-    const feePercent = input.feePercent ?? 0;
+    const depositFeePercent = input.depositFeePercent ?? 0;
+    const withdrawFeePercent = input.withdrawFeePercent ?? 0;
 
-    if (feePercent > config.maxFeePercentage) {
+    if (
+      depositFeePercent > config.maxFeePercentage ||
+      withdrawFeePercent > config.maxFeePercentage
+    ) {
       return NextResponse.json(
-        { error: `Fee cannot exceed ${config.maxFeePercentage}%` },
+        { error: `Fees cannot exceed ${config.maxFeePercentage}%` },
         { status: 400 }
       );
     }
@@ -94,7 +99,8 @@ export async function POST(request: NextRequest) {
         slug,
         description: input.description?.trim() || null,
         managerId: user.id,
-        feePercent,
+        depositFeePercent,
+        withdrawFeePercent,
       },
     });
 

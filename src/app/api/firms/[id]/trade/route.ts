@@ -4,15 +4,15 @@ import { getCurrentUser } from "@/lib/auth-utils";
 import {
   assertFeatures,
   getFirmConfig,
-  getMemecoinConfig,
+  getCryptoConfig,
   getTradingConfig,
 } from "@/lib/config";
-import { getMemecoinPrice } from "@/lib/memecoin";
+import { getCryptoPrice } from "@/lib/crypto";
 import { getTradingSharePrice } from "@/lib/pricing";
 import { prisma } from "@/lib/prisma";
 
 const tradeSchema = z.object({
-  assetType: z.enum(["STOCK", "MEMECOIN"]).default("STOCK"),
+  assetType: z.enum(["STOCK", "CRYPTO"]).default("STOCK"),
   symbol: z.string().min(1),
   units: z.number().positive().finite(),
   type: z.enum(["BUY", "SELL"]),
@@ -58,17 +58,17 @@ export async function POST(
 
     const symbol = input.symbol.trim().toUpperCase().replace(/^\$/, "");
 
-    if (input.assetType === "MEMECOIN") {
+    if (input.assetType === "CRYPTO") {
       const firmConfig = getFirmConfig();
-      if (!firmConfig.allowMemecoins) {
+      if (!firmConfig.allowCrypto) {
         return NextResponse.json(
-          { error: "Firms cannot trade memecoins" },
+          { error: "Firms cannot trade crypto" },
           { status: 403 }
         );
       }
-      assertFeatures("memecoins", "memecoinTrading");
+      assertFeatures("crypto", "cryptoTrading");
 
-      const coin = await prisma.memecoin.findUnique({ where: { symbol } });
+      const coin = await prisma.crypto.findUnique({ where: { symbol } });
       if (!coin) {
         return NextResponse.json({ error: "Coin not found" }, { status: 404 });
       }
@@ -76,8 +76,8 @@ export async function POST(
         return NextResponse.json({ error: `$${coin.symbol} is delisted` }, { status: 400 });
       }
 
-      const memeConfig = getMemecoinConfig();
-      const price = getMemecoinPrice(coin, memeConfig.tickSeconds);
+      const cryptoConfig = getCryptoConfig();
+      const price = getCryptoPrice(coin, cryptoConfig.tickSeconds);
       const units = Math.round(input.units * 1e6) / 1e6;
 
       if (input.type === "BUY") {
@@ -94,16 +94,16 @@ export async function POST(
             where: { id: firm.id },
             data: { balance: { decrement: cost } },
           });
-          await tx.firmMemecoinHolding.upsert({
-            where: { firmId_memecoinId: { firmId: firm.id, memecoinId: coin.id } },
+          await tx.firmCryptoHolding.upsert({
+            where: { firmId_cryptoId: { firmId: firm.id, cryptoId: coin.id } },
             update: { units: { increment: units } },
-            create: { firmId: firm.id, memecoinId: coin.id, units },
+            create: { firmId: firm.id, cryptoId: coin.id, units },
           });
           await tx.firmTransaction.create({
             data: {
               firmId: firm.id,
               type: "BUY",
-              assetType: "MEMECOIN",
+              assetType: "CRYPTO",
               assetId: coin.id,
               symbol: coin.symbol,
               units,
@@ -120,14 +120,14 @@ export async function POST(
         });
       }
 
-      const holding = await prisma.firmMemecoinHolding.findUnique({
-        where: { firmId_memecoinId: { firmId: firm.id, memecoinId: coin.id } },
+      const holding = await prisma.firmCryptoHolding.findUnique({
+        where: { firmId_cryptoId: { firmId: firm.id, cryptoId: coin.id } },
       });
       if (!holding || holding.units + 1e-9 < units) {
         return NextResponse.json({ error: "The firm does not hold that many" }, { status: 400 });
       }
 
-      const proceeds = price * units * (1 - memeConfig.sellFeePercentage / 100);
+      const proceeds = price * units * (1 - cryptoConfig.sellFeePercentage / 100);
       const remaining = Math.round((holding.units - units) * 1e6) / 1e6;
 
       await prisma.$transaction(async (tx) => {
@@ -136,12 +136,12 @@ export async function POST(
           data: { balance: { increment: proceeds } },
         });
         if (remaining <= 0) {
-          await tx.firmMemecoinHolding.delete({
-            where: { firmId_memecoinId: { firmId: firm.id, memecoinId: coin.id } },
+          await tx.firmCryptoHolding.delete({
+            where: { firmId_cryptoId: { firmId: firm.id, cryptoId: coin.id } },
           });
         } else {
-          await tx.firmMemecoinHolding.update({
-            where: { firmId_memecoinId: { firmId: firm.id, memecoinId: coin.id } },
+          await tx.firmCryptoHolding.update({
+            where: { firmId_cryptoId: { firmId: firm.id, cryptoId: coin.id } },
             data: { units: remaining },
           });
         }
@@ -149,7 +149,7 @@ export async function POST(
           data: {
             firmId: firm.id,
             type: "SELL",
-            assetType: "MEMECOIN",
+            assetType: "CRYPTO",
             assetId: coin.id,
             symbol: coin.symbol,
             units,

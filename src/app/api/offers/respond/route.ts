@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-utils';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import {
+  adjustPartyCash,
+  buyerParty,
+  creditShares,
+  debitShares,
+  getPartyCash,
+  partyControlledBy,
+  recordPartyTrade,
+  sellerParty,
+} from '@/lib/offer-parties';
 
 const respondToOfferSchema = z.object({
   buyOfferId: z.string(),
@@ -39,8 +49,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if current user is the seller of the sell offer
-    if (buyOffer.sellOffer.sellerId !== user.id) {
+    // Whoever controls the listing answers it: the seller, or the firm's manager.
+    const lister = sellerParty(buyOffer.sellOffer);
+    if (!partyControlledBy(lister, user.id)) {
       return NextResponse.json(
         { error: 'Unauthorized to respond to this offer' },
         { status: 403 }
@@ -58,10 +69,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'accept') {
-      // Start a transaction to handle the trade
       await prisma.$transaction(async (tx) => {
         const requestedShares = buyOffer.shares;
         const listingShares = buyOffer.sellOffer.shares;
+        const companyId = buyOffer.sellOffer.companyId;
+        const symbol = buyOffer.sellOffer.company.symbol;
 
         if (requestedShares <= 0) {
           throw new Error('Invalid share quantity on offer');
@@ -71,124 +83,35 @@ export async function POST(request: NextRequest) {
           throw new Error('Not enough shares remaining in this listing');
         }
 
-        // Check if buyer still has sufficient balance
-        const buyer = await tx.user.findUnique({
-          where: { id: buyOffer.buyerId },
-          select: { balance: true },
-        });
-
+        const bidder = buyerParty(buyOffer);
         const totalCost = requestedShares * buyOffer.offeredPrice;
-        if (!buyer || buyer.balance < totalCost) {
+
+        // Re-check funds inside the transaction: the balance may have moved
+        // since the bid was placed.
+        const bidderCash = await getPartyCash(tx, bidder);
+        if (bidderCash < totalCost) {
           throw new Error('Buyer has insufficient balance');
         }
 
-        // Check if seller still has the shares
-        const sellerHolding = await tx.holding.findUnique({
-          where: {
-            userId_companyId: {
-              userId: buyOffer.sellOffer.sellerId,
-              companyId: buyOffer.sellOffer.companyId,
-            },
-          },
-        });
+        // debitShares throws if the seller no longer holds enough.
+        await debitShares(tx, lister, companyId, requestedShares);
+        await creditShares(tx, bidder, companyId, requestedShares);
 
-        if (!sellerHolding || sellerHolding.shares < requestedShares) {
-          throw new Error('Seller has insufficient shares');
-        }
+        await adjustPartyCash(tx, bidder, -totalCost);
+        await adjustPartyCash(tx, lister, totalCost);
 
-        // Transfer shares from seller to buyer
-        // Update or create buyer's holding
-        const buyerHolding = await tx.holding.findUnique({
-          where: {
-            userId_companyId: {
-              userId: buyOffer.buyerId,
-              companyId: buyOffer.sellOffer.companyId,
-            },
-          },
-        });
-
-        if (buyerHolding) {
-          await tx.holding.update({
-            where: {
-              userId_companyId: {
-                userId: buyOffer.buyerId,
-                companyId: buyOffer.sellOffer.companyId,
-              },
-            },
-            data: {
-              shares: buyerHolding.shares + requestedShares,
-            },
-          });
-        } else {
-          await tx.holding.create({
-            data: {
-              userId: buyOffer.buyerId,
-              companyId: buyOffer.sellOffer.companyId,
-              shares: requestedShares,
-            },
-          });
-        }
-
-        // Update seller's holding
-        if (sellerHolding.shares === requestedShares) {
-          // Remove the holding if all shares are sold
-          await tx.holding.delete({
-            where: {
-              userId_companyId: {
-                userId: buyOffer.sellOffer.sellerId,
-                companyId: buyOffer.sellOffer.companyId,
-              },
-            },
-          });
-        } else {
-          // Reduce the shares
-          await tx.holding.update({
-            where: {
-              userId_companyId: {
-                userId: buyOffer.sellOffer.sellerId,
-                companyId: buyOffer.sellOffer.companyId,
-              },
-            },
-            data: {
-              shares: sellerHolding.shares - requestedShares,
-            },
-          });
-        }
-
-        // Transfer money
-        await tx.user.update({
-          where: { id: buyOffer.buyerId },
-          data: {
-            balance: buyer.balance - totalCost,
-          },
-        });
-
-        await tx.user.update({
-          where: { id: buyOffer.sellOffer.sellerId },
-          data: {
-            balance: buyOffer.sellOffer.seller.balance + totalCost,
-          },
-        });
-
-        // Update buy offer status
         await tx.buyOffer.update({
           where: { id: buyOfferId },
           data: { status: 'accepted' },
         });
 
-        // Update sell offer shares and possibly status
         const remainingShares = listingShares - requestedShares;
         if (remainingShares === 0) {
           await tx.sellOffer.update({
             where: { id: buyOffer.sellOfferId },
-            data: {
-              status: 'completed',
-              completedAt: new Date(),
-              shares: 0,
-            },
+            data: { status: 'completed', completedAt: new Date(), shares: 0 },
           });
 
-          // Decline all other pending offers on this now-completed sell offer
           await tx.buyOffer.updateMany({
             where: {
               sellOfferId: buyOffer.sellOfferId,
@@ -200,31 +123,24 @@ export async function POST(request: NextRequest) {
         } else {
           await tx.sellOffer.update({
             where: { id: buyOffer.sellOfferId },
-            data: {
-              shares: remainingShares,
-            },
+            data: { shares: remainingShares },
           });
         }
 
-        // Create transaction records
-        await tx.transaction.create({
-          data: {
-            userId: buyOffer.buyerId,
-            companyId: buyOffer.sellOffer.companyId,
-            type: 'BUY',
-            shares: requestedShares,
-            price: buyOffer.offeredPrice,
-          },
+        await recordPartyTrade(tx, bidder, {
+          companyId,
+          symbol,
+          type: 'BUY',
+          shares: requestedShares,
+          price: buyOffer.offeredPrice,
         });
 
-        await tx.transaction.create({
-          data: {
-            userId: buyOffer.sellOffer.sellerId,
-            companyId: buyOffer.sellOffer.companyId,
-            type: 'SELL',
-            shares: requestedShares,
-            price: buyOffer.offeredPrice,
-          },
+        await recordPartyTrade(tx, lister, {
+          companyId,
+          symbol,
+          type: 'SELL',
+          shares: requestedShares,
+          price: buyOffer.offeredPrice,
         });
       });
 

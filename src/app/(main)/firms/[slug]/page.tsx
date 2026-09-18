@@ -27,7 +27,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { AC } from "@/lib/autocomplete";
+import { useLiveRefresh } from "@/lib/live";
 
 type Firm = {
   id: string;
@@ -37,16 +40,17 @@ type Firm = {
   manager: { id: string; username: string; name: string | null };
   isManager: boolean;
   isOpen: boolean;
-  feePercent: number;
+  depositFeePercent: number;
+  withdrawFeePercent: number;
   cash: number;
   nav: number;
   navPerUnit: number;
   totalUnits: number;
   minDeposit: number;
   canTrade: boolean;
-  allowMemecoins: boolean;
+  allowCrypto: boolean;
   holdings: Array<{
-    assetType: "STOCK" | "MEMECOIN";
+    assetType: "STOCK" | "CRYPTO";
     symbol: string;
     name: string;
     units: number;
@@ -66,6 +70,7 @@ type Firm = {
     invested: number;
     value: number;
     profit: number;
+    emailOptIn: boolean;
   } | null;
   transactions: Array<{
     id: string;
@@ -94,7 +99,21 @@ export default function FirmDetailPage() {
   const [withdrawUnits, setWithdrawUnits] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const [assetType, setAssetType] = useState<"STOCK" | "MEMECOIN">("STOCK");
+  const [news, setNews] = useState<
+    Array<{
+      id: string;
+      title: string;
+      body: string;
+      author: string;
+      recipients: number;
+      createdAt: string;
+    }>
+  >([]);
+  const [newsTitle, setNewsTitle] = useState("");
+  const [newsBody, setNewsBody] = useState("");
+  const [newsEmail, setNewsEmail] = useState(true);
+
+  const [assetType, setAssetType] = useState<"STOCK" | "CRYPTO">("STOCK");
   const [tradeSymbol, setTradeSymbol] = useState("");
   const [tradeUnits, setTradeUnits] = useState("");
   const [tradeSide, setTradeSide] = useState<"BUY" | "SELL">("BUY");
@@ -121,7 +140,13 @@ export default function FirmDetailPage() {
         );
       }
 
-      const coinsRes = await fetch("/api/memecoins");
+      const newsRes = await fetch(`/api/firms/${slug}/news`);
+      if (newsRes.ok) {
+        const newsData = await newsRes.json();
+        setNews(newsData.news ?? []);
+      }
+
+      const coinsRes = await fetch("/api/crypto");
       if (coinsRes.ok) {
         const data = await coinsRes.json();
         setCoins(
@@ -137,8 +162,16 @@ export default function FirmDetailPage() {
     }
   }, [router, slug]);
 
+  const refreshLive = useLiveRefresh();
+
   useEffect(() => {
     fetchFirm();
+    // A firm's value moves with its positions, so keep it ticking.
+    const interval = setInterval(
+      fetchFirm,
+      Number(process.env.NEXT_PUBLIC_LIVE_REFRESH_MS || 8000)
+    );
+    return () => clearInterval(interval);
   }, [fetchFirm]);
 
   async function post(path: string, body: unknown, successFallback: string) {
@@ -153,6 +186,7 @@ export default function FirmDetailPage() {
       if (!response.ok) throw new Error(data.error || successFallback);
       toast.success(data.message || successFallback);
       fetchFirm();
+      refreshLive();
       return true;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Something went wrong");
@@ -211,10 +245,12 @@ export default function FirmDetailPage() {
         ))}
       </div>
 
-      {!firm.isManager && (
+      {(
         <Card>
           <CardHeader>
-            <CardTitle>Your stake</CardTitle>
+            <CardTitle>
+              {firm.isManager ? "Your own stake" : "Your stake"}
+            </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             {firm.membership ? (
@@ -247,7 +283,9 @@ export default function FirmDetailPage() {
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                You have not invested in this firm yet. Your cash: ${balance.toFixed(2)}
+                {firm.isManager
+                  ? `You have not put your own money in yet. Your cash: $${balance.toFixed(2)}`
+                  : `You have not invested in this firm yet. Your cash: $${balance.toFixed(2)}`}
               </p>
             )}
 
@@ -283,9 +321,11 @@ export default function FirmDetailPage() {
                     Invest
                   </Button>
                 </div>
-                {firm.feePercent > 0 && (
+                {firm.depositFeePercent > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    {firm.feePercent}% of each deposit goes to the manager.
+                    {firm.isManager
+                      ? "You don't pay your own deposit fee."
+                      : `${firm.depositFeePercent}% of each deposit goes to the manager.`}
                   </p>
                 )}
               </form>
@@ -325,6 +365,11 @@ export default function FirmDetailPage() {
                     Withdraw
                   </Button>
                 </div>
+                {firm.withdrawFeePercent > 0 && !firm.isManager && (
+                  <p className="text-xs text-muted-foreground">
+                    {firm.withdrawFeePercent}% of each withdrawal goes to the manager.
+                  </p>
+                )}
                 {firm.membership && (
                   <button
                     type="button"
@@ -360,14 +405,14 @@ export default function FirmDetailPage() {
                 if (ok) setTradeUnits("");
               }}
             >
-              {firm.allowMemecoins && (
+              {firm.allowCrypto && (
                 <div className="flex flex-col gap-2">
                   <Label>Asset</Label>
                   <Select
                     value={assetType}
                     onValueChange={(value) => {
                       if (!value) return;
-                      setAssetType(value as "STOCK" | "MEMECOIN");
+                      setAssetType(value as "STOCK" | "CRYPTO");
                       setTradeSymbol("");
                     }}
                   >
@@ -376,7 +421,7 @@ export default function FirmDetailPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="STOCK">Stocks</SelectItem>
-                      <SelectItem value="MEMECOIN">Memecoins</SelectItem>
+                      <SelectItem value="CRYPTO">Crypto</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -394,7 +439,7 @@ export default function FirmDetailPage() {
                   <SelectContent>
                     {symbolOptions.map((symbol) => (
                       <SelectItem key={symbol} value={symbol}>
-                        {assetType === "MEMECOIN" ? `$${symbol}` : symbol}
+                        {assetType === "CRYPTO" ? `$${symbol}` : symbol}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -441,6 +486,107 @@ export default function FirmDetailPage() {
       )}
 
       <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Updates</CardTitle>
+          {firm.membership && !firm.isManager && (
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Checkbox
+                checked={firm.membership.emailOptIn}
+                onCheckedChange={(checked) =>
+                  post(
+                    `/api/firms/${firm.slug}/email-preference`,
+                    { emailOptIn: checked === true },
+                    "Updated"
+                  )
+                }
+              />
+              Email me these
+            </label>
+          )}
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          {firm.isManager && (
+            <form
+              className="flex flex-col gap-2 rounded-lg border border-border p-3"
+              onSubmit={async (event) => {
+                event.preventDefault();
+                if (!newsTitle.trim() || !newsBody.trim()) return;
+                const ok = await post(
+                  `/api/firms/${firm.slug}/news`,
+                  {
+                    title: newsTitle,
+                    body: newsBody,
+                    sendEmail: newsEmail,
+                  },
+                  "Update posted"
+                );
+                if (ok) {
+                  setNewsTitle("");
+                  setNewsBody("");
+                }
+              }}
+            >
+              <Label htmlFor="news-title">Post an update to your investors</Label>
+              <Input
+                id="news-title"
+                value={newsTitle}
+                onChange={(event) => setNewsTitle(event.target.value)}
+                placeholder="Title"
+                maxLength={140}
+                autoComplete={AC.off}
+              />
+              <Textarea
+                value={newsBody}
+                onChange={(event) => setNewsBody(event.target.value)}
+                placeholder="What happened this week?"
+                rows={4}
+                maxLength={5000}
+              />
+              <div className="flex items-center justify-between gap-2">
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Checkbox
+                    checked={newsEmail}
+                    onCheckedChange={(checked) => setNewsEmail(checked === true)}
+                  />
+                  Email it to investors who opted in
+                </label>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={busy || !newsTitle.trim() || !newsBody.trim()}
+                >
+                  Post
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {news.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No updates yet.</p>
+          ) : (
+            news.map((item) => (
+              <div key={item.id} className="border-b border-border pb-3 last:border-0">
+                <div className="flex items-baseline justify-between gap-2">
+                  <h4 className="font-medium">{item.title}</h4>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {new Date(item.createdAt).toLocaleString()}
+                  </span>
+                </div>
+                <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
+                  {item.body}
+                </p>
+                {firm.isManager && item.recipients > 0 && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Emailed to {item.recipients}
+                  </p>
+                )}
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader>
           <CardTitle>Positions</CardTitle>
         </CardHeader>
@@ -464,7 +610,7 @@ export default function FirmDetailPage() {
                   <TableRow key={`${holding.assetType}-${holding.symbol}`}>
                     <TableCell>
                       <div className="font-medium">
-                        {holding.assetType === "MEMECOIN" ? "$" : ""}
+                        {holding.assetType === "CRYPTO" ? "$" : ""}
                         {holding.symbol}
                       </div>
                       <div className="text-xs text-muted-foreground">{holding.name}</div>
@@ -545,7 +691,7 @@ export default function FirmDetailPage() {
                           ? "Client deposit"
                           : "Client withdrawal"
                         : `${tx.type === "BUY" ? "Bought" : "Sold"} ${tx.units} ${
-                            tx.assetType === "MEMECOIN" ? "$" : ""
+                            tx.assetType === "CRYPTO" ? "$" : ""
                           }${tx.symbol}`}
                     </TableCell>
                     <TableCell className="text-right">${tx.amount.toFixed(2)}</TableCell>

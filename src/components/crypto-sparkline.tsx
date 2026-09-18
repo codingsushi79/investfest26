@@ -1,7 +1,7 @@
 "use client";
 
-/** Compact price trace for a memecoin row. Green when it's up, red when it's down. */
-export function MemecoinSparkline({
+/** Compact price trace for a crypto row. Green when it's up, red when it's down. */
+export function CryptoSparkline({
   points,
   width = 96,
   height = 28,

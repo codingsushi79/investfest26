@@ -1,34 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth-utils";
-import { assertFeatures, getFeaturesConfig, getMemecoinConfig } from "@/lib/config";
-import { getMemecoinMarket } from "@/lib/memecoin-data";
+import { assertFeatures, getFeaturesConfig, getCryptoConfig } from "@/lib/config";
+import { getCryptoMarket } from "@/lib/crypto-data";
 import {
-  createMemecoinSeed,
+  createCryptoSeed,
   driftFromPercentPerHour,
-  normalizeMemecoinSymbol,
-} from "@/lib/memecoin";
+  normalizeCryptoSymbol,
+} from "@/lib/crypto";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    assertFeatures("memecoins");
+    assertFeatures("crypto");
 
     const user = await getCurrentUser();
-    const market = await getMemecoinMarket(user?.id);
+    const market = await getCryptoMarket(user?.id);
 
     return NextResponse.json({
       ...market,
       canCreate:
         !!user &&
         user.username === process.env.OP_USERNAME &&
-        getFeaturesConfig().memecoinCreation,
-      canTrade: getFeaturesConfig().memecoinTrading,
+        getFeaturesConfig().cryptoCreation,
+      canTrade: getFeaturesConfig().cryptoTrading,
     });
   } catch (error) {
     const message = (error as Error).message;
     const status = message.startsWith("Feature disabled") ? 404 : 500;
-    if (status === 500) console.error("Memecoins error:", error);
+    if (status === 500) console.error("Crypto error:", error);
     return NextResponse.json({ error: message }, { status });
   }
 }
@@ -45,7 +45,7 @@ const createSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    assertFeatures("memecoins", "memecoinCreation");
+    assertFeatures("crypto", "cryptoCreation");
 
     const user = await getCurrentUser();
     if (!user) {
@@ -55,11 +55,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Operator only" }, { status: 403 });
     }
 
-    const config = getMemecoinConfig();
+    const config = getCryptoConfig();
     const input = createSchema.parse(await request.json());
-    const symbol = normalizeMemecoinSymbol(input.symbol);
+    const symbol = normalizeCryptoSymbol(input.symbol);
 
-    const coinCount = await prisma.memecoin.count();
+    const coinCount = await prisma.crypto.count();
     if (coinCount >= config.maxCoins) {
       return NextResponse.json(
         { error: `Coin limit reached (${config.maxCoins})` },
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const existing = await prisma.memecoin.findUnique({ where: { symbol } });
+    const existing = await prisma.crypto.findUnique({ where: { symbol } });
     if (existing) {
       return NextResponse.json(
         { error: `$${symbol} already exists` },
@@ -94,12 +94,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const coin = await prisma.memecoin.create({
+    const coin = await prisma.crypto.create({
       data: {
         symbol,
         name: input.name.trim(),
         description: input.description?.trim() || null,
-        seed: createMemecoinSeed(),
+        seed: createCryptoSeed(),
         basePrice: input.startPrice ?? config.defaultStartPrice,
         volatility,
         drift: driftFromPercentPerHour(trend, config.tickSeconds),

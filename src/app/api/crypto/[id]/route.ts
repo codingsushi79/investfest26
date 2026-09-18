@@ -19,7 +19,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    assertFeatures("memecoins", "memecoinCreation");
+    assertFeatures("crypto", "cryptoCreation");
 
     const user = await getCurrentUser();
     if (!user) {
@@ -32,7 +32,7 @@ export async function PATCH(
     const { id } = await params;
     const input = patchSchema.parse(await request.json());
 
-    const coin = await prisma.memecoin.update({
+    const coin = await prisma.crypto.update({
       where: { id },
       data: {
         ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),

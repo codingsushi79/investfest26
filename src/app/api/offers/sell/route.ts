@@ -19,6 +19,13 @@ export async function GET(request: NextRequest) {
             username: true,
           },
         },
+        firm: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
         company: {
           select: {
             symbol: true,

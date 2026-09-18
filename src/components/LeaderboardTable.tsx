@@ -20,6 +20,13 @@ type LeaderRow = {
   invested: number;
   portfolioValue: number;
   holdings: { symbol: string; shares: number; value: number }[];
+  crypto?: { symbol: string; units: number; value: number }[];
+  firmStakes?: {
+    firmId: string;
+    name: string;
+    value: number;
+    isManager: boolean;
+  }[];
 };
 
 export function LeaderboardTable({ rows }: { rows: LeaderRow[] }) {
@@ -80,14 +87,38 @@ export function LeaderboardTable({ rows }: { rows: LeaderRow[] }) {
               <TableCell className="text-right">${row.balance.toFixed(2)}</TableCell>
               <TableCell>
                 <div className="flex flex-wrap gap-1">
-                  {row.holdings.length === 0 ? (
+                  {row.holdings.length === 0 &&
+                  (row.crypto?.length ?? 0) === 0 &&
+                  (row.firmStakes?.length ?? 0) === 0 ? (
                     <span className="text-xs text-muted-foreground">No positions</span>
                   ) : (
-                    row.holdings.map((h) => (
-                      <Badge key={h.symbol} variant="secondary" className="text-xs">
-                        {h.symbol} ×{h.shares}
-                      </Badge>
-                    ))
+                    <>
+                      {row.holdings.map((h) => (
+                        <Badge key={h.symbol} variant="secondary" className="text-xs">
+                          {h.symbol} ×{h.shares}
+                        </Badge>
+                      ))}
+                      {row.crypto?.map((coin) => (
+                        <Badge
+                          key={coin.symbol}
+                          variant="outline"
+                          className="text-xs text-amber-600 dark:text-amber-500"
+                        >
+                          ${coin.symbol} ×{coin.units.toLocaleString()}
+                        </Badge>
+                      ))}
+                      {row.firmStakes?.map((stake) => (
+                        <Badge
+                          key={stake.firmId}
+                          variant="outline"
+                          className="text-xs text-primary"
+                          title={`${stake.isManager ? "Manages" : "Invested in"} ${stake.name}`}
+                        >
+                          {stake.isManager ? "⚑" : "▲"} {stake.name} $
+                          {stake.value.toFixed(0)}
+                        </Badge>
+                      ))}
+                    </>
                   )}
                 </div>
               </TableCell>

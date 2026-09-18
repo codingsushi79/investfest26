@@ -1,8 +1,8 @@
 import { cache } from "react";
 import { prisma } from "./prisma";
 import { getFeaturesConfig } from "./config";
-import { getFirmValueByUser } from "./firm-data";
-import { getMemecoinValueByUser } from "./memecoin-data";
+import { getFirmStakesByUser, type FirmStake } from "./firm-data";
+import { getCryptoBagsByUser, type CryptoBag } from "./crypto-data";
 import {
   BASELINE_SHARE_PRICE,
   BASELINE_SHARES,
@@ -139,16 +139,29 @@ export async function getDashboardData(userId?: string) {
 }
 
 /**
- * Memecoin bags and firm stakes count toward a player's wealth just like
+ * Crypto bags and firm stakes count toward a player's wealth just like
  * shares do, so standings stay honest when someone moves cash into them.
  */
 async function getSideAssetValues() {
   const features = getFeaturesConfig();
-  const [memecoins, firms] = await Promise.all([
-    features.memecoins ? getMemecoinValueByUser() : Promise.resolve(new Map<string, number>()),
-    features.firms ? getFirmValueByUser() : Promise.resolve(new Map<string, number>()),
+  const [crypto, firms] = await Promise.all([
+    features.crypto
+      ? getCryptoBagsByUser()
+      : Promise.resolve(new Map<string, CryptoBag[]>()),
+    features.firms
+      ? getFirmStakesByUser()
+      : Promise.resolve(new Map<string, FirmStake[]>()),
   ]);
-  return { memecoins, firms };
+
+  const sum = <T extends { value: number }>(rows: T[] | undefined) =>
+    (rows ?? []).reduce((total, row) => total + row.value, 0);
+
+  return {
+    bagsFor: (userId: string) => crypto.get(userId) ?? [],
+    stakesFor: (userId: string) => firms.get(userId) ?? [],
+    cryptoValueFor: (userId: string) => sum(crypto.get(userId)),
+    firmValueFor: (userId: string) => sum(firms.get(userId)),
+  };
 }
 
 export async function getLeaderboard() {
@@ -180,9 +193,9 @@ export async function getLeaderboard() {
       };
     });
     const stockValue = holdings.reduce((sum, h) => sum + h.value, 0);
-    const memecoinValue = sideAssets.memecoins.get(user.id) ?? 0;
-    const firmValue = sideAssets.firms.get(user.id) ?? 0;
-    const invested = stockValue + memecoinValue + firmValue;
+    const cryptoValue = sideAssets.cryptoValueFor(user.id);
+    const firmValue = sideAssets.firmValueFor(user.id);
+    const invested = stockValue + cryptoValue + firmValue;
     return {
       userId: user.id,
       name: user.name,
@@ -190,8 +203,10 @@ export async function getLeaderboard() {
       email: user.email,
       balance: user.balance,
       holdings,
+      crypto: sideAssets.bagsFor(user.id),
+      firmStakes: sideAssets.stakesFor(user.id),
       stockValue,
-      memecoinValue,
+      cryptoValue,
       firmValue,
       invested,
       portfolioValue: invested,
@@ -231,8 +246,8 @@ export async function getAllPortfolios() {
     });
 
     const stockValue = holdingsWithValues.reduce((sum, h) => sum + h.value, 0);
-    const memecoinValue = sideAssets.memecoins.get(u.id) ?? 0;
-    const firmValue = sideAssets.firms.get(u.id) ?? 0;
+    const cryptoValue = sideAssets.cryptoValueFor(u.id);
+    const firmValue = sideAssets.firmValueFor(u.id);
 
     return {
       userId: u.id,
@@ -241,10 +256,12 @@ export async function getAllPortfolios() {
       email: u.email,
       balance: u.balance,
       holdings: holdingsWithValues,
+      crypto: sideAssets.bagsFor(u.id),
+      firmStakes: sideAssets.stakesFor(u.id),
       stockValue,
-      memecoinValue,
+      cryptoValue,
       firmValue,
-      portfolioValue: stockValue + memecoinValue + firmValue,
+      portfolioValue: stockValue + cryptoValue + firmValue,
     };
   });
 }

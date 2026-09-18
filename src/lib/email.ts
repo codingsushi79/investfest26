@@ -182,3 +182,93 @@ export async function sendOtpEmail({
     text,
   });
 }
+
+function buildNewsEmailHtml({
+  heading,
+  title,
+  body,
+  footer,
+}: {
+  heading: string;
+  title: string;
+  body: string;
+  footer: string;
+}) {
+  const safeHeading = escapeHtml(heading);
+  const safeTitle = escapeHtml(title);
+  const safeFooter = escapeHtml(footer);
+  // Keep the author's paragraph breaks without letting any markup through.
+  const safeBody = escapeHtml(body)
+    .split(/\n{2,}/)
+    .map(
+      (paragraph) =>
+        `<p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#334155;">${paragraph.replaceAll(
+          "\n",
+          "<br />"
+        )}</p>`
+    )
+    .join("");
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${safeTitle}</title>
+</head>
+<body style="margin:0;padding:24px;background:#f8fafc;font-family:${FONT_STACK};">
+  <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;padding:32px;">
+    <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:${BRAND.accent};text-transform:uppercase;letter-spacing:0.04em;">${safeHeading}</p>
+    <h1 style="margin:0 0 20px;font-size:22px;line-height:1.3;color:#0f172a;">${safeTitle}</h1>
+    ${safeBody}
+    <p style="margin:28px 0 0;padding-top:16px;border-top:1px solid #e2e8f0;font-size:12px;color:#64748b;">${safeFooter}</p>
+  </div>
+</body>
+</html>`;
+}
+
+/**
+ * Sends one update to many recipients. Each address gets its own message so
+ * nobody sees anyone else's email, and one bad address can't sink the batch.
+ */
+export async function sendNewsEmail({
+  recipients,
+  heading,
+  title,
+  body,
+  footer,
+  subjectPrefix,
+}: {
+  recipients: string[];
+  heading: string;
+  title: string;
+  body: string;
+  footer: string;
+  subjectPrefix: string;
+}) {
+  if (recipients.length === 0) return { sent: 0, failed: 0 };
+
+  const html = buildNewsEmailHtml({ heading, title, body, footer });
+  const text = `${heading}\n\n${title}\n\n${body}\n\n${footer}`;
+  const from = getFromAddress();
+  const resend = getResend();
+
+  const results = await Promise.allSettled(
+    recipients.map((to) =>
+      resend.emails.send({
+        from,
+        to,
+        subject: `${subjectPrefix} ${title}`,
+        html,
+        text,
+      })
+    )
+  );
+
+  const failed = results.filter((result) => result.status === "rejected").length;
+  if (failed > 0) {
+    console.error(`News email: ${failed}/${recipients.length} failed to send`);
+  }
+
+  return { sent: results.length - failed, failed };
+}

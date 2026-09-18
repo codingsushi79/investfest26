@@ -1,11 +1,11 @@
 /**
- * Memecoin prices move on their own. Nobody — not even the operator — can set
+ * Crypto prices move on their own. Nobody — not even the operator — can set
  * one: the price is a pure function of the coin's seed and how many ticks have
  * elapsed since its genesis, so every server and every request agrees on it
  * without a background job writing price rows.
  */
 
-export type MemecoinLike = {
+export type CryptoLike = {
   id: string;
   seed: number;
   basePrice: number;
@@ -58,7 +58,7 @@ function normalAt(seed: number, tick: number) {
  */
 const cumulativeCache = new Map<string, { tick: number; sum: number }>();
 
-function cumulativeLogReturn(coin: MemecoinLike, tick: number) {
+function cumulativeLogReturn(coin: CryptoLike, tick: number) {
   if (tick <= 0) return 0;
 
   const cached = cumulativeCache.get(coin.id);
@@ -91,15 +91,15 @@ function cumulativeLogReturn(coin: MemecoinLike, tick: number) {
   return sum;
 }
 
-function clampPrice(coin: MemecoinLike, price: number) {
+function clampPrice(coin: CryptoLike, price: number) {
   const min = coin.minPrice > 0 ? coin.minPrice : 0.01;
   const capped = coin.maxPrice != null ? Math.min(price, coin.maxPrice) : price;
   return Math.max(min, capped);
 }
 
 /** Tick index the coin is on at `at` (defaults to now). */
-export function getMemecoinTick(
-  coin: MemecoinLike,
+export function getCryptoTick(
+  coin: CryptoLike,
   tickSeconds: number,
   at: Date = new Date()
 ) {
@@ -110,45 +110,45 @@ export function getMemecoinTick(
 }
 
 /** Price of the coin at a given tick index. */
-export function getMemecoinPriceAtTick(coin: MemecoinLike, tick: number) {
+export function getCryptoPriceAtTick(coin: CryptoLike, tick: number) {
   if (tick <= 0) return clampPrice(coin, coin.basePrice);
   const price = coin.basePrice * Math.exp(cumulativeLogReturn(coin, tick));
   return clampPrice(coin, price);
 }
 
 /** Current price of the coin. */
-export function getMemecoinPrice(
-  coin: MemecoinLike,
+export function getCryptoPrice(
+  coin: CryptoLike,
   tickSeconds: number,
   at: Date = new Date()
 ) {
-  return getMemecoinPriceAtTick(coin, getMemecoinTick(coin, tickSeconds, at));
+  return getCryptoPriceAtTick(coin, getCryptoTick(coin, tickSeconds, at));
 }
 
-export type MemecoinPricePoint = { tick: number; label: string; value: number };
+export type CryptoPricePoint = { tick: number; label: string; value: number };
 
 /**
  * The last `points` ticks of price history, oldest first, for charting.
  * Derived from the same walk as the live price, so the chart never disagrees
  * with what a trade actually costs.
  */
-export function getMemecoinHistory(
-  coin: MemecoinLike,
+export function getCryptoHistory(
+  coin: CryptoLike,
   tickSeconds: number,
   points: number,
   at: Date = new Date()
-): MemecoinPricePoint[] {
-  const currentTick = getMemecoinTick(coin, tickSeconds, at);
+): CryptoPricePoint[] {
+  const currentTick = getCryptoTick(coin, tickSeconds, at);
   const start = Math.max(0, currentTick - points + 1);
   const genesis = new Date(coin.genesisAt).getTime();
-  const history: MemecoinPricePoint[] = [];
+  const history: CryptoPricePoint[] = [];
 
   for (let tick = start; tick <= currentTick; tick++) {
     const timestamp = new Date(genesis + tick * tickSeconds * 1000);
     history.push({
       tick,
       label: timestamp.toISOString(),
-      value: getMemecoinPriceAtTick(coin, tick),
+      value: getCryptoPriceAtTick(coin, tick),
     });
   }
 
@@ -156,23 +156,23 @@ export function getMemecoinHistory(
 }
 
 /** Percentage move over the last `lookback` ticks. */
-export function getMemecoinChange(
-  coin: MemecoinLike,
+export function getCryptoChange(
+  coin: CryptoLike,
   tickSeconds: number,
   lookback: number,
   at: Date = new Date()
 ) {
-  const currentTick = getMemecoinTick(coin, tickSeconds, at);
+  const currentTick = getCryptoTick(coin, tickSeconds, at);
   const previousTick = Math.max(0, currentTick - lookback);
-  const current = getMemecoinPriceAtTick(coin, currentTick);
-  const previous = getMemecoinPriceAtTick(coin, previousTick);
+  const current = getCryptoPriceAtTick(coin, currentTick);
+  const previous = getCryptoPriceAtTick(coin, previousTick);
   if (previous <= 0) return 0;
   return ((current - previous) / previous) * 100;
 }
 
 /** Seconds until the coin's next price move. */
 export function getSecondsToNextTick(
-  coin: MemecoinLike,
+  coin: CryptoLike,
   tickSeconds: number,
   at: Date = new Date()
 ) {
@@ -201,7 +201,7 @@ export function percentPerHourFromDrift(drift: number, tickSeconds: number) {
 
 const SYMBOL_PATTERN = /^[A-Z0-9]{2,10}$/;
 
-export function normalizeMemecoinSymbol(raw: string) {
+export function normalizeCryptoSymbol(raw: string) {
   const symbol = raw.trim().toUpperCase().replace(/^\$/, "");
   if (!SYMBOL_PATTERN.test(symbol)) {
     throw new Error("Symbol must be 2–10 letters or digits");
@@ -210,6 +210,6 @@ export function normalizeMemecoinSymbol(raw: string) {
 }
 
 /** Random seed for a new coin. */
-export function createMemecoinSeed() {
+export function createCryptoSeed() {
   return Math.floor(Math.random() * 2_147_483_647) + 1;
 }

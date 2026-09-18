@@ -4,8 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Coins, Plus } from "lucide-react";
 import { toast } from "sonner";
-import { MemecoinCreateDialog } from "@/components/memecoin-create-dialog";
-import { MemecoinSparkline } from "@/components/memecoin-sparkline";
+import { CryptoCreateDialog } from "@/components/crypto-create-dialog";
+import { CryptoSparkline } from "@/components/crypto-sparkline";
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +31,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AC } from "@/lib/autocomplete";
+import { useLive, useLiveRefresh } from "@/lib/live";
 import { cn } from "@/lib/utils";
 
 type Coin = {
@@ -47,9 +48,6 @@ type Coin = {
   value: number;
 };
 
-/** Prices move on their own, so the page keeps pulling fresh ones. */
-const REFRESH_MS = 15_000;
-
 function formatPrice(price: number) {
   if (price >= 1) return `$${price.toFixed(2)}`;
   return `$${price.toFixed(4)}`;
@@ -65,54 +63,40 @@ function ChangeBadge({ change }: { change: number }) {
   );
 }
 
-export default function MemecoinsPage() {
+export default function CryptoPage() {
   const router = useRouter();
-  const [coins, setCoins] = useState<Coin[]>([]);
-  const [balance, setBalance] = useState(0);
-  const [canCreate, setCanCreate] = useState(false);
-  const [canTrade, setCanTrade] = useState(true);
-  const [sellFee, setSellFee] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const refreshLive = useLiveRefresh();
+
+  // Prices move on their own, so these poll continuously.
+  const { data: market, loading } = useLive<{
+    coins: Coin[];
+    canCreate: boolean;
+    canTrade: boolean;
+    sellFeePercentage: number;
+  }>("/api/crypto");
+  const { data: account } = useLive<{ balance: number }>("/api/user");
+
+  const coins = market?.coins ?? [];
+  const canCreate = market?.canCreate ?? false;
+  const canTrade = market?.canTrade ?? true;
+  const sellFee = market?.sellFeePercentage ?? 0;
+  const balance = account?.balance ?? 0;
+
   const [createOpen, setCreateOpen] = useState(false);
   const [tradeCoin, setTradeCoin] = useState<Coin | null>(null);
   const [tradeType, setTradeType] = useState<"BUY" | "SELL">("BUY");
   const [amount, setAmount] = useState("");
   const [trading, setTrading] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    try {
-      const [coinsRes, userRes] = await Promise.all([
-        fetch("/api/memecoins"),
-        fetch("/api/dashboard"),
-      ]);
+  const fetchData = useCallback(() => {
+    refreshLive("/api/crypto", "/api/user");
+  }, [refreshLive]);
 
-      if (coinsRes.status === 404) {
-        router.replace("/");
-        return;
-      }
-      if (coinsRes.ok) {
-        const data = await coinsRes.json();
-        setCoins(data.coins);
-        setCanCreate(data.canCreate);
-        setCanTrade(data.canTrade);
-        setSellFee(data.sellFeePercentage);
-      }
-      if (userRes.ok) {
-        const dashboard = await userRes.json();
-        setBalance(dashboard.cash ?? 0);
-      }
-    } catch (error) {
-      console.error("Failed to load memecoins:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [router]);
-
+  // The market endpoint 404s when the feature is switched off.
+  const marketError = useLive<unknown>("/api/crypto").error;
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, REFRESH_MS);
-    return () => clearInterval(interval);
-  }, [fetchData]);
+    if (marketError === "HTTP 404") router.replace("/");
+  }, [marketError, router]);
 
   function openTrade(coin: Coin, type: "BUY" | "SELL") {
     setTradeCoin(coin);
@@ -120,25 +104,29 @@ export default function MemecoinsPage() {
     setAmount("");
   }
 
+  const liveTradeCoin = tradeCoin
+    ? coins.find((coin) => coin.id === tradeCoin.id) ?? tradeCoin
+    : null;
+
   const parsedAmount = parseFloat(amount);
   const estimate =
-    tradeCoin && !isNaN(parsedAmount) && parsedAmount > 0
+    liveTradeCoin && !isNaN(parsedAmount) && parsedAmount > 0
       ? tradeType === "BUY"
-        ? parsedAmount * tradeCoin.price
-        : parsedAmount * tradeCoin.price * (1 - sellFee / 100)
+        ? parsedAmount * liveTradeCoin.price
+        : parsedAmount * liveTradeCoin.price * (1 - sellFee / 100)
       : null;
 
   async function submitTrade(event: React.FormEvent) {
     event.preventDefault();
-    if (!tradeCoin || isNaN(parsedAmount) || parsedAmount <= 0) return;
+    if (!liveTradeCoin || isNaN(parsedAmount) || parsedAmount <= 0) return;
 
     setTrading(true);
     try {
-      const response = await fetch("/api/memecoins/trade", {
+      const response = await fetch("/api/crypto/trade", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          symbol: tradeCoin.symbol,
+          symbol: liveTradeCoin.symbol,
           units: parsedAmount,
           type: tradeType,
         }),
@@ -172,7 +160,7 @@ export default function MemecoinsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Memecoins"
+        title="Crypto"
         description="Prices here move on their own — no operator sets them. Buy the dip at your own risk."
       >
         {canCreate && (
@@ -206,7 +194,7 @@ export default function MemecoinsPage() {
         <EmptyState
           icon={Coins}
           title="No coins yet"
-          description="The operator hasn't launched any memecoins. Once one is live, its price starts moving immediately."
+          description="The operator hasn't launched any coins. Once one is live, its price starts moving immediately."
         />
       ) : (
         <div className="overflow-x-auto rounded-xl border">
@@ -247,7 +235,7 @@ export default function MemecoinsPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-end">
-                      <MemecoinSparkline
+                      <CryptoSparkline
                         points={coin.history.map((point) => point.value)}
                       />
                     </div>
@@ -294,10 +282,10 @@ export default function MemecoinsPage() {
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>
-              {tradeType === "BUY" ? "Buy" : "Sell"} ${tradeCoin?.symbol}
+              {tradeType === "BUY" ? "Buy" : "Sell"} ${liveTradeCoin?.symbol}
             </DialogTitle>
             <DialogDescription>
-              {tradeCoin && `Live price ${formatPrice(tradeCoin.price)}`}
+              {liveTradeCoin && `Live price ${formatPrice(liveTradeCoin.price)}`}
               {tradeType === "SELL" && sellFee > 0 && ` · ${sellFee}% sell fee`}
             </DialogDescription>
           </DialogHeader>
@@ -317,13 +305,13 @@ export default function MemecoinsPage() {
                 autoFocus
                 required
               />
-              {tradeType === "SELL" && tradeCoin && (
+              {tradeType === "SELL" && liveTradeCoin && (
                 <button
                   type="button"
                   className="self-start text-xs text-primary hover:underline"
-                  onClick={() => setAmount(String(tradeCoin.units))}
+                  onClick={() => setAmount(String(liveTradeCoin.units))}
                 >
-                  Sell all {tradeCoin.units.toLocaleString()}
+                  Sell all {liveTradeCoin.units.toLocaleString()}
                 </button>
               )}
             </div>
@@ -352,7 +340,7 @@ export default function MemecoinsPage() {
       </Dialog>
 
       {canCreate && (
-        <MemecoinCreateDialog
+        <CryptoCreateDialog
           open={createOpen}
           onOpenChange={setCreateOpen}
           onSuccess={fetchData}

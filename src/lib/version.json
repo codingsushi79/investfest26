@@ -1,6 +1,6 @@
 {
-  "version": "0.8.17",
-  "commitHash": "d4523ee",
-  "commitMessage": "Update company value management and dashboard features",
-  "buildTime": "2026-06-11T21:25:18.548Z"
+  "version": "0.8.18",
+  "commitHash": "c2bf657",
+  "commitMessage": "Fix runaway memecoin prices and biased price walk",
+  "buildTime": "2026-09-18T14:03:31.140Z"
 }

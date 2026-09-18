@@ -32,7 +32,8 @@ type Firm = {
   isManager: boolean;
   isOpen: boolean;
   isClosed: boolean;
-  feePercent: number;
+  depositFeePercent: number;
+  withdrawFeePercent: number;
   memberCount: number;
   nav: number;
   navPerUnit: number;
@@ -55,6 +56,7 @@ export default function FirmsPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [fee, setFee] = useState("0");
+  const [withdrawFee, setWithdrawFee] = useState("0");
   const [saving, setSaving] = useState(false);
 
   const fetchFirms = useCallback(async () => {
@@ -79,6 +81,11 @@ export default function FirmsPage() {
 
   useEffect(() => {
     fetchFirms();
+    const interval = setInterval(
+      fetchFirms,
+      Number(process.env.NEXT_PUBLIC_LIVE_REFRESH_MS || 8000)
+    );
+    return () => clearInterval(interval);
   }, [fetchFirms]);
 
   async function createFirm(event: React.FormEvent) {
@@ -92,7 +99,8 @@ export default function FirmsPage() {
         body: JSON.stringify({
           name,
           description: description || undefined,
-          feePercent: parseFloat(fee) || 0,
+          depositFeePercent: parseFloat(fee) || 0,
+          withdrawFeePercent: parseFloat(withdrawFee) || 0,
         }),
       });
 
@@ -104,6 +112,7 @@ export default function FirmsPage() {
       setName("");
       setDescription("");
       setFee("0");
+      setWithdrawFee("0");
       router.push(`/firms/${data.slug}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not register firm");
@@ -162,7 +171,10 @@ export default function FirmsPage() {
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Managed by {firm.manager.username}
-                  {firm.feePercent > 0 && ` · ${firm.feePercent}% fee`}
+                  {firm.depositFeePercent > 0 &&
+                    ` · ${firm.depositFeePercent}% in`}
+                  {firm.withdrawFeePercent > 0 &&
+                    ` · ${firm.withdrawFeePercent}% out`}
                 </p>
               </CardHeader>
 
@@ -248,22 +260,46 @@ export default function FirmsPage() {
               />
             </div>
 
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="firm-fee">Management fee (%)</Label>
-              <Input
-                id="firm-fee"
-                type="number"
-                step="0.5"
-                min="0"
-                max={maxFee}
-                value={fee}
-                onChange={(event) => setFee(event.target.value)}
-                autoComplete={AC.off}
-              />
-              <p className="text-xs text-muted-foreground">
-                Taken from each client deposit, up to {maxFee}%.
-              </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="firm-fee">Deposit fee (%)</Label>
+                <Input
+                  id="firm-fee"
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  max={maxFee}
+                  value={fee}
+                  onChange={(event) => setFee(event.target.value)}
+                  autoComplete={AC.off}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Taken when a client puts money in.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="firm-withdraw-fee">Withdrawal fee (%)</Label>
+                <Input
+                  id="firm-withdraw-fee"
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  max={maxFee}
+                  value={withdrawFee}
+                  onChange={(event) => setWithdrawFee(event.target.value)}
+                  autoComplete={AC.off}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Taken when a client takes money out.
+                </p>
+              </div>
             </div>
+
+            <p className="text-xs text-muted-foreground">
+              Both fees go to you, and each can be up to {maxFee}%. You never pay
+              either one on your own money.
+            </p>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>

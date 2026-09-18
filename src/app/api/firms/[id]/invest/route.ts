@@ -44,26 +44,24 @@ export async function POST(
 
     const firm = await prisma.firm.findFirst({
       where: { OR: [{ id }, { slug: id }] },
-      include: { holdings: true, memecoinHoldings: true, members: true },
+      include: { holdings: true, cryptoHoldings: true, members: true },
     });
     if (!firm) {
       return NextResponse.json({ error: "Firm not found" }, { status: 404 });
     }
-    if (firm.isClosed || !firm.isOpen) {
+    // "Closed to new money" is the manager's own switch, so it never locks
+    // the manager out of backing their own firm.
+    const isManager = firm.managerId === user.id;
+
+    if (firm.isClosed || (!firm.isOpen && !isManager)) {
       return NextResponse.json(
         { error: "This firm is not accepting new investments" },
         { status: 400 }
       );
     }
-    if (firm.managerId === user.id) {
-      return NextResponse.json(
-        { error: "Managers invest through their own trading, not as a client" },
-        { status: 400 }
-      );
-    }
 
     const existingMember = firm.members.find((m) => m.userId === user.id);
-    if (!existingMember && firm.members.length >= config.maxMembers) {
+    if (!existingMember && !isManager && firm.members.length >= config.maxMembers) {
       return NextResponse.json(
         { error: `This firm is full (${config.maxMembers} clients)` },
         { status: 400 }
@@ -74,7 +72,8 @@ export async function POST(
     // Units are priced off the NAV as it stands before this deposit lands, so
     // an incoming client neither dilutes nor is diluted by existing clients.
     const { navPerUnit } = valueFirm(firm, prices);
-    const fee = amount * (firm.feePercent / 100);
+    // A manager putting their own money in doesn't pay themselves a fee.
+    const fee = isManager ? 0 : amount * (firm.depositFeePercent / 100);
     const net = amount - fee;
     const units = net / navPerUnit;
 

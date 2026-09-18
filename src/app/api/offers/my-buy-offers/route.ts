@@ -9,11 +9,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Bids the user placed, personally or for a firm they manage.
+    const managedFirms = await prisma.firm.findMany({
+      where: { managerId: user.id },
+      select: { id: true },
+    });
+
     const offers = await prisma.buyOffer.findMany({
       where: {
-        buyerId: user.id,
+        OR: [
+          { buyerId: user.id },
+          { firmId: { in: managedFirms.map((firm) => firm.id) } },
+        ],
       },
       include: {
+        firm: {
+          select: { id: true, name: true, slug: true },
+        },
         sellOffer: {
           include: {
             company: {
@@ -26,6 +38,9 @@ export async function GET(request: NextRequest) {
               select: {
                 username: true,
               },
+            },
+            firm: {
+              select: { id: true, name: true, slug: true },
             },
           },
         },

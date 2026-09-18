@@ -133,11 +133,15 @@ export function middleware(req: NextRequest, event: NextFetchEvent) {
     return NextResponse.redirect(new URL('/', req.url));
   }
 
-  if (pathname.startsWith('/memecoins') && !featuresConfig.memecoins) {
+  if (pathname.startsWith('/crypto') && !featuresConfig.crypto) {
     return NextResponse.redirect(new URL('/', req.url));
   }
 
   if (pathname.startsWith('/firms') && !featuresConfig.firms) {
+    return NextResponse.redirect(new URL('/', req.url));
+  }
+
+  if (pathname.startsWith('/news') && !featuresConfig.news) {
     return NextResponse.redirect(new URL('/', req.url));
   }
 

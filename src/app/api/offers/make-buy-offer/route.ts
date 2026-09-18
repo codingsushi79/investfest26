@@ -2,11 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth-utils';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { assertFeatures } from '@/lib/config';
+import {
+  getPartyCash,
+  resolveActingParty,
+  sameParty,
+  sellerParty,
+} from '@/lib/offer-parties';
 
 const makeBuyOfferSchema = z.object({
   sellOfferId: z.string(),
   offeredPrice: z.number().positive(),
   shares: z.number().int().positive(),
+  /** Bid on behalf of a firm the caller manages. */
+  firmId: z.string().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -25,7 +34,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { sellOfferId, offeredPrice, shares } = makeBuyOfferSchema.parse(body);
+    const { sellOfferId, offeredPrice, shares, firmId } =
+      makeBuyOfferSchema.parse(body);
+
+    if (firmId) {
+      assertFeatures('firms', 'firmTrading');
+    }
 
     // Check if sell offer exists and is active
     const sellOffer = await prisma.sellOffer.findUnique({
@@ -40,8 +54,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user is not trying to buy their own offer
-    if (sellOffer.sellerId === user.id) {
+    // Nobody bids against themselves -- including a manager bidding with firm
+    // money on that same firm's listing.
+    const bidder = await resolveActingParty(prisma, firmId, user);
+    const lister = sellerParty(sellOffer);
+
+    if (sameParty(bidder, lister)) {
       return NextResponse.json(
         { error: 'Cannot make offer on your own listing' },
         { status: 400 }
@@ -56,21 +74,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user has sufficient balance for the requested amount
+    // The money comes from whichever side is bidding.
     const totalCost = shares * offeredPrice;
-    if (user.balance < totalCost) {
+    const available = await getPartyCash(prisma, bidder);
+    if (available < totalCost) {
       return NextResponse.json(
-        { error: 'Insufficient balance' },
+        {
+          error:
+            bidder.kind === 'FIRM'
+              ? 'The firm does not have enough cash'
+              : 'Insufficient balance',
+        },
         { status: 400 }
       );
     }
 
-    // Check if user already made an offer on this sell offer
+    // One pending bid per bidder per listing.
     const existingOffer = await prisma.buyOffer.findFirst({
       where: {
         sellOfferId,
-        buyerId: user.id,
         status: 'pending',
+        ...(firmId ? { firmId } : { buyerId: user.id, firmId: null }),
       },
     });
 
@@ -86,6 +110,7 @@ export async function POST(request: NextRequest) {
       data: {
         sellOfferId,
         buyerId: user.id,
+        firmId: firmId ?? null,
         offeredPrice,
         shares,
       },

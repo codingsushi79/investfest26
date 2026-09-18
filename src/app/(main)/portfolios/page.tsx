@@ -20,8 +20,18 @@ interface Portfolio {
     latestPrice: number;
     value: number;
   }>;
+  crypto?: Array<{ cryptoId: string; symbol: string; units: number; value: number }>;
+  firmStakes?: Array<{
+    firmId: string;
+    name: string;
+    slug: string;
+    value: number;
+    isManager: boolean;
+  }>;
   portfolioValue: number;
 }
+
+const LIVE_REFRESH_MS = Number(process.env.NEXT_PUBLIC_LIVE_REFRESH_MS || 8000);
 
 export default function PortfoliosPage() {
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
@@ -29,10 +39,24 @@ export default function PortfoliosPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    fetch("/api/portfolios")
-      .then((r) => (r.ok ? r.json() : []))
-      .then(setPortfolios)
-      .finally(() => setLoading(false));
+    let cancelled = false;
+
+    const load = () =>
+      fetch("/api/portfolios")
+        .then((r) => (r.ok ? r.json() : []))
+        .then((data) => {
+          if (!cancelled) setPortfolios(data);
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+
+    load();
+    const interval = setInterval(load, LIVE_REFRESH_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, []);
 
   const filtered = useMemo(() => {
@@ -94,13 +118,31 @@ export default function PortfoliosPage() {
               </div>
             </CardHeader>
             <CardContent>
-              {portfolio.holdings.length === 0 ? (
+              {portfolio.holdings.length === 0 &&
+              (portfolio.crypto?.length ?? 0) === 0 &&
+              (portfolio.firmStakes?.length ?? 0) === 0 ? (
                 <p className="text-sm text-muted-foreground">No holdings</p>
               ) : (
                 <div className="flex flex-wrap gap-1">
                   {portfolio.holdings.map((h) => (
                     <Badge key={h.symbol} variant="secondary">
                       {h.symbol} ×{h.shares} (${h.value.toFixed(0)})
+                    </Badge>
+                  ))}
+                  {portfolio.crypto?.map((coin) => (
+                    <Badge
+                      key={coin.cryptoId}
+                      variant="outline"
+                      className="text-amber-600 dark:text-amber-500"
+                    >
+                      ${coin.symbol} ×{coin.units.toLocaleString()} ($
+                      {coin.value.toFixed(0)})
+                    </Badge>
+                  ))}
+                  {portfolio.firmStakes?.map((stake) => (
+                    <Badge key={stake.firmId} variant="outline" className="text-primary">
+                      {stake.isManager ? "Manages" : "Invested in"} {stake.name} ($
+                      {stake.value.toFixed(0)})
                     </Badge>
                   ))}
                 </div>

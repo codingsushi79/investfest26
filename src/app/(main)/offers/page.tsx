@@ -39,7 +39,21 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AC } from '@/lib/autocomplete';
+import { useLiveRefresh } from '@/lib/live';
 import { cn } from '@/lib/utils';
+
+interface FirmRef {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface ManagedFirm extends FirmRef {
+  balance: number;
+}
+
+/** Sentinel for "act as myself" in the acting-as picker. */
+const AS_SELF = 'self';
 
 interface SellOffer {
   id: string;
@@ -49,6 +63,7 @@ interface SellOffer {
   seller: {
     username: string;
   };
+  firm?: FirmRef | null;
   company: {
     symbol: string;
     name: string;
@@ -63,6 +78,7 @@ interface BuyOffer {
   buyer: {
     username: string;
   };
+  firm?: FirmRef | null;
   sellOffer: {
     shares: number;
     company: {
@@ -119,13 +135,23 @@ export default function OffersPage() {
   const [companyFilter, setCompanyFilter] = useState('');
   const [sortOption, setSortOption] = useState<SellOfferSortOption>('recent');
   const [buySortOption, setBuySortOption] = useState<BuyOfferSortOption>('recent');
+  const [managedFirms, setManagedFirms] = useState<ManagedFirm[]>([]);
+  const [bidAs, setBidAs] = useState<string>(AS_SELF);
 
   useEffect(() => {
     fetchOffers();
     const intervalId = setInterval(() => {
       fetchOffers();
-    }, 30000);
+    }, Number(process.env.NEXT_PUBLIC_LIVE_REFRESH_MS || 8000));
     return () => clearInterval(intervalId);
+  }, []);
+
+  // Managers can bid with their firm's cash as well as their own.
+  useEffect(() => {
+    fetch('/api/firms/managed', { credentials: 'include' })
+      .then((response) => (response.ok ? response.json() : { firms: [] }))
+      .then((data) => setManagedFirms(data.firms ?? []))
+      .catch(() => setManagedFirms([]));
   }, []);
 
   const fetchOffers = async () => {
@@ -209,6 +235,10 @@ export default function OffersPage() {
     setBuyOfferShares('');
   };
 
+  const refreshLive = useLiveRefresh();
+  const activeFirm =
+    bidAs === AS_SELF ? null : managedFirms.find((firm) => firm.id === bidAs) ?? null;
+
   const submitBuyOffer = async () => {
     if (!selectedSellOffer || !buyOfferPrice || !buyOfferShares) return;
 
@@ -224,6 +254,7 @@ export default function OffersPage() {
           sellOfferId: selectedSellOffer.id,
           offeredPrice: parseFloat(buyOfferPrice),
           shares: parseInt(buyOfferShares, 10),
+          ...(activeFirm ? { firmId: activeFirm.id } : {}),
         }),
       });
 
@@ -233,6 +264,7 @@ export default function OffersPage() {
       }
 
       closeBuyOfferModal();
+      refreshLive();
       toast.success(
         `Buy offer submitted for ${selectedSellOffer.company.symbol} at $${parseFloat(
           buyOfferPrice
@@ -471,7 +503,14 @@ export default function OffersPage() {
                           </div>
                           <div className="text-right">
                             <p className="text-sm text-muted-foreground">Listed by</p>
-                            <p className="font-medium">{offer.seller.username}</p>
+                            <p className="font-medium">
+                              {offer.firm ? offer.firm.name : offer.seller.username}
+                            </p>
+                            {offer.firm && (
+                              <p className="text-xs text-muted-foreground">
+                                firm · {offer.seller.username}
+                              </p>
+                            )}
                           </div>
                         </div>
 
@@ -574,7 +613,14 @@ export default function OffersPage() {
                       </div>
                       <div className="text-right">
                         <p className="text-sm text-muted-foreground">Offered by</p>
-                        <p className="font-medium">{offer.buyer.username}</p>
+                        <p className="font-medium">
+                          {offer.firm ? offer.firm.name : offer.buyer.username}
+                        </p>
+                        {offer.firm && (
+                          <p className="text-xs text-muted-foreground">
+                            firm · {offer.buyer.username}
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -667,6 +713,35 @@ export default function OffersPage() {
               </div>
 
               <div className="space-y-4">
+                {managedFirms.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="bid-as">Bidding as</Label>
+                    <Select
+                      value={bidAs}
+                      onValueChange={(value) => value && setBidAs(value)}
+                    >
+                      <SelectTrigger id="bid-as">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={AS_SELF}>
+                          Myself ({formatCurrency(user?.balance ?? 0)})
+                        </SelectItem>
+                        {managedFirms.map((firm) => (
+                          <SelectItem key={firm.id} value={firm.id}>
+                            {firm.name} ({formatCurrency(firm.balance)})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {activeFirm && (
+                      <p className="text-xs text-muted-foreground">
+                        Paid from the firm&apos;s cash; the shares go to the firm.
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="offerPrice">Your offer price per share</Label>
                   <div className="relative">
