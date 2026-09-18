@@ -266,20 +266,35 @@ export async function getAllPortfolios() {
   });
 }
 
+/**
+ * Shares in issue per company: the ones people hold directly plus the ones
+ * firms hold for their clients. A firm's shares were bought with real client
+ * money, so leaving them out understates the count and, since share price is
+ * company value divided by it, overstates the price.
+ */
 export async function getTotalSharesByCompany() {
   await ensureSeedData();
 
   const opUsername = process.env.OP_USERNAME;
-  const holdings = await prisma.holding.findMany({
-    include: { user: true },
-  });
-
-  const filteredHoldings = holdings.filter(
-    (holding) => holding.user.username !== opUsername
-  );
+  const [holdings, firmHoldings] = await Promise.all([
+    prisma.holding.findMany({ include: { user: true } }),
+    getFeaturesConfig().firms
+      ? prisma.firmHolding.findMany()
+      : Promise.resolve([]),
+  ]);
 
   const totals = new Map<string, number>();
-  for (const holding of filteredHoldings) {
+
+  // The operator isn't a player, so their own shares don't count.
+  for (const holding of holdings) {
+    if (holding.user.username === opUsername) continue;
+    totals.set(
+      holding.companyId,
+      (totals.get(holding.companyId) ?? 0) + holding.shares
+    );
+  }
+
+  for (const holding of firmHoldings) {
     totals.set(
       holding.companyId,
       (totals.get(holding.companyId) ?? 0) + holding.shares
@@ -296,26 +311,11 @@ export async function getCompanyValues() {
     include: { prices: { orderBy: { createdAt: "asc" } } },
   });
 
-  const opUsername = process.env.OP_USERNAME;
-  const holdings = await prisma.holding.findMany({
-    include: {
-      user: true,
-      company: true,
-    },
-  });
-
-  const filteredHoldings = holdings.filter(
-    (holding) => holding.user.username !== opUsername
-  );
+  // Same count the operator's price maths uses, firm shares included.
+  const sharesByCompany = await getTotalSharesByCompany();
 
   const companyValues = companies.map((company) => {
-    const companyHoldings = filteredHoldings.filter(
-      (holding) => holding.companyId === company.id
-    );
-    const sharesInvested = companyHoldings.reduce(
-      (sum, holding) => sum + holding.shares,
-      0
-    );
+    const sharesInvested = sharesByCompany.get(company.id) ?? 0;
     const inBaseline = isInBaselinePeriod(company.prices);
     const latest = getLatestPricePoint(company.prices);
     const operatorCompanyValue = getLatestCompanyValue(company.prices);

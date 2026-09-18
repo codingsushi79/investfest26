@@ -52,9 +52,12 @@ export function OperatorValueDialog({
   const isAdvancing = selectedCompany
     ? !selectedCompany.inBaseline || advancePeriod
     : false;
+  // With nobody invested the server divides by the 100 baseline shares, so the
+  // preview has to use the same number or it would show the wrong price.
+  const BASELINE_SHARES = 100;
   const divisor = selectedCompany
     ? isAdvancing
-      ? selectedCompany.actualShares
+      ? selectedCompany.actualShares || BASELINE_SHARES
       : selectedCompany.valuationShares
     : 0;
   const parsedValue = parseFloat(operatorCompanyValue);
@@ -69,11 +72,6 @@ export function OperatorValueDialog({
 
     if (isNaN(parsedValue) || parsedValue <= 0) {
       toast.error("Enter a valid company value greater than 0");
-      return;
-    }
-
-    if (isAdvancing && selectedCompany.actualShares <= 0) {
-      toast.error("Students must own shares before advancing past Y0 Q4");
       return;
     }
 
@@ -171,7 +169,9 @@ export function OperatorValueDialog({
                 Shares for this update:{" "}
                 <strong>
                   {isAdvancing
-                    ? selectedCompany.actualShares.toLocaleString()
+                    ? selectedCompany.actualShares > 0
+                      ? selectedCompany.actualShares.toLocaleString()
+                      : `${BASELINE_SHARES} (nobody invested yet)`
                     : `${selectedCompany.valuationShares} (baseline)`}
                 </strong>
               </p>
@@ -200,12 +200,7 @@ export function OperatorValueDialog({
             </Button>
             <Button
               type="submit"
-              disabled={
-                updating ||
-                !operatorCompany ||
-                !operatorCompanyValue ||
-                (isAdvancing && (selectedCompany?.actualShares ?? 0) <= 0)
-              }
+              disabled={updating || !operatorCompany || !operatorCompanyValue}
             >
               {updating ? "Updating…" : "Save"}
             </Button>

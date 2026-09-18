@@ -89,7 +89,11 @@ export function getLatestCompanyValue(
   return latest.value * (shares || 1);
 }
 
-/** Shares used when the operator last set company value. */
+/**
+ * Shares the operator's company value is divided by. Falls back to the
+ * baseline count when nobody holds anything yet, so a price is always
+ * settable rather than dividing by zero.
+ */
 export function getSharesForCompanyValue(
   prices: Array<{ label: string; sharesOutstanding?: number | null }>,
   actualOutstandingShares: number
@@ -97,5 +101,5 @@ export function getSharesForCompanyValue(
   if (isInBaselinePeriod(prices)) {
     return BASELINE_SHARES;
   }
-  return actualOutstandingShares;
+  return actualOutstandingShares > 0 ? actualOutstandingShares : BASELINE_SHARES;
 }

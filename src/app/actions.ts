@@ -271,12 +271,12 @@ export async function adminUpdatePrices(rows: z.infer<typeof adminPriceSchema>) 
         continue;
       }
 
-      const sharesOutstanding = totalSharesByCompany.get(company.id) ?? 0;
-      if (sharesOutstanding <= 0) {
-        throw new Error(
-          `Cannot set company value for ${item.symbol}: no shares invested yet`
-        );
-      }
+      // With nobody invested there is nothing to divide by, so fall back to
+      // the same 100 baseline shares Y0 Q4 uses. The operator can still move
+      // the price, and the next update switches to the real count once
+      // someone actually buys in.
+      const investedShares = totalSharesByCompany.get(company.id) ?? 0;
+      const sharesOutstanding = investedShares > 0 ? investedShares : BASELINE_SHARES;
 
       const label =
         item.label?.trim() || getNextTimePeriod(company.prices);

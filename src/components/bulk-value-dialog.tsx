@@ -28,6 +28,9 @@ type Company = {
 
 type Row = { value: string; advance: boolean };
 
+/** Divisor used when nobody holds shares yet, matching the server. */
+const BASELINE_SHARES = 100;
+
 /** Set the company value for several companies in one submit. */
 export function BulkValueDialog({
   open,
@@ -83,14 +86,15 @@ export function BulkValueDialog({
           if (!row?.value || isNaN(parsed) || parsed <= 0) return null;
 
           const advancing = !company.inBaseline || row.advance;
-          const divisor = advancing ? company.actualShares : company.valuationShares;
+          const divisor = advancing
+            ? company.actualShares || BASELINE_SHARES
+            : company.valuationShares;
 
           return {
             company,
             companyValue: parsed,
             advancing,
             impliedPrice: divisor > 0 ? parsed / divisor : null,
-            blocked: advancing && company.actualShares <= 0,
           };
         })
         .filter(Boolean) as Array<{
@@ -98,12 +102,9 @@ export function BulkValueDialog({
         companyValue: number;
         advancing: boolean;
         impliedPrice: number | null;
-        blocked: boolean;
       }>,
     [companies, rows]
   );
-
-  const blocked = filled.filter((row) => row.blocked);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -112,15 +113,6 @@ export function BulkValueDialog({
       toast.error("Enter a value for at least one company");
       return;
     }
-    if (blocked.length > 0) {
-      toast.error(
-        `No shares invested yet in ${blocked
-          .map((row) => row.company.symbol)
-          .join(", ")}`
-      );
-      return;
-    }
-
     setSaving(true);
     try {
       const response = await fetch("/api/admin/update-prices", {
@@ -179,11 +171,12 @@ export function BulkValueDialog({
             {companies.map((company) => {
               const row = rows[company.symbol] ?? { value: "", advance: false };
               const advancing = !company.inBaseline || row.advance;
-              const divisor = advancing ? company.actualShares : company.valuationShares;
+              const divisor = advancing
+                ? company.actualShares || BASELINE_SHARES
+                : company.valuationShares;
               const parsed = parseFloat(row.value);
               const impliedPrice =
                 divisor > 0 && !isNaN(parsed) && parsed > 0 ? parsed / divisor : null;
-              const noShares = advancing && company.actualShares <= 0;
 
               return (
                 <div
@@ -228,13 +221,11 @@ export function BulkValueDialog({
                       />
                     </div>
                     <div className="w-24 text-right text-xs">
-                      {noShares && row.value ? (
-                        <span className="text-destructive">no shares</span>
-                      ) : impliedPrice !== null ? (
+                      {impliedPrice !== null && (
                         <span className="text-muted-foreground">
                           ${impliedPrice.toFixed(2)}/sh
                         </span>
-                      ) : null}
+                      )}
                     </div>
                   </div>
                 </div>
