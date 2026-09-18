@@ -4,28 +4,36 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // Pooled endpoint for the app's queries.
+  url       = env("DATABASE_URL")
+  // Neon's pooler cannot run migrations, so Prisma Migrate uses the direct
+  // (non-pooler) endpoint instead.
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id            String        @id @default(cuid())
-  email         String?       @unique
-  name          String?
-  username      String        @unique
-  password      String
-  image         String?
-  balance       Float         @default(1000)
-  isPaused      Boolean       @default(false)
-  isBanned      Boolean       @default(false)
-  emailVerified DateTime?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  accounts      Account[]
-  sessions      Session[]
-  holdings      Holding[]
-  transactions  Transaction[]
-  sellOffers    SellOffer[]   @relation("SellerOffers")
-  buyOffers     BuyOffer[]    @relation("BuyerOffers")
+  id                   String                @id @default(cuid())
+  email                String?               @unique
+  name                 String?
+  username             String                @unique
+  password             String
+  image                String?
+  balance              Float                 @default(1000)
+  isPaused             Boolean               @default(false)
+  isBanned             Boolean               @default(false)
+  emailVerified        DateTime?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  accounts             Account[]
+  sessions             Session[]
+  holdings             Holding[]
+  transactions         Transaction[]
+  sellOffers           SellOffer[]           @relation("SellerOffers")
+  buyOffers            BuyOffer[]            @relation("BuyerOffers")
+  memecoinHoldings     MemecoinHolding[]
+  memecoinTransactions MemecoinTransaction[]
+  managedFirms         Firm[]                @relation("FirmManager")
+  firmMemberships      FirmMembership[]
 }
 
 model Account {
@@ -34,12 +42,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String?  @db.Text
-  access_token      String?  @db.Text
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String?  @db.Text
+  id_token          String? @db.Text
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -64,14 +72,15 @@ model VerificationToken {
 }
 
 model Company {
-  id        String    @id @default(cuid())
-  symbol    String    @unique
-  name      String
-  createdAt DateTime  @default(now())
-  prices    PricePoint[]
-  holdings    Holding[]
+  id           String        @id @default(cuid())
+  symbol       String        @unique
+  name         String
+  createdAt    DateTime      @default(now())
+  prices       PricePoint[]
+  holdings     Holding[]
   transactions Transaction[]
   sellOffers   SellOffer[]
+  firmHoldings FirmHolding[]
 }
 
 model PricePoint {
@@ -86,55 +95,55 @@ model PricePoint {
 }
 
 model Holding {
-  id         String   @id @default(cuid())
-  userId     String
-  companyId  String
-  shares     Int      @default(0)
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  userId    String
+  companyId String
+  shares    Int     @default(0)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@unique([userId, companyId])
 }
 
 model Transaction {
-  id         String   @id @default(cuid())
-  userId     String
-  companyId  String
-  type       String   // BUY or SELL
-  shares     Int
-  price      Float
-  createdAt  DateTime @default(now())
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  userId    String
+  companyId String
+  type      String // BUY or SELL
+  shares    Int
+  price     Float
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 }
 
 model SellOffer {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   sellerId      String
   companyId     String
   shares        Int
   pricePerShare Float
-  status        String   @default("active") // active, completed, cancelled
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  status        String    @default("active") // active, completed, cancelled
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   completedAt   DateTime?
 
-  seller   User     @relation("SellerOffers", fields: [sellerId], references: [id], onDelete: Cascade)
-  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  seller    User       @relation("SellerOffers", fields: [sellerId], references: [id], onDelete: Cascade)
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
   buyOffers BuyOffer[]
 
   @@index([status, createdAt])
 }
 
 model BuyOffer {
-  id            String   @id @default(cuid())
-  sellOfferId   String
-  buyerId       String
-  offeredPrice  Float
-  shares        Int
-  status        String   @default("pending") // pending, accepted, declined
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(cuid())
+  sellOfferId  String
+  buyerId      String
+  offeredPrice Float
+  shares       Int
+  status       String   @default("pending") // pending, accepted, declined
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   sellOffer SellOffer @relation(fields: [sellOfferId], references: [id], onDelete: Cascade)
   buyer     User      @relation("BuyerOffers", fields: [buyerId], references: [id], onDelete: Cascade)
@@ -142,3 +151,138 @@ model BuyOffer {
   @@index([sellOfferId, status])
 }
 
+model Memecoin {
+  id          String   @id @default(cuid())
+  symbol      String   @unique
+  name        String
+  description String?
+  /// Seed for the deterministic price walk. Same seed + same clock = same price everywhere.
+  seed        Int
+  /// Price at genesisAt, before any ticks have been applied.
+  basePrice   Float    @default(1)
+  /// Per-tick volatility (standard deviation of the log return).
+  volatility  Float    @default(0.02)
+  /// Per-tick drift of the log return.
+  drift       Float    @default(0)
+  minPrice    Float    @default(0.01)
+  maxPrice    Float?
+  isActive    Boolean  @default(true)
+  genesisAt   DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  holdings     MemecoinHolding[]
+  transactions MemecoinTransaction[]
+  firmHoldings FirmMemecoinHolding[]
+}
+
+model MemecoinHolding {
+  id         String   @id @default(cuid())
+  userId     String
+  memecoinId String
+  units      Float    @default(0)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  memecoin   Memecoin @relation(fields: [memecoinId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, memecoinId])
+}
+
+model MemecoinTransaction {
+  id         String   @id @default(cuid())
+  userId     String
+  memecoinId String
+  type       String // BUY or SELL
+  units      Float
+  price      Float
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  memecoin   Memecoin @relation(fields: [memecoinId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model Firm {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  managerId   String
+  /// Uninvested cash held by the firm on behalf of its clients.
+  balance     Float    @default(0)
+  /// Total fund units issued to clients. NAV per unit = (balance + holdings) / totalUnits.
+  totalUnits  Float    @default(0)
+  /// Percentage of each client deposit kept by the firm as a management fee.
+  feePercent  Float    @default(0)
+  isOpen      Boolean  @default(true)
+  isClosed    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  manager          User                  @relation("FirmManager", fields: [managerId], references: [id], onDelete: Cascade)
+  members          FirmMembership[]
+  holdings         FirmHolding[]
+  memecoinHoldings FirmMemecoinHolding[]
+  transactions     FirmTransaction[]
+
+  @@index([isClosed, createdAt])
+}
+
+model FirmMembership {
+  id        String   @id @default(cuid())
+  firmId    String
+  userId    String
+  /// Fund units owned by this client.
+  units     Float    @default(0)
+  /// Lifetime cash deposited, used to show the client's profit/loss.
+  invested  Float    @default(0)
+  /// Lifetime cash withdrawn.
+  withdrawn Float    @default(0)
+  joinedAt  DateTime @default(now())
+
+  firm Firm @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([firmId, userId])
+}
+
+model FirmHolding {
+  id        String  @id @default(cuid())
+  firmId    String
+  companyId String
+  shares    Int     @default(0)
+  firm      Firm    @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([firmId, companyId])
+}
+
+model FirmMemecoinHolding {
+  id         String   @id @default(cuid())
+  firmId     String
+  memecoinId String
+  units      Float    @default(0)
+  firm       Firm     @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  memecoin   Memecoin @relation(fields: [memecoinId], references: [id], onDelete: Cascade)
+
+  @@unique([firmId, memecoinId])
+}
+
+model FirmTransaction {
+  id        String   @id @default(cuid())
+  firmId    String
+  /// BUY, SELL, DEPOSIT or WITHDRAW
+  type      String
+  /// STOCK, MEMECOIN or CASH
+  assetType String   @default("STOCK")
+  assetId   String?
+  symbol    String?
+  units     Float
+  price     Float
+  amount    Float
+  actorId   String?
+  createdAt DateTime @default(now())
+
+  firm Firm @relation(fields: [firmId], references: [id], onDelete: Cascade)
+
+  @@index([firmId, createdAt])
+}

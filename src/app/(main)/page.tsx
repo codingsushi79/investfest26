@@ -4,13 +4,17 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   ArrowRight,
+  Briefcase,
+  Coins,
   Handshake,
+  Layers,
   LineChart,
   Plus,
   Store,
   TrendingUp,
   Wallet,
 } from "lucide-react";
+import { BulkValueDialog } from "@/components/bulk-value-dialog";
 import { OperatorValueDialog } from "@/components/operator-value-dialog";
 import { PageHeader } from "@/components/page-header";
 import { PortfolioTable } from "@/components/PortfolioTable";
@@ -57,6 +61,7 @@ export default function DashboardPage() {
   });
   const [loading, setLoading] = useState(true);
   const [valueDialogOpen, setValueDialogOpen] = useState(false);
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [tradingEnded, setTradingEnded] = useState(false);
 
   const isOperator = user?.username === authConfig.operatorUsername;
@@ -142,6 +147,18 @@ export default function DashboardPage() {
       description: "Peer-to-peer buy and sell offers",
       icon: Handshake,
     },
+    featuresConfig.memecoins && {
+      href: "/memecoins",
+      label: "Memecoins",
+      description: "Prices that move on their own",
+      icon: Coins,
+    },
+    featuresConfig.firms && {
+      href: "/firms",
+      label: "Investment firms",
+      description: "Invest for clients, or hire a manager",
+      icon: Briefcase,
+    },
     featuresConfig.leaderboard && {
       href: "/leaderboard",
       label: "Leaderboard",
@@ -171,10 +188,22 @@ export default function DashboardPage() {
               {tradingEnded ? "Resume event" : "End event"}
             </Button>
             {featuresConfig.adminPriceUpdates && (
-              <Button size="sm" onClick={() => setValueDialogOpen(true)}>
-                <Plus data-icon="inline-start" />
-                Set value
-              </Button>
+              <>
+                <Button size="sm" onClick={() => setValueDialogOpen(true)}>
+                  <Plus data-icon="inline-start" />
+                  Set value
+                </Button>
+                {featuresConfig.bulkPriceUpdates && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setBulkDialogOpen(true)}
+                  >
+                    <Layers data-icon="inline-start" />
+                    Set many
+                  </Button>
+                )}
+              </>
             )}
           </>
         )}
@@ -263,12 +292,22 @@ export default function DashboardPage() {
       )}
 
       {isOperator && featuresConfig.adminPriceUpdates && (
-        <OperatorValueDialog
-          open={valueDialogOpen}
-          onOpenChange={setValueDialogOpen}
-          companies={dashboard.companies}
-          onSuccess={fetchData}
-        />
+        <>
+          <OperatorValueDialog
+            open={valueDialogOpen}
+            onOpenChange={setValueDialogOpen}
+            companies={dashboard.companies}
+            onSuccess={fetchData}
+          />
+          {featuresConfig.bulkPriceUpdates && (
+            <BulkValueDialog
+              open={bulkDialogOpen}
+              onOpenChange={setBulkDialogOpen}
+              companies={dashboard.companies}
+              onSuccess={fetchData}
+            />
+          )}
+        </>
       )}
     </div>
   );

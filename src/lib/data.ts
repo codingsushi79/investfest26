@@ -1,5 +1,8 @@
 import { cache } from "react";
 import { prisma } from "./prisma";
+import { getFeaturesConfig } from "./config";
+import { getFirmValueByUser } from "./firm-data";
+import { getMemecoinValueByUser } from "./memecoin-data";
 import {
   BASELINE_SHARE_PRICE,
   BASELINE_SHARES,
@@ -135,6 +138,19 @@ export async function getDashboardData(userId?: string) {
   };
 }
 
+/**
+ * Memecoin bags and firm stakes count toward a player's wealth just like
+ * shares do, so standings stay honest when someone moves cash into them.
+ */
+async function getSideAssetValues() {
+  const features = getFeaturesConfig();
+  const [memecoins, firms] = await Promise.all([
+    features.memecoins ? getMemecoinValueByUser() : Promise.resolve(new Map<string, number>()),
+    features.firms ? getFirmValueByUser() : Promise.resolve(new Map<string, number>()),
+  ]);
+  return { memecoins, firms };
+}
+
 export async function getLeaderboard() {
   await ensureSeedData();
   const companies = await prisma.company.findMany({
@@ -144,9 +160,10 @@ export async function getLeaderboard() {
     companies.map((c) => [c.id, tradingPriceFromCompanyPrices(c.prices)])
   );
 
-  const users = await prisma.user.findMany({
-    include: { holdings: true },
-  });
+  const [users, sideAssets] = await Promise.all([
+    prisma.user.findMany({ include: { holdings: true } }),
+    getSideAssetValues(),
+  ]);
 
   const opUsername = process.env.OP_USERNAME;
   const filteredUsers = users.filter((user) => user.username !== opUsername);
@@ -162,8 +179,10 @@ export async function getLeaderboard() {
         price,
       };
     });
-    const invested = holdings.reduce((sum, h) => sum + h.value, 0);
-    const portfolioValue = invested;
+    const stockValue = holdings.reduce((sum, h) => sum + h.value, 0);
+    const memecoinValue = sideAssets.memecoins.get(user.id) ?? 0;
+    const firmValue = sideAssets.firms.get(user.id) ?? 0;
+    const invested = stockValue + memecoinValue + firmValue;
     return {
       userId: user.id,
       name: user.name,
@@ -171,8 +190,11 @@ export async function getLeaderboard() {
       email: user.email,
       balance: user.balance,
       holdings,
+      stockValue,
+      memecoinValue,
+      firmValue,
       invested,
-      portfolioValue,
+      portfolioValue: invested,
     };
   });
 
@@ -188,9 +210,10 @@ export async function getAllPortfolios() {
     companies.map((c) => [c.id, tradingPriceFromCompanyPrices(c.prices)])
   );
 
-  const users = await prisma.user.findMany({
-    include: { holdings: true },
-  });
+  const [users, sideAssets] = await Promise.all([
+    prisma.user.findMany({ include: { holdings: true } }),
+    getSideAssetValues(),
+  ]);
 
   const opUsername = process.env.OP_USERNAME;
   const filteredUsers = users.filter((user) => user.username !== opUsername);
@@ -207,7 +230,9 @@ export async function getAllPortfolios() {
       };
     });
 
-    const portfolioValue = holdingsWithValues.reduce((sum, h) => sum + h.value, 0);
+    const stockValue = holdingsWithValues.reduce((sum, h) => sum + h.value, 0);
+    const memecoinValue = sideAssets.memecoins.get(u.id) ?? 0;
+    const firmValue = sideAssets.firms.get(u.id) ?? 0;
 
     return {
       userId: u.id,
@@ -216,7 +241,10 @@ export async function getAllPortfolios() {
       email: u.email,
       balance: u.balance,
       holdings: holdingsWithValues,
-      portfolioValue,
+      stockValue,
+      memecoinValue,
+      firmValue,
+      portfolioValue: stockValue + memecoinValue + firmValue,
     };
   });
 }

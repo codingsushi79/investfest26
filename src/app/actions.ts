@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth-utils";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { assertFeatures } from "@/lib/config";
 import { ensureSeedData, getTotalSharesByCompany } from "@/lib/data";
 import {
   BASELINE_PERIOD,
@@ -171,9 +172,18 @@ const adminPriceSchema = z.array(
     companyValue: z.number().positive(),
     advancePeriod: z.boolean().optional(),
   })
-);
+).min(1);
 
+/**
+ * Set the company value for one company or for many in a single pass. Each row
+ * is applied independently, so one bad row rolls the whole batch back.
+ */
 export async function adminUpdatePrices(rows: z.infer<typeof adminPriceSchema>) {
+  assertFeatures("adminPriceUpdates");
+  if (rows.length > 1) {
+    assertFeatures("bulkPriceUpdates");
+  }
+
   const user = await getCurrentUser();
   const adminUsername = process.env.OP_USERNAME;
 
@@ -207,6 +217,15 @@ export async function adminUpdatePrices(rows: z.infer<typeof adminPriceSchema>) 
   console.log("Admin check passed!");
 
   const updates = adminPriceSchema.parse(rows);
+
+  const seen = new Set<string>();
+  for (const update of updates) {
+    if (seen.has(update.symbol)) {
+      throw new Error(`Duplicate row for ${update.symbol}`);
+    }
+    seen.add(update.symbol);
+  }
+
   const companies = await prisma.company.findMany({
     where: { symbol: { in: updates.map((u) => u.symbol) } },
     include: { prices: true },

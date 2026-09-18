@@ -5,7 +5,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   BarChart3,
+  Briefcase,
   Building2,
+  Coins,
   Handshake,
   LayoutDashboard,
   LineChart,
@@ -48,6 +50,8 @@ const navLinks: NavLink[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/trade", label: "Trade", icon: Store, feature: "trading" },
   { href: "/offers", label: "Offers", icon: Handshake, feature: "offers" },
+  { href: "/memecoins", label: "Memecoins", icon: Coins, feature: "memecoins" },
+  { href: "/firms", label: "Firms", icon: Briefcase, feature: "firms" },
   { href: "/leaderboard", label: "Leaderboard", icon: BarChart3, feature: "leaderboard" },
   { href: "/portfolios", label: "Portfolios", icon: Users, feature: "portfolios" },
   { href: "/profile", label: "Profile", icon: User, feature: "userProfiles" },
