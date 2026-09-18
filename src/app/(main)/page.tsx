@@ -198,7 +198,7 @@ export default function DashboardPage() {
               <>
                 <Button size="sm" onClick={() => setValueDialogOpen(true)}>
                   <Plus data-icon="inline-start" />
-                  Set value
+                  Set price
                 </Button>
                 {featuresConfig.bulkPriceUpdates && (
                   <Button

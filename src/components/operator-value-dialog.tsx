@@ -44,7 +44,7 @@ export function OperatorValueDialog({
   onSuccess: () => void;
 }) {
   const [operatorCompany, setOperatorCompany] = useState("");
-  const [operatorCompanyValue, setOperatorCompanyValue] = useState("");
+  const [sharePrice, setSharePrice] = useState("");
   const [advancePeriod, setAdvancePeriod] = useState(false);
   const [updating, setUpdating] = useState(false);
 
@@ -52,26 +52,26 @@ export function OperatorValueDialog({
   const isAdvancing = selectedCompany
     ? !selectedCompany.inBaseline || advancePeriod
     : false;
-  // With nobody invested the server divides by the 100 baseline shares, so the
-  // preview has to use the same number or it would show the wrong price.
+  // Shares outstanding no longer set the price -- they only turn it into a
+  // company value for display. Matches the server's fallback when empty.
   const BASELINE_SHARES = 100;
-  const divisor = selectedCompany
+  const shares = selectedCompany
     ? isAdvancing
       ? selectedCompany.actualShares || BASELINE_SHARES
       : selectedCompany.valuationShares
     : 0;
-  const parsedValue = parseFloat(operatorCompanyValue);
-  const impliedPrice =
-    divisor > 0 && !isNaN(parsedValue) && parsedValue > 0
-      ? parsedValue / divisor
+  const parsedPrice = parseFloat(sharePrice);
+  const impliedCompanyValue =
+    shares > 0 && !isNaN(parsedPrice) && parsedPrice > 0
+      ? parsedPrice * shares
       : null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!operatorCompany || !operatorCompanyValue || !selectedCompany) return;
+    if (!operatorCompany || !sharePrice || !selectedCompany) return;
 
-    if (isNaN(parsedValue) || parsedValue <= 0) {
-      toast.error("Enter a valid company value greater than 0");
+    if (isNaN(parsedPrice) || parsedPrice <= 0) {
+      toast.error("Enter a share price greater than 0");
       return;
     }
 
@@ -84,7 +84,7 @@ export function OperatorValueDialog({
           {
             symbol: operatorCompany,
             label: isAdvancing ? selectedCompany.nextLabel : selectedCompany.latestLabel,
-            companyValue: parsedValue,
+            pricePerShare: parsedPrice,
             advancePeriod: isAdvancing,
           },
         ]),
@@ -95,10 +95,10 @@ export function OperatorValueDialog({
         throw new Error(data.error || "Update failed");
       }
 
-      toast.success("Company value updated");
+      toast.success("Share price updated");
       onOpenChange(false);
       setOperatorCompany("");
-      setOperatorCompanyValue("");
+      setSharePrice("");
       setAdvancePeriod(false);
       onSuccess();
     } catch (error) {
@@ -112,9 +112,10 @@ export function OperatorValueDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Set company value</DialogTitle>
+          <DialogTitle>Set share price</DialogTitle>
           <DialogDescription>
-            Share price = company value ÷ shares invested. During Y0 Q4 portfolios stay at $100/share.
+            Set the price per share directly. Company value follows from it.
+            During Y0 Q4 portfolios stay at $100/share until you advance.
           </DialogDescription>
         </DialogHeader>
 
@@ -144,15 +145,15 @@ export function OperatorValueDialog({
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="company-value">Company value ($)</Label>
+            <Label htmlFor="share-price">Share price ($)</Label>
             <Input
-              id="company-value"
+              id="share-price"
               type="number"
               step="0.01"
               min="0.01"
-              value={operatorCompanyValue}
-              onChange={(e) => setOperatorCompanyValue(e.target.value)}
-              placeholder="e.g. 20000"
+              value={sharePrice}
+              onChange={(e) => setSharePrice(e.target.value)}
+              placeholder="e.g. 120"
               autoComplete={AC.off}
               required
             />
@@ -166,7 +167,7 @@ export function OperatorValueDialog({
                   : `Advancing to ${selectedCompany.nextLabel}`}
               </p>
               <p className="text-muted-foreground">
-                Shares for this update:{" "}
+                Shares outstanding:{" "}
                 <strong>
                   {isAdvancing
                     ? selectedCompany.actualShares > 0
@@ -175,9 +176,10 @@ export function OperatorValueDialog({
                     : `${selectedCompany.valuationShares} (baseline)`}
                 </strong>
               </p>
-              {impliedPrice !== null && (
+              {impliedCompanyValue !== null && (
                 <p>
-                  New share price: <strong>${impliedPrice.toFixed(2)}</strong>
+                  Company value becomes:{" "}
+                  <strong>${impliedCompanyValue.toFixed(2)}</strong>
                 </p>
               )}
               {selectedCompany.inBaseline && (
@@ -200,7 +202,7 @@ export function OperatorValueDialog({
             </Button>
             <Button
               type="submit"
-              disabled={updating || !operatorCompany || !operatorCompanyValue}
+              disabled={updating || !operatorCompany || !sharePrice}
             >
               {updating ? "Updating…" : "Save"}
             </Button>

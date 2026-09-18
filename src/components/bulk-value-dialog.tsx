@@ -31,7 +31,7 @@ type Row = { value: string; advance: boolean };
 /** Divisor used when nobody holds shares yet, matching the server. */
 const BASELINE_SHARES = 100;
 
-/** Set the company value for several companies in one submit. */
+/** Set the share price for several companies in one submit. */
 export function BulkValueDialog({
   open,
   onOpenChange,
@@ -86,22 +86,22 @@ export function BulkValueDialog({
           if (!row?.value || isNaN(parsed) || parsed <= 0) return null;
 
           const advancing = !company.inBaseline || row.advance;
-          const divisor = advancing
+          const shares = advancing
             ? company.actualShares || BASELINE_SHARES
             : company.valuationShares;
 
           return {
             company,
-            companyValue: parsed,
+            pricePerShare: parsed,
             advancing,
-            impliedPrice: divisor > 0 ? parsed / divisor : null,
+            impliedCompanyValue: shares > 0 ? parsed * shares : null,
           };
         })
         .filter(Boolean) as Array<{
         company: Company;
-        companyValue: number;
+        pricePerShare: number;
         advancing: boolean;
-        impliedPrice: number | null;
+        impliedCompanyValue: number | null;
       }>,
     [companies, rows]
   );
@@ -110,7 +110,7 @@ export function BulkValueDialog({
     event.preventDefault();
 
     if (filled.length === 0) {
-      toast.error("Enter a value for at least one company");
+      toast.error("Enter a price for at least one company");
       return;
     }
     setSaving(true);
@@ -122,7 +122,7 @@ export function BulkValueDialog({
           filled.map((row) => ({
             symbol: row.company.symbol,
             label: row.advancing ? row.company.nextLabel : row.company.latestLabel,
-            companyValue: row.companyValue,
+            pricePerShare: row.pricePerShare,
             advancePeriod: row.advancing,
           }))
         ),
@@ -149,10 +149,10 @@ export function BulkValueDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Set company values</DialogTitle>
+          <DialogTitle>Set share prices</DialogTitle>
           <DialogDescription>
-            Fill in the companies you want to update and save them together. Blank
-            rows are left untouched.
+            Fill in the share prices you want to set and save them together.
+            Blank rows are left untouched.
           </DialogDescription>
         </DialogHeader>
 
@@ -171,12 +171,12 @@ export function BulkValueDialog({
             {companies.map((company) => {
               const row = rows[company.symbol] ?? { value: "", advance: false };
               const advancing = !company.inBaseline || row.advance;
-              const divisor = advancing
+              const shares = advancing
                 ? company.actualShares || BASELINE_SHARES
                 : company.valuationShares;
               const parsed = parseFloat(row.value);
-              const impliedPrice =
-                divisor > 0 && !isNaN(parsed) && parsed > 0 ? parsed / divisor : null;
+              const impliedCompanyValue =
+                shares > 0 && !isNaN(parsed) && parsed > 0 ? parsed * shares : null;
 
               return (
                 <div
@@ -187,7 +187,7 @@ export function BulkValueDialog({
                     <div className="font-medium">{company.symbol}</div>
                     <div className="truncate text-xs text-muted-foreground">
                       {company.name} · {advancing ? company.nextLabel : company.latestLabel}
-                      {divisor > 0 && ` · ${divisor.toLocaleString()} shares`}
+                      {shares > 0 && ` · ${shares.toLocaleString()} shares`}
                     </div>
                   </div>
 
@@ -205,14 +205,14 @@ export function BulkValueDialog({
                     )}
                     <div className="w-32">
                       <Label htmlFor={`value-${company.symbol}`} className="sr-only">
-                        {company.symbol} company value
+                        {company.symbol} share price
                       </Label>
                       <Input
                         id={`value-${company.symbol}`}
                         type="number"
                         step="0.01"
                         min="0.01"
-                        placeholder="Value ($)"
+                        placeholder="Price ($)"
                         value={row.value}
                         autoComplete={AC.off}
                         onChange={(event) =>
@@ -221,9 +221,9 @@ export function BulkValueDialog({
                       />
                     </div>
                     <div className="w-24 text-right text-xs">
-                      {impliedPrice !== null && (
+                      {impliedCompanyValue !== null && (
                         <span className="text-muted-foreground">
-                          ${impliedPrice.toFixed(2)}/sh
+                          ${impliedCompanyValue.toFixed(0)} total
                         </span>
                       )}
                     </div>

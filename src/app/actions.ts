@@ -169,14 +169,16 @@ const adminPriceSchema = z.array(
   z.object({
     symbol: z.string(),
     label: z.string().optional(),
-    companyValue: z.number().positive(),
+    /** The operator sets the share price directly. */
+    pricePerShare: z.number().positive(),
     advancePeriod: z.boolean().optional(),
   })
 ).min(1);
 
 /**
- * Set the company value for one company or for many in a single pass. Each row
- * is applied independently, so one bad row rolls the whole batch back.
+ * Set the share price for one company or for many in a single pass. The price
+ * is what the operator chooses; company value is derived from it as
+ * price x shares outstanding. One bad row rolls the whole batch back.
  */
 export async function adminUpdatePrices(rows: z.infer<typeof adminPriceSchema>) {
   assertFeatures("adminPriceUpdates");
@@ -243,7 +245,8 @@ export async function adminUpdatePrices(rows: z.infer<typeof adminPriceSchema>) 
 
       if (inBaseline && !advancePeriod) {
         const sharesOutstanding = BASELINE_SHARES;
-        const pricePerShare = item.companyValue / sharesOutstanding;
+        const pricePerShare = item.pricePerShare;
+        const companyValue = pricePerShare * sharesOutstanding;
         const existing = company.prices.find(
           (point) => point.label === BASELINE_PERIOD
         );
@@ -251,11 +254,7 @@ export async function adminUpdatePrices(rows: z.infer<typeof adminPriceSchema>) 
         if (existing) {
           await tx.pricePoint.update({
             where: { id: existing.id },
-            data: {
-              value: pricePerShare,
-              companyValue: item.companyValue,
-              sharesOutstanding,
-            },
+            data: { value: pricePerShare, companyValue, sharesOutstanding },
           });
         } else {
           await tx.pricePoint.create({
@@ -263,7 +262,7 @@ export async function adminUpdatePrices(rows: z.infer<typeof adminPriceSchema>) 
               companyId: company.id,
               label: BASELINE_PERIOD,
               value: pricePerShare,
-              companyValue: item.companyValue,
+              companyValue,
               sharesOutstanding,
             },
           });
@@ -271,23 +270,20 @@ export async function adminUpdatePrices(rows: z.infer<typeof adminPriceSchema>) 
         continue;
       }
 
-      // With nobody invested there is nothing to divide by, so fall back to
-      // the same 100 baseline shares Y0 Q4 uses. The operator can still move
-      // the price, and the next update switches to the real count once
-      // someone actually buys in.
+      // Shares only matter for reporting company value now: the price stands
+      // on its own, so an empty register no longer blocks anything.
       const investedShares = totalSharesByCompany.get(company.id) ?? 0;
       const sharesOutstanding = investedShares > 0 ? investedShares : BASELINE_SHARES;
 
-      const label =
-        item.label?.trim() || getNextTimePeriod(company.prices);
-      const pricePerShare = item.companyValue / sharesOutstanding;
+      const label = item.label?.trim() || getNextTimePeriod(company.prices);
+      const pricePerShare = item.pricePerShare;
 
       await tx.pricePoint.create({
         data: {
           companyId: company.id,
           label,
           value: pricePerShare,
-          companyValue: item.companyValue,
+          companyValue: pricePerShare * sharesOutstanding,
           sharesOutstanding,
         },
       });

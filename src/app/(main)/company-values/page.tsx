@@ -52,7 +52,7 @@ export default function CompanyValuesPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Company values"
-        description="Share price = company value ÷ shares invested. Popular companies can reach $20k+ while others stay near $100–200."
+        description="The operator sets each share price. Company value is that price times the shares outstanding."
       />
 
       <Card className="border-primary/20 bg-primary/5">
@@ -97,7 +97,7 @@ export default function CompanyValuesPage() {
                   <div>${company.sharePrice.toFixed(2)}</div>
                   {!company.inBaseline && (company.sharesAtLastUpdate ?? 0) > 0 && (
                     <div className="text-xs text-muted-foreground">
-                      ${company.operatorCompanyValue.toFixed(0)} ÷ {company.sharesAtLastUpdate}
+                      × {company.sharesAtLastUpdate} shares
                     </div>
                   )}
                 </TableCell>
