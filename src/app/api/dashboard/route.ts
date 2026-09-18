@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth-utils";
 import { getTotalSharesByCompany } from "@/lib/data";
+import { getFeaturesConfig } from "@/lib/config";
+import { getCryptoBagsByUser } from "@/lib/crypto-data";
+import { getFirmStakesByUser } from "@/lib/firm-data";
 import { prisma } from "@/lib/prisma";
 import {
   getLatestPricePoint,
@@ -49,7 +52,28 @@ export async function GET() {
       };
     });
 
-    const invested = holdingsWithValues.reduce((sum, h) => sum + h.value, 0);
+    // Coins and firm stakes are holdings too; leaving them out made the
+    // dashboard understate what someone actually owns.
+    const features = getFeaturesConfig();
+    const [cryptoBags, firmStakes] = await Promise.all([
+      features.crypto ? getCryptoBagsByUser() : Promise.resolve(new Map()),
+      features.firms ? getFirmStakesByUser() : Promise.resolve(new Map()),
+    ]);
+
+    const myCrypto = cryptoBags.get(user.id) ?? [];
+    const myFirms = firmStakes.get(user.id) ?? [];
+
+    const stockValue = holdingsWithValues.reduce((sum, h) => sum + h.value, 0);
+    const cryptoValue = myCrypto.reduce(
+      (sum: number, bag: { value: number }) => sum + bag.value,
+      0
+    );
+    const firmValue = myFirms.reduce(
+      (sum: number, stake: { value: number }) => sum + stake.value,
+      0
+    );
+
+    const invested = stockValue + cryptoValue + firmValue;
     const cash = user.balance;
     const portfolioValue = invested;
 
@@ -70,6 +94,11 @@ export async function GET() {
         };
       }),
       holdings: holdingsWithValues,
+      crypto: myCrypto,
+      firmStakes: myFirms,
+      stockValue,
+      cryptoValue,
+      firmValue,
       cash,
       invested,
       portfolioValue,

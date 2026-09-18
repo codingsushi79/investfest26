@@ -49,6 +49,21 @@ type DashboardState = {
     latestPrice: number;
     value: number;
   }>;
+  crypto: Array<{
+    cryptoId: string;
+    symbol: string;
+    units: number;
+    price: number;
+    value: number;
+  }>;
+  firmStakes: Array<{
+    firmId: string;
+    name: string;
+    slug: string;
+    units: number;
+    value: number;
+    isManager: boolean;
+  }>;
   cash: number;
   invested: number;
   portfolioValue: number;
@@ -59,6 +74,8 @@ export default function DashboardPage() {
   const [dashboard, setDashboard] = useState<DashboardState>({
     companies: [],
     holdings: [],
+    crypto: [],
+    firmStakes: [],
     cash: 0,
     invested: 0,
     portfolioValue: 0,
@@ -79,6 +96,8 @@ export default function DashboardPage() {
         setDashboard({
           companies: data.companies,
           holdings: data.holdings,
+          crypto: data.crypto ?? [],
+          firmStakes: data.firmStakes ?? [],
           cash: data.cash,
           invested: data.invested,
           portfolioValue: data.portfolioValue,
@@ -293,7 +312,11 @@ export default function DashboardPage() {
             )}
           </CardHeader>
           <CardContent>
-            <PortfolioTable rows={dashboard.holdings} />
+            <PortfolioTable
+              rows={dashboard.holdings}
+              crypto={dashboard.crypto}
+              firmStakes={dashboard.firmStakes}
+            />
           </CardContent>
         </Card>
       )}

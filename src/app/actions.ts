@@ -293,6 +293,5 @@ export async function adminUpdatePrices(rows: z.infer<typeof adminPriceSchema>) 
   revalidatePath("/");
   revalidatePath("/leaderboard");
   revalidatePath("/portfolios");
-  revalidatePath("/company-values");
 }
 

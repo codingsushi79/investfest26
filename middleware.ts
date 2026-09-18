@@ -8,7 +8,6 @@ const GATED_ROUTES: Array<{ prefix: string; feature: keyof typeof featuresConfig
   { prefix: "/portfolios", feature: "portfolios" },
   { prefix: "/offers", feature: "offers" },
   { prefix: "/trade", feature: "trading" },
-  { prefix: "/company-values", feature: "companyValues" },
   { prefix: "/crypto", feature: "crypto" },
   { prefix: "/firms", feature: "firms" },
   { prefix: "/news", feature: "news" },

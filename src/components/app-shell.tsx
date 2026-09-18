@@ -6,7 +6,6 @@ import { useState } from "react";
 import {
   BarChart3,
   Briefcase,
-  Building2,
   Coins,
   Handshake,
   LayoutDashboard,
@@ -58,13 +57,6 @@ const navLinks: NavLink[] = [
   { href: "/leaderboard", label: "Leaderboard", icon: BarChart3, feature: "leaderboard" },
   { href: "/portfolios", label: "Portfolios", icon: Users, feature: "portfolios" },
   { href: "/profile", label: "Profile", icon: User, feature: "userProfiles" },
-  {
-    href: "/company-values",
-    label: "Company values",
-    icon: Building2,
-    feature: "companyValues",
-    operatorOnly: true,
-  },
 ];
 
 function isActive(pathname: string, href: string) {
